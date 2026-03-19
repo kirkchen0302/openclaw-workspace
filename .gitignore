@@ -1,0 +1,20 @@
+# GCP Credentials - 不推上去
+.gcp/
+
+# 安裝包
+*.tar.gz
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 報表圖片（可選擇性推）
+reports/
+
+# macOS
+.DS_Store
+
+# OpenClaw 內部
+.openclaw/
