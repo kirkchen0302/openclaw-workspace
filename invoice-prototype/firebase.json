@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "pm-prototype-a75ce",
     "public": "dist",
     "ignore": [
       "firebase.json",
