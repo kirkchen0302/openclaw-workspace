@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { fetchUserData } from "./firebase";
 
 // ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
@@ -279,18 +279,22 @@ function FlatSubCard({ sub, expanded, onToggle }) {
   );
 }
 
-function SubscriptionsPage() {
+function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS }) {
   const [seg, setSeg] = useState("sub");
-  const [expSub, setExpSub] = useState("ubereats");
-  const [expFlat, setExpFlat] = useState("apple");
+  const [expSub, setExpSub] = useState(deliverySubs[0]?.id || "");
+  const [expFlat, setExpFlat] = useState(flatSubs[0]?.id || "apple");
 
+  const safeMonths = (arr, idx) => arr.reduce((s, x) => {
+    const m = x.months?.[idx];
+    return s + (typeof m === "number" ? m : x.fee || 0);
+  }, 0);
   const monthTotals = [
-    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[0], 0),
-    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[1], 0),
-    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[2], 0),
+    safeMonths(deliverySubs, 0) + safeMonths(flatSubs, 0),
+    safeMonths(deliverySubs, 1) + safeMonths(flatSubs, 1),
+    safeMonths(deliverySubs, 2) + safeMonths(flatSubs, 2),
   ];
-  const maxT = Math.max(...monthTotals);
-  const dangerCount = SUBSCRIPTIONS.filter(x => x.roiStatus === "danger").length;
+  const maxT = Math.max(...monthTotals, 1);
+  const dangerCount = deliverySubs.filter(x => x.roiStatus === "danger").length;
 
   return (
     <div>
@@ -349,7 +353,8 @@ function SubscriptionsPage() {
             <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
               外送訂閱費用可從你的發票計算實際效益，幫助你判斷是否值得繼續訂閱。
             </div>
-            {SUBSCRIPTIONS.map(sub => (
+            {deliverySubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無外送訂閱紀錄</div>}
+            {deliverySubs.map(sub => (
               <RoiCard key={sub.id} sub={sub} expanded={expSub === sub.id}
                 onToggle={() => setExpSub(expSub === sub.id ? null : sub.id)} />
             ))}
@@ -360,7 +365,8 @@ function SubscriptionsPage() {
             <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
               定額訂閱無法計算使用效益，AI 幫你追蹤費用變化、提醒續訂時間，讓你自主決定是否繼續。
             </div>
-            {FLAT_SUBS.map(sub => (
+            {flatSubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無定額訂閱紀錄</div>}
+            {flatSubs.map(sub => (
               <FlatSubCard key={sub.id} sub={sub} expanded={expFlat === sub.id}
                 onToggle={() => setExpFlat(expFlat === sub.id ? null : sub.id)} />
             ))}
@@ -469,8 +475,36 @@ function BillTrendChart() {
   );
 }
 
-function BillsPage() {
-  const urgent = BILLS.filter(b => b.status === "urgent");
+function BillsPage({ invoices = [] }) {
+  // 從發票推導週期性帳單
+  const detectedBills = useMemo(() => {
+    if (!invoices || invoices.length === 0) return BILLS;
+    const BILL_PATTERNS = [
+      { key: "power",  name: "台電電費",     icon: "⚡",  keywords: ["台電","電力"], cycle: "約每 2 個月", daysEstimate: 45 },
+      { key: "mobile", name: "電信費",       icon: "📶",  keywords: ["大哥大","遠傳","中華電信","台灣之星","威達"], cycle: "約每個月", daysEstimate: 20 },
+      { key: "life",   name: "保險費",       icon: "🛡️", keywords: ["人壽","保險","國泰","新光","富邦保"], cycle: "約每個月", daysEstimate: 25 },
+      { key: "water",  name: "台灣自來水",   icon: "💧",  keywords: ["自來水"], cycle: "約每 2 個月", daysEstimate: 50 },
+    ];
+    const found = [];
+    for (const pattern of BILL_PATTERNS) {
+      const match = invoices.find(inv => pattern.keywords.some(k => inv.shop.includes(k)));
+      if (match) {
+        found.push({
+          id: pattern.key,
+          name: pattern.name,
+          icon: pattern.icon,
+          cycle: pattern.cycle,
+          lastSeen: `${match.month || "近期"}`,
+          daysEstimate: pattern.daysEstimate,
+          status: pattern.daysEstimate <= 7 ? "urgent" : pattern.daysEstimate <= 20 ? "normal" : "upcoming",
+          tip: `AI 根據你的發票偵測到此費用，${pattern.cycle}出現一次`,
+        });
+      }
+    }
+    return found.length > 0 ? found : BILLS;
+  }, [invoices]);
+
+  const urgent = detectedBills.filter(b => b.status === "urgent");
 
   return (
     <div>
@@ -494,7 +528,10 @@ function BillsPage() {
 
       <div style={{ padding: "0 16px 4px" }}>
         <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>AI 根據你的發票出現頻率推估繳費週期，提醒你大概什麼時候該繳費了</div>
-        {BILLS.map(bill => <BillCard key={bill.id} bill={bill} />)}
+        {detectedBills.length === 0
+          ? <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 24 }}>尚未偵測到固定帳單</div>
+          : detectedBills.map(bill => <BillCard key={bill.id} bill={bill} />)
+        }
       </div>
 
       {/* 帳單趨勢圖表 */}
@@ -690,11 +727,13 @@ function TaskCard({ task, joined, onJoin, onSwap }) {
   );
 }
 
-function RewardsPage() {
+function RewardsPage({ autoTasks = AUTO_TASKS }) {
   const [joined, setJoined] = useState({});
   const [swapTarget, setSwapTarget] = useState(null);
-  const [tasks, setTasks] = useState(AUTO_TASKS);
+  const [tasks, setTasks] = useState(autoTasks);
   const total = tasks.reduce((s, t) => s + t.reward, 0);
+
+  useEffect(() => { setTasks(autoTasks); }, [autoTasks]);
 
   function handleSwapConfirm(preview) {
     setTasks(prev => prev.map(t =>
@@ -991,11 +1030,14 @@ export default function App() {
   const [user, setUser] = useState(null); // { phone, data }
   const [loading, setLoading] = useState(false);
 
-  // 動態替換發票資料
-  const liveInvoices = user?.data?.invoices || INVOICES;
-  const livePieData  = user?.data?.pieData   || PIE_DATA;
-  const liveTotalAmt = user?.data?.totalAmount || 75737;
-  const liveInvCount = user?.data?.invoiceCount || 63;
+  // 動態替換所有頁面資料
+  const liveInvoices     = user?.data?.invoices      || INVOICES;
+  const livePieData      = user?.data?.pieData        || PIE_DATA;
+  const liveTotalAmt     = user?.data?.totalAmount    || 75737;
+  const liveInvCount     = user?.data?.invoiceCount   || 63;
+  const liveDeliverySubs = user?.data?.deliverySubs   || SUBSCRIPTIONS;
+  const liveFlatSubs     = user?.data?.flatSubs       || FLAT_SUBS;
+  const liveAutoTasks    = user?.data?.autoTasks      || AUTO_TASKS;
 
   function handleLogin(phone, data) {
     setUser({ phone, data });
@@ -1014,10 +1056,10 @@ export default function App() {
   const pages = {
     home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt}/>,
     invoices:      <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount}/>,
-    rewards:       <RewardsPage/>,
+    rewards:       <RewardsPage autoTasks={liveAutoTasks}/>,
     scan:          <ScanPage/>,
-    subscriptions: <SubscriptionsPage/>,
-    bills:         <BillsPage/>,
+    subscriptions: <SubscriptionsPage deliverySubs={liveDeliverySubs} flatSubs={liveFlatSubs}/>,
+    bills:         <BillsPage invoices={liveInvoices}/>,
   };
 
   return (
