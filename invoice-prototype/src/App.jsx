@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { fetchUserData } from "./firebase";
 
 // ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
@@ -738,7 +739,7 @@ function RewardsPage() {
 }
 
 // ─── 發票頁 ───────────────────────────────────────────────────────────────────
-function InvoicesPage() {
+function InvoicesPage({ invoices = INVOICES, totalAmount = 75737, invoiceCount = 63 }) {
   return (
     <div>
       <div style={S.header}>
@@ -752,16 +753,16 @@ function InvoicesPage() {
       </div>
       <div style={{ ...S.card, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: "#E6F1FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📅</div>
-        <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>開獎倒數 <span style={{ color: "#378ADD" }}>21天</span></div><div style={{ fontSize: 11, color: "#8E8E93" }}>共 63 張發票參與對獎</div></div>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>開獎倒數 <span style={{ color: "#378ADD" }}>21天</span></div><div style={{ fontSize: 11, color: "#8E8E93" }}>共 {invoiceCount} 張發票參與對獎</div></div>
         <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 7, background: "#E6F1FB", color: "#185FA5" }}>即將開獎</span>
       </div>
       <div style={{ padding: "0 16px 6px" }}>
-        <span style={{ fontSize: 13, color: "#8E8E93" }}>2月 總計 </span>
-        <span style={{ fontSize: 16, fontWeight: 800 }}>$75,737</span>
+        <span style={{ fontSize: 13, color: "#8E8E93" }}>近2個月 總計 </span>
+        <span style={{ fontSize: 16, fontWeight: 800 }}>${totalAmount.toLocaleString()}</span>
       </div>
       <div style={{ background: "#fff", borderRadius: 13, margin: "0 16px", overflow: "hidden" }}>
-        {INVOICES.map((inv, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", padding: "11px 14px", borderBottom: i < INVOICES.length - 1 ? "1px solid #F5F5F5" : "none" }}>
+        {invoices.map((inv, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", padding: "11px 14px", borderBottom: i < invoices.length - 1 ? "1px solid #F5F5F5" : "none" }}>
             <div style={{ width: 34, textAlign: "center", flexShrink: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{inv.day}</div>
               <div style={{ fontSize: 10, color: "#8E8E93" }}>{inv.week}</div>
@@ -815,7 +816,7 @@ function ScanPage() {
 }
 
 // ─── 首頁 ─────────────────────────────────────────────────────────────────────
-function HomePage({ setTab }) {
+function HomePage({ setTab, user, invoiceCount, totalAmount }) {
   const [idx, setIdx] = useState(0);
   const touchX = useRef(null);
   const INSIGHTS = [
@@ -833,11 +834,11 @@ function HomePage({ setTab }) {
           <div style={{ display:"flex", gap:8 }}><button style={S.iconBtn}>🐥</button><button style={S.iconBtn}>⚙️</button></div>
         </div>
         <div style={{ marginBottom:10 }}>
-          <div style={{ fontSize:14, color:"#1D9E75", fontWeight:500 }}>Hello！Kirk</div>
+          <div style={{ fontSize:14, color:"#1D9E75", fontWeight:500 }}>Hello！{user?.phone || ""}</div>
           <div style={{ fontSize:12, color:"#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
         </div>
         <div style={{ display:"flex", background:"#F2F2F7", borderRadius:10, padding:"8px 0" }}>
-          {[{label:"本月發票",value:"63"},{label:"本週帳單",value:"2筆",red:true},{label:"任務獎勵",value:"$160",blue:true}].map((s,i)=>(
+          {[{label:"本月發票",value:`${invoiceCount || 63}張`},{label:"本週帳單",value:"2筆",red:true},{label:"任務獎勵",value:"$160",blue:true}].map((s,i)=>(
             <div key={i} style={{ flex:1, textAlign:"center", borderRight:i<2?"1px solid #E8E8E8":"none" }}>
               <div style={{ fontSize:17, fontWeight:800, color:s.red?"#A32D2D":s.blue?"#185FA5":"#1C1C1E" }}>{s.value}</div>
               <div style={{ fontSize:10, color:"#8E8E93" }}>{s.label}</div>
@@ -904,6 +905,78 @@ function HomePage({ setTab }) {
   );
 }
 
+// ─── 登入頁 ───────────────────────────────────────────────────────────────────
+function LoginPage({ onLogin }) {
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLogin() {
+    const clean = phone.replace(/\D/g, "");
+    if (clean.length < 9) {
+      setError("請輸入正確的手機號碼");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const result = await fetchUserData(clean);
+    setLoading(false);
+    if (result.success) {
+      onLogin(clean, result.data);
+    } else {
+      setError(result.error);
+    }
+  }
+
+  return (
+    <div style={{ width: 375, minHeight: "100vh", background: "linear-gradient(160deg, #EEF5FF 0%, #F8FAFF 60%, #F2F2F7 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif", padding: "40px 24px" }}>
+      {/* Logo */}
+      <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, background: "#378ADD", borderRadius: 16, transform: "rotate(45deg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <span style={{ transform: "rotate(-45deg)", fontSize: 28 }}>💳</span>
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "#1C1C1E" }}>發票存摺</div>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginTop: 4 }}>你的發票是最好的理財顧問</div>
+      </div>
+
+      {/* 輸入卡片 */}
+      <div style={{ background: "#fff", borderRadius: 20, padding: "28px 24px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C1E", marginBottom: 6 }}>手機號碼登入</div>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 20 }}>輸入你的手機號碼，查看個人發票分析</div>
+
+        <div style={{ position: "relative", marginBottom: 16 }}>
+          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#8E8E93", pointerEvents: "none" }}>📱</div>
+          <input
+            type="tel"
+            value={phone}
+            onChange={e => { setPhone(e.target.value); setError(""); }}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            placeholder="09xx-xxx-xxx"
+            style={{ width: "100%", padding: "14px 14px 14px 40px", borderRadius: 12, border: `1.5px solid ${error ? "#FF3B30" : "#E0E0E0"}`, fontSize: 16, outline: "none", color: "#1C1C1E", background: "#F8F8F8", letterSpacing: 1 }}
+          />
+        </div>
+
+        {error && (
+          <div style={{ fontSize: 12, color: "#FF3B30", marginBottom: 12, padding: "8px 12px", background: "#FFF2F1", borderRadius: 8 }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          style={{ width: "100%", padding: "14px", borderRadius: 14, border: "none", background: loading ? "#B0C8F0" : "#378ADD", color: "#fff", fontSize: 16, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 14px rgba(55,138,221,0.35)", transition: "all 0.2s" }}>
+          {loading ? "查詢中..." : "進入我的發票 →"}
+        </button>
+      </div>
+
+      <div style={{ marginTop: 24, fontSize: 11, color: "#AEAEB2", textAlign: "center", lineHeight: 1.6 }}>
+        此為內部測試版本<br />資料來源：財政部電子發票整合服務平台
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 const TABS = [
   { key:"invoices",      icon:"🧾", label:"發票" },
@@ -915,9 +988,32 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState("home");
+  const [user, setUser] = useState(null); // { phone, data }
+  const [loading, setLoading] = useState(false);
+
+  // 動態替換發票資料
+  const liveInvoices = user?.data?.invoices || INVOICES;
+  const livePieData  = user?.data?.pieData   || PIE_DATA;
+  const liveTotalAmt = user?.data?.totalAmount || 75737;
+  const liveInvCount = user?.data?.invoiceCount || 63;
+
+  function handleLogin(phone, data) {
+    setUser({ phone, data });
+    setTab("home");
+  }
+
+  function handleLogout() {
+    setUser(null);
+    setTab("home");
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   const pages = {
-    home:          <HomePage setTab={setTab}/>,
-    invoices:      <InvoicesPage/>,
+    home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt}/>,
+    invoices:      <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount}/>,
     rewards:       <RewardsPage/>,
     scan:          <ScanPage/>,
     subscriptions: <SubscriptionsPage/>,
@@ -955,6 +1051,9 @@ export default function App() {
         {tab !== "home" && (
           <button onClick={()=>setTab("home")} style={{ position:"fixed", bottom:70, right:"calc(50% - 187px + 12px)", width:36, height:36, borderRadius:18, background:"#fff", border:"1px solid #E0E0E0", cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", zIndex:99, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>🏠</button>
         )}
+
+        {/* 登出按鈕 */}
+        <button onClick={handleLogout} style={{ position:"fixed", bottom:70, left:"calc(50% - 187px + 12px)", width:36, height:36, borderRadius:18, background:"#fff", border:"1px solid #E0E0E0", cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", zIndex:99, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>🚪</button>
       </div>
     </>
   );
