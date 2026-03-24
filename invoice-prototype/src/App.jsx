@@ -64,6 +64,9 @@ const BILL_HISTORY = {
   b4: { name: "台灣自來水",   icon: "💧",  data: [280, 300, 320],    color: "#378ADD" },
 };
 
+// 基準日設定為 2026/3/25
+const TODAY = new Date("2026-03-25T00:00:00");
+
 // ─── 任務更換資料 ──────────────────────────────────────────────────────────────
 const TASK_SWAP_CHANNELS = ["全聯", "麥當勞", "7-11", "全家", "UberEats", "foodpanda"];
 const TASK_SWAP_CATEGORIES = ["飲料", "咖啡", "早餐", "日用品"];
@@ -477,35 +480,127 @@ function BillTrendChart() {
 }
 
 function BillsPage({ invoices = [] }) {
-  // 從發票推導週期性帳單
+  // 帳單偵測規則
+  const BILL_PATTERNS = [
+    {
+      key: "power", name: "台電電費", icon: "⚡", color: "#378ADD",
+      keywords: ["台電", "電力"],
+      // 奇數月繳（1,3,5,7,9,11月）
+      nextDueMonths: [1, 3, 5, 7, 9, 11],
+      cycleLabel: "每 2 個月",
+    },
+    {
+      key: "water", name: "台灣自來水", icon: "💧", color: "#54A8E0",
+      keywords: ["自來水"],
+      // 偶數月繳（2,4,6,8,10,12月）
+      nextDueMonths: [2, 4, 6, 8, 10, 12],
+      cycleLabel: "每 2 個月",
+    },
+    {
+      key: "mobile", name: "電信費", icon: "📶", color: "#639922",
+      keywords: ["大哥大", "遠傳", "中華電信", "台灣之星", "威達", "亞太"],
+      nextDueMonths: [1,2,3,4,5,6,7,8,9,10,11,12],
+      cycleLabel: "每個月",
+    },
+    {
+      key: "insurance", name: "保險費", icon: "🛡️", color: "#7F77DD",
+      keywords: ["人壽", "保險", "國泰", "新光", "富邦保", "南山"],
+      nextDueMonths: [1,2,3,4,5,6,7,8,9,10,11,12],
+      cycleLabel: "每個月",
+    },
+  ];
+
   const detectedBills = useMemo(() => {
-    if (!invoices || invoices.length === 0) return BILLS;
-    const BILL_PATTERNS = [
-      { key: "power",  name: "台電電費",     icon: "⚡",  keywords: ["台電","電力"], cycle: "約每 2 個月", daysEstimate: 45 },
-      { key: "mobile", name: "電信費",       icon: "📶",  keywords: ["大哥大","遠傳","中華電信","台灣之星","威達"], cycle: "約每個月", daysEstimate: 20 },
-      { key: "life",   name: "保險費",       icon: "🛡️", keywords: ["人壽","保險","國泰","新光","富邦保"], cycle: "約每個月", daysEstimate: 25 },
-      { key: "water",  name: "台灣自來水",   icon: "💧",  keywords: ["自來水"], cycle: "約每 2 個月", daysEstimate: 50 },
-    ];
+    if (!invoices || invoices.length === 0) return [];
+
+    // 從發票找出每筆帳單的歷史金額（依月份）
+    const todayM = TODAY.getMonth() + 1; // 3
+    const todayY = TODAY.getFullYear();  // 2026
+
     const found = [];
     for (const pattern of BILL_PATTERNS) {
-      const match = invoices.find(inv => pattern.keywords.some(k => inv.shop.includes(k)));
-      if (match) {
-        found.push({
-          id: pattern.key,
-          name: pattern.name,
-          icon: pattern.icon,
-          cycle: pattern.cycle,
-          lastSeen: `${match.month || "近期"}`,
-          daysEstimate: pattern.daysEstimate,
-          status: pattern.daysEstimate <= 7 ? "urgent" : pattern.daysEstimate <= 20 ? "normal" : "upcoming",
-          tip: `AI 根據你的發票偵測到此費用，${pattern.cycle}出現一次`,
-        });
+      // 撈出符合關鍵字的發票
+      const matched = invoices.filter(inv =>
+        pattern.keywords.some(k => inv.shop.includes(k))
+      );
+      if (matched.length === 0) continue;
+
+      // 依月份統計金額（取各月第一筆）
+      const byMonth = {};
+      for (const inv of matched) {
+        const key = `${inv.yearMonth || ""}`;
+        if (!byMonth[key] || inv.amount > byMonth[key]) {
+          byMonth[key] = inv.amount;
+        }
       }
+      const sortedMonths = Object.keys(byMonth).sort();
+      const recentMonths = sortedMonths.slice(-6);
+      const trendData = recentMonths.map(ym => ({
+        label: ym.split("-")[1] + "月",
+        amount: byMonth[ym],
+      }));
+
+      // 推算下次繳費月份
+      const dueMths = pattern.nextDueMonths;
+      // 找下一個到期月（從今天 3/25 往後）
+      let nextDueMonth = null, nextDueYear = todayY;
+      for (let offset = 0; offset <= 12; offset++) {
+        const m = ((todayM - 1 + offset) % 12) + 1;
+        const y = todayY + Math.floor((todayM - 1 + offset) / 12);
+        if (dueMths.includes(m)) {
+          // 電費/水費：月底前繳，設定為當月最後一天
+          const dueDay = new Date(y, m, 0); // 當月最後一天
+          if (dueDay >= TODAY) {
+            nextDueMonth = m;
+            nextDueYear = y;
+            break;
+          }
+        }
+      }
+
+      // 計算距離繳費日天數
+      let daysLeft = null;
+      let dueLabel = "";
+      if (nextDueMonth) {
+        const dueDate = new Date(nextDueYear, nextDueMonth, 0); // 月底
+        const diff = Math.ceil((dueDate - TODAY) / (1000 * 60 * 60 * 24));
+        daysLeft = diff;
+        dueLabel = `${nextDueYear}/${nextDueMonth}月底`;
+      }
+
+      const status = daysLeft !== null
+        ? (daysLeft <= 7 ? "urgent" : daysLeft <= 20 ? "normal" : "upcoming")
+        : "upcoming";
+
+      // 最近一期金額
+      const lastAmt = trendData.length > 0 ? trendData[trendData.length - 1].amount : null;
+      const prevAmt = trendData.length > 1 ? trendData[trendData.length - 2].amount : null;
+
+      found.push({
+        id: pattern.key,
+        name: matched[0]?.shop || pattern.name,
+        displayName: pattern.name,
+        icon: pattern.icon,
+        color: pattern.color,
+        cycleLabel: pattern.cycleLabel,
+        dueLabel,
+        daysLeft,
+        status,
+        lastAmount: lastAmt,
+        prevAmount: prevAmt,
+        trendData,
+        tip: `AI 偵測到此費用，${pattern.cycleLabel}繳一次，預計 ${dueLabel} 到期`,
+      });
     }
-    return found.length > 0 ? found : BILLS;
+    return found;
   }, [invoices]);
 
   const urgent = detectedBills.filter(b => b.status === "urgent");
+
+  // 本月帳單合計（本月有出現的帳單，用最後一期金額）
+  const monthlyTotal = detectedBills
+    .filter(b => b.lastAmount)
+    .reduce((s, b) => s + b.lastAmount, 0);
 
   return (
     <div>
@@ -514,29 +609,50 @@ function BillsPage({ invoices = [] }) {
         <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
       </div>
 
-      {/* 緊急提醒橫幅 */}
+      {/* 緊急橫幅 */}
       {urgent.length > 0 && (
         <div style={{ margin: "10px 16px 10px", borderRadius: 13, background: "#FCEBEB", border: "1.5px solid #F7C1C1", padding: "12px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 20 }}>⚠️</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>台電電費繳費週期到了！</div>
-              <div style={{ fontSize: 12, color: "#D85A30", lineHeight: 1.5 }}>AI 根據你的發票推估，台電帳單可能近期就會到，記得確認繳費狀態</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>
+                {urgent.map(b => b.displayName).join("、")} 繳費週期快到了！
+              </div>
+              <div style={{ fontSize: 12, color: "#D85A30", lineHeight: 1.5 }}>
+                AI 推估距繳費日剩 {urgent[0].daysLeft} 天，請確認繳費狀態
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* 總覽 */}
+      <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>偵測到的帳單項目</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#1C1C1E" }}>{detectedBills.length} 項</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>近期繳費估計</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#378ADD" }}>
+            ${monthlyTotal > 0 ? monthlyTotal.toLocaleString() : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* 帳單列表 */}
       <div style={{ padding: "0 16px 4px" }}>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>AI 根據你的發票出現頻率推估繳費週期，提醒你大概什麼時候該繳費了</div>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>
+          AI 根據你的發票推估繳費週期（基準日：2026/3/25）
+        </div>
         {detectedBills.length === 0
           ? <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 24 }}>尚未偵測到固定帳單</div>
-          : detectedBills.map(bill => <BillCard key={bill.id} bill={bill} />)
+          : detectedBills.map(bill => <DynamicBillCard key={bill.id} bill={bill} />)
         }
       </div>
 
-      {/* 帳單趨勢圖表 */}
-      <BillTrendChart />
+      {/* 趨勢圖 */}
+      {detectedBills.length > 0 && <DynamicBillTrendChart bills={detectedBills} />}
 
       <div style={{ ...S.card, background: "#F2F2F7", textAlign: "center", padding: "12px" }}>
         <div style={{ fontSize: 12, color: "#8E8E93", lineHeight: 1.7 }}>
@@ -544,6 +660,106 @@ function BillsPage({ invoices = [] }) {
         </div>
       </div>
       <div style={{ height: 16 }} />
+    </div>
+  );
+}
+
+function DynamicBillCard({ bill }) {
+  const urgencyColor = bill.status === "urgent" ? "#A32D2D" : bill.status === "normal" ? "#185FA5" : "#5F5E5A";
+  const urgencyBg    = bill.status === "urgent" ? "#FCEBEB" : bill.status === "normal" ? "#E6F1FB" : "#F2F2F7";
+  const urgencyLabel = bill.daysLeft !== null
+    ? (bill.status === "urgent" ? `⚠️ 剩 ${bill.daysLeft} 天` : `約 ${bill.daysLeft} 天後`)
+    : "週期未到";
+  const diff = bill.lastAmount && bill.prevAmount ? bill.lastAmount - bill.prevAmount : null;
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 13, padding: "12px 14px", marginBottom: 8, border: bill.status === "urgent" ? "1.5px solid #F09595" : "1px solid #EBEBEB" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: urgencyBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{bill.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{bill.displayName}</span>
+            {diff !== null && diff !== 0 && (
+              <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: diff > 0 ? "#FCEBEB" : "#EAF3DE", color: diff > 0 ? "#A32D2D" : "#3B6D11" }}>
+                {diff > 0 ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>
+            {bill.cycleLabel}繳一次 · 上次：{bill.trendData.length > 0 ? `$${bill.lastAmount?.toLocaleString()}` : "無紀錄"}
+          </div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor }}>{urgencyLabel}</div>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 3 }}>預計 {bill.dueLabel}</div>
+        </div>
+      </div>
+      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 11, color: "#8E8E93", lineHeight: 1.5 }}>
+        🤖 {bill.tip}
+      </div>
+    </div>
+  );
+}
+
+function DynamicBillTrendChart({ bills }) {
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: "16px", margin: "0 16px 10px" }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>帳單趨勢分析</div>
+      <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 16 }}>近6個月各項帳單金額變化</div>
+
+      {bills.filter(b => b.trendData.length > 0).map(bill => {
+        const vals = bill.trendData.map(t => t.amount);
+        const max = Math.max(...vals, 1);
+        const isRising = vals.length >= 2 && vals[vals.length-1] > vals[vals.length-2];
+        const diff = vals.length >= 2 ? vals[vals.length-1] - vals[vals.length-2] : 0;
+
+        return (
+          <div key={bill.id} style={{ marginBottom: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15 }}>{bill.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#1C1C1E" }}>{bill.displayName}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {diff !== 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
+                    {isRising ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
+                  </span>
+                )}
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>
+                  ${vals[vals.length-1].toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 56 }}>
+              {bill.trendData.map((t, i) => {
+                const h = Math.max((t.amount / max) * 48, 4);
+                const isLast = i === bill.trendData.length - 1;
+                return (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2" }}>
+                      ${t.amount >= 1000 ? (t.amount/1000).toFixed(1)+"k" : t.amount}
+                    </span>
+                    <div style={{ width: "100%", height: `${h}px`, borderRadius: "4px 4px 0 0", background: isLast ? (isRising && diff !== 0 ? "#E05C5C" : bill.color) : "#E0E8F0" }} />
+                    <span style={{ fontSize: 10, color: "#8E8E93" }}>{t.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 本月帳單合計 */}
+      <div style={{ marginTop: 8, padding: "10px 12px", background: "#F2F2F7", borderRadius: 10 }}>
+        <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>近期帳單合計估算</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#1C1C1E" }}>
+            ${bills.filter(b=>b.lastAmount).reduce((s,b)=>s+b.lastAmount,0).toLocaleString()}
+          </span>
+          <span style={{ fontSize: 11, color: "#8E8E93" }}>依上次發票金額估算</span>
+        </div>
+      </div>
     </div>
   );
 }
