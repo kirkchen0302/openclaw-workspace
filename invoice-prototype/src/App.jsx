@@ -752,9 +752,9 @@ function DynamicBillCard({ bill }) {
             {bill.cycleLabel}繳一次 · 上次：{bill.trendData.length > 0 ? `$${bill.lastAmount?.toLocaleString()}` : "無紀錄"}
           </div>
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor }}>{urgencyLabel}</div>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 3 }}>預計 {bill.dueLabel}</div>
+        <div style={{ textAlign: "right", flexShrink: 0, minWidth: 80 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: urgencyBg, color: urgencyColor, whiteSpace: "nowrap" }}>{urgencyLabel}</div>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 4, whiteSpace: "nowrap" }}>預計 {bill.dueLabel}</div>
         </div>
       </div>
       <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 11, color: "#8E8E93", lineHeight: 1.5 }}>
@@ -795,18 +795,21 @@ function DynamicBillTrendChart({ bills }) {
                 </span>
               </div>
             </div>
-            {/* 柱狀圖：金額標籤在上，月份標籤在下，不堆疊 */}
-            <div style={{ display: "flex", gap: 8 }}>
+            {/* 柱狀圖：底部對齊，金額標籤在上，月份標籤在下 */}
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
               {bill.trendData.map((t, i) => {
-                const h = Math.max((t.amount / max) * 64, 4);
+                const h = Math.max((t.amount / max) * 80, 4);
                 const isLast = i === bill.trendData.length - 1;
                 return (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2", marginBottom: 4, whiteSpace: "nowrap" }}>
+                    {/* 金額標籤固定在柱子上方 */}
+                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2", marginBottom: 5, whiteSpace: "nowrap" }}>
                       {t.amount >= 1000 ? `$${(t.amount/1000).toFixed(1)}k` : `$${t.amount}`}
                     </span>
+                    {/* 柱子：高度由下往上長，底部自然對齊 */}
                     <div style={{ width: "100%", height: `${h}px`, borderRadius: "4px 4px 0 0", background: isLast ? (isRising && diff !== 0 ? "#E05C5C" : bill.color) : "#E0E8F0" }} />
-                    <span style={{ fontSize: 10, color: "#8E8E93", marginTop: 5 }}>{t.label}</span>
+                    {/* 月份標籤在柱子下方 */}
+                    <span style={{ fontSize: 10, color: "#8E8E93", marginTop: 6 }}>{t.label}</span>
                   </div>
                 );
               })}
