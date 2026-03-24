@@ -1350,14 +1350,14 @@ function LoginPage({ onLogin }) {
         <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 20 }}>輸入你的手機號碼，查看個人發票分析</div>
 
         <div style={{ position: "relative", marginBottom: 16 }}>
-          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#8E8E93", pointerEvents: "none" }}>📱</div>
+          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "#8E8E93", pointerEvents: "none", zIndex: 1 }}>📱</div>
           <input
             type="tel"
             value={phone}
             onChange={e => { setPhone(e.target.value); setError(""); }}
             onKeyDown={e => e.key === "Enter" && handleLogin()}
             placeholder="09xx-xxx-xxx"
-            style={{ width: "100%", padding: "14px 14px 14px 40px", borderRadius: 12, border: `1.5px solid ${error ? "#FF3B30" : "#E0E0E0"}`, fontSize: 16, outline: "none", color: "#1C1C1E", background: "#F8F8F8", letterSpacing: 1 }}
+            style={{ boxSizing: "border-box", width: "100%", padding: "14px 14px 14px 44px", borderRadius: 12, border: `1.5px solid ${error ? "#FF3B30" : "#E0E0E0"}`, fontSize: 16, outline: "none", color: "#1C1C1E", background: "#F8F8F8", letterSpacing: 1, display: "block" }}
           />
         </div>
 
@@ -1376,7 +1376,7 @@ function LoginPage({ onLogin }) {
       </div>
 
       <div style={{ marginTop: 24, fontSize: 11, color: "#AEAEB2", textAlign: "center", lineHeight: 1.6 }}>
-        此為內部測試版本<br />資料來源：財政部電子發票整合服務平台
+        此為內部測試版本<br />© 麻布數據科技股份有限公司
       </div>
     </div>
   );
