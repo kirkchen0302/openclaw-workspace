@@ -1,0 +1,981 @@
+import { useState, useRef } from "react";
+
+// ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
+const SUBSCRIPTIONS = [
+  {
+    id: "ubereats",
+    name: "UberEats+",
+    icon: "🛵",
+    fee: 178,
+    type: "roi",
+    renewDay: 15,
+    months: [
+      { m: "12月", orders: 8, feeWaived: 392 },
+      { m: "1月",  orders: 5, feeWaived: 245 },
+      { m: "2月",  orders: 2, feeWaived:  98 },
+    ],
+    roiStatus: "danger",
+    roiLabel: "本月虧損 $80",
+    roiTip: "本月叫了 2 次外送，免運費共 $98，但訂閱費 $178，虧損 $80。至少需叫 4 次才能回本。",
+    actionLabel: "考慮暫停訂閱",
+    actionColor: "#A32D2D",
+    actionBg: "#FCEBEB",
+  },
+  {
+    id: "foodpanda",
+    name: "foodpanda Pro",
+    icon: "🐼",
+    fee: 149,
+    type: "roi",
+    renewDay: 22,
+    months: [
+      { m: "12月", orders: 6, feeWaived: 270 },
+      { m: "1月",  orders: 7, feeWaived: 315 },
+      { m: "2月",  orders: 5, feeWaived: 225 },
+    ],
+    roiStatus: "green",
+    roiLabel: "本月划算 +$76",
+    roiTip: "本月叫了 5 次，免運費 $225，扣掉訂閱費 $149，還省了 $76。繼續保留划算！",
+    actionLabel: "繼續保留",
+    actionColor: "#3B6D11",
+    actionBg: "#EAF3DE",
+  },
+];
+
+// 定額訂閱：僅保留會開立發票的項目
+const FLAT_SUBS = [
+  { id: "apple", name: "Apple iCloud", icon: "☁️", fee: 90, renewDay: 24, trend: "stable", months: [90, 90, 90] },
+];
+
+// ─── 帳單提醒資料 ─────────────────────────────────────────────────────────────
+const BILLS = [
+  { id: "b1", name: "台電電費",     icon: "⚡",  amount: 1240, dueDate: "3/25", daysLeft: 2,  status: "urgent",   lastMonth: 980  },
+  { id: "b2", name: "台灣大哥大",   icon: "📶",  amount: 599,  dueDate: "3/31", daysLeft: 8,  status: "normal",   lastMonth: 599  },
+  { id: "b3", name: "國泰人壽保費", icon: "🛡️", amount: 3200, dueDate: "4/5",  daysLeft: 13, status: "upcoming", lastMonth: 3200 },
+  { id: "b4", name: "台灣自來水",   icon: "💧",  amount: 320,  dueDate: "4/10", daysLeft: 18, status: "upcoming", lastMonth: 280  },
+];
+
+// 帳單歷史趨勢資料（近3個月）
+const BILL_HISTORY = {
+  b1: { name: "台電電費",     icon: "⚡",  data: [980, 1100, 1240],  color: "#378ADD" },
+  b2: { name: "台灣大哥大",   icon: "📶",  data: [599, 599, 599],    color: "#639922" },
+  b3: { name: "國泰人壽保費", icon: "🛡️", data: [3200, 3200, 3200], color: "#7F77DD" },
+  b4: { name: "台灣自來水",   icon: "💧",  data: [280, 300, 320],    color: "#378ADD" },
+};
+
+// ─── 任務更換資料 ──────────────────────────────────────────────────────────────
+const TASK_SWAP_CHANNELS = ["全聯", "麥當勞", "7-11", "全家", "UberEats", "foodpanda"];
+const TASK_SWAP_CATEGORIES = ["飲料", "咖啡", "早餐", "日用品"];
+const TASK_SWAP_MOCK = {
+  "全聯":     { title: "全聯消費滿額",   desc: "至全聯消費滿 $200，拿 $80 禮券", reward: 80, daysLeft: 8  },
+  "麥當勞":   { title: "麥當勞早餐任務", desc: "購買任一早餐組合，享 $30 折扣",   reward: 30, daysLeft: 10 },
+  "7-11":     { title: "7-11 咖啡任務",  desc: "購買任一杯咖啡，集點 2 點",       reward: 20, daysLeft: 14 },
+  "全家":     { title: "全家集點挑戰",   desc: "消費集點達標可兌換禮品",           reward: 25, daysLeft: 7  },
+  "UberEats": { title: "UberEats 訂餐",  desc: "完成一筆外送訂單，折抵 $50",      reward: 50, daysLeft: 5  },
+  "foodpanda":{ title: "foodpanda 挑戰", desc: "完成一筆外送，享 $40 回饋",        reward: 40, daysLeft: 6  },
+  "飲料":     { title: "飲料購買任務",   desc: "購買任一瓶裝飲料，集點 1 點",     reward: 10, daysLeft: 30 },
+  "咖啡":     { title: "咖啡愛好者",     desc: "購買任一杯咖啡，享早鳥優惠",      reward: 20, daysLeft: 14 },
+  "早餐":     { title: "早餐達人",       desc: "購買早餐組合，省 $15",             reward: 15, daysLeft: 10 },
+  "日用品":   { title: "日用品補貨",     desc: "購買任一日用品，享 5% 回饋",      reward: 30, daysLeft: 8  },
+};
+
+// ─── 其他頁面資料 ─────────────────────────────────────────────────────────────
+const AUTO_TASKS = [
+  { id: "t1", shop: "UberEats 台灣", icon: "🛵", title: "外送達人挑戰",   desc: "上月叫了 21 次，本月再叫 3 次即可達標",    progress: 2,   target: 3,   unit: "次", reward: 50, daysLeft: 8, urgency: "high", basis: "根據你過去 3 個月的外送頻率自動生成" },
+  { id: "t2", shop: "全聯實業",       icon: "🛒", title: "全聯本月衝標",   desc: "已消費 $489，距門檻 $500 還差 $11",         progress: 489, target: 500, unit: "$", reward: 80, daysLeft: 3, urgency: "high", basis: "你每月在全聯穩定消費，自動計算距門檻差額" },
+  { id: "t3", shop: "麥當勞",         icon: "🍔", title: "麥當勞集點任務", desc: "本月已去 8 次，再去 2 次解鎖集點獎勵",      progress: 8,   target: 10,  unit: "次", reward: 30, daysLeft: 8, urgency: "med",  basis: "你是麥當勞常客，任務對你來說難度很低" },
+];
+
+const INVOICES = [
+  { day: "28", week: "週六", shop: "全國電子",     type: "載具", amount: 45799, highlight: true },
+  { day: "28", week: "週六", shop: "UberEats 台灣", type: "載具", amount: 180 },
+  { day: "27", week: "週五", shop: "麥當勞",        type: "載具", amount: 210 },
+  { day: "27", week: "週五", shop: "全聯實業",      type: "載具", amount: 489 },
+  { day: "26", week: "週四", shop: "路易莎咖啡",    type: "載具", amount: 125 },
+  { day: "25", week: "週三", shop: "大苑子",        type: "載具", amount: 75  },
+  { day: "25", week: "週三", shop: "7-11統一超商",  type: "載具", amount: 85  },
+  { day: "24", week: "週二", shop: "Apple",         type: "載具", amount: 90  },
+  { day: "23", week: "週一", shop: "麥當勞",        type: "載具", amount: 189 },
+];
+
+const PIE_DATA = [
+  { label: "外食", pct: 32, color: "#378ADD" },
+  { label: "購物", pct: 28, color: "#639922" },
+  { label: "訂閱", pct: 18, color: "#7F77DD" },
+  { label: "交通", pct: 12, color: "#BA7517" },
+  { label: "其他", pct: 10, color: "#D85A30" },
+];
+
+const QUICK_QUESTIONS = {
+  invoices: ["這筆花費值得嗎？", "幫我分析這個月", "哪家我最常去？"],
+};
+
+const AI_ANSWERS = {
+  "這筆花費值得嗎？": { text: "全國電子 $45,799 這筆，算是大型電器消費。記得對獎，金額大的發票中獎機率也更高 🎯" },
+  "幫我分析這個月":   { text: "2月共 63 張發票，總金額 $75,737。外食 32%、購物 28%、訂閱 18%。本月訂閱費 $936 略高，加上 UberEats+ 虧損，建議進行訂閱健康檢查。" },
+  "哪家我最常去？":   { text: "UberEats（21次）、麥當勞（8次）、全聯（7次）、7-11（6次）、路易莎（5次）。這 3 家都已自動生成任務！" },
+};
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const S = {
+  root:       { width: 375, minHeight: "100vh", background: "#F2F2F7", fontFamily: "-apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif", position: "relative", margin: "0 auto", display: "flex", flexDirection: "column" },
+  screen:     { flex: 1, overflowY: "auto", paddingBottom: 160 },
+  header:     { background: "#fff", padding: "12px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F0F0F0" },
+  headerTitle:{ fontSize: 22, fontWeight: 700, color: "#1C1C1E" },
+  iconBtn:    { width: 34, height: 34, borderRadius: 17, background: "#F2F2F7", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 },
+  card:       { background: "#fff", borderRadius: 14, padding: 14, margin: "0 16px 10px" },
+  tabBar:     { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: 375, background: "#fff", borderTop: "1px solid #E8E8E8", display: "flex", alignItems: "flex-end", zIndex: 100, paddingBottom: 4 },
+  tabItem:    { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0 4px", cursor: "pointer", border: "none", background: "transparent", gap: 2 },
+  tabScan:    { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", position: "relative", paddingBottom: 4 },
+  scanBubble: { width: 50, height: 50, borderRadius: 13, background: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center", marginTop: -16, boxShadow: "0 4px 12px rgba(55,138,221,0.35)", fontSize: 22 },
+  segment:    { display: "flex", background: "#F2F2F7", borderRadius: 10, padding: 2, margin: "0 16px 10px" },
+  segItem:    (a) => ({ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: a ? "#fff" : "transparent", color: a ? "#1C1C1E" : "#8E8E93", boxShadow: a ? "0 1px 3px rgba(0,0,0,0.08)" : "none", transition: "all 0.2s" }),
+};
+
+function Logo() {
+  return (
+    <div style={{ width: 30, height: 30, background: "#378ADD", borderRadius: 7, transform: "rotate(45deg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ transform: "rotate(-45deg)", fontSize: 13 }}>💳</span>
+    </div>
+  );
+}
+
+function DonutChart() {
+  const stops = []; let acc = 0;
+  PIE_DATA.forEach(d => { stops.push(`${d.color} ${acc}% ${acc + d.pct}%`); acc += d.pct; });
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ position: "relative", width: 68, height: 68, flexShrink: 0 }}>
+        <div style={{ width: 68, height: 68, borderRadius: "50%", background: `conic-gradient(${stops.join(", ")})` }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 42, height: 42, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "#1C1C1E" }}>$75.7k</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+        {PIE_DATA.map(d => (
+          <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: "#8E8E93" }}>{d.label} {d.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── 訂閱健康頁 ───────────────────────────────────────────────────────────────
+function MiniTrend({ vals, color }) {
+  const max = Math.max(...vals);
+  return (
+    <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 24 }}>
+      {vals.map((v, i) => (
+        <div key={i} style={{ flex: 1, borderRadius: "2px 2px 0 0", background: i === vals.length - 1 ? color : "#E8E8E8", height: `${(v / max) * 24}px` }} />
+      ))}
+    </div>
+  );
+}
+
+function RoiCard({ sub, expanded, onToggle }) {
+  const latest = sub.months[sub.months.length - 1];
+  const roi = latest.feeWaived - sub.fee;
+  const statusColor = sub.roiStatus === "green" ? "#3B6D11" : sub.roiStatus === "warn" ? "#854F0B" : "#A32D2D";
+  const statusBg   = sub.roiStatus === "green" ? "#EAF3DE" : sub.roiStatus === "warn" ? "#FAEEDA" : "#FCEBEB";
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 13, marginBottom: 8, overflow: "hidden", border: sub.roiStatus === "danger" ? "1.5px solid #F09595" : "1px solid #EBEBEB" }}>
+      <div onClick={onToggle} style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: "#F2F2F7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{sub.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: statusBg, color: statusColor }}>{sub.roiLabel}</span>
+          </div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂 · 本月省運費 ${latest.feeWaived}</div>
+        </div>
+        <span style={{ color: "#C7C7CC", fontSize: 13 }}>{expanded ? "▲" : "▼"}</span>
+      </div>
+      {expanded && (
+        <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
+          <div style={{ marginTop: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 8 }}>近3個月：省運費 vs 月費</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {sub.months.map((m, i) => {
+                const r = m.feeWaived - sub.fee;
+                return (
+                  <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "#8E8E93", marginBottom: 4 }}>{m.m}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: r >= 0 ? "#3B6D11" : "#A32D2D" }}>{r >= 0 ? "+" : ""}{r}</div>
+                    <div style={{ fontSize: 10, color: "#8E8E93" }}>{m.orders}次外送</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{ background: statusBg, borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: statusColor, lineHeight: 1.6 }}>
+              {sub.roiStatus === "danger" ? "⚠️ " : "✅ "}{sub.roiTip}
+            </div>
+          </div>
+          <button style={{ width: "100%", padding: "9px", borderRadius: 9, background: sub.actionBg, color: sub.actionColor, border: `1px solid ${sub.actionColor}30`, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+            {sub.actionLabel} →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FlatSubCard({ sub, expanded, onToggle }) {
+  const trendUp = sub.trend === "up";
+  const latestFee = sub.months[sub.months.length - 1];
+  const prevFee   = sub.months[sub.months.length - 2];
+  const diff = latestFee - prevFee;
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 13, marginBottom: 8, overflow: "hidden", border: trendUp ? "1.5px solid #FAC775" : "1px solid #EBEBEB" }}>
+      <div onClick={onToggle} style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: "#F2F2F7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{sub.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
+            {trendUp && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#FAEEDA", color: "#854F0B" }}>費用調漲</span>}
+          </div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${latestFee} · {sub.renewDay}日續訂{diff > 0 ? ` · 比上月多 $${diff}` : ""}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <MiniTrend vals={sub.months} color={trendUp ? "#EF9F27" : "#378ADD"} />
+        </div>
+        <span style={{ color: "#C7C7CC", fontSize: 13, marginLeft: 6 }}>{expanded ? "▲" : "▼"}</span>
+      </div>
+      {expanded && (
+        <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
+          <div style={{ marginTop: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 6 }}>近3個月費用</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["12月", "1月", "2月"].map((m, i) => (
+                <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "7px", textAlign: "center" }}>
+                  <div style={{ fontSize: 10, color: "#8E8E93", marginBottom: 3 }}>{m}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E" }}>${sub.months[i]}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: "#F8F8F8", borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: "#636366", lineHeight: 1.6 }}>
+              💡 此訂閱為定額方案，AI 僅追蹤費用變化。是否續訂請依個人使用習慣決定。
+              {trendUp && <span style={{ color: "#854F0B", fontWeight: 600 }}> 本月費用已調漲，建議重新評估使用需求。</span>}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#E6F1FB", borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
+            <span style={{ fontSize: 16 }}>📅</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#185FA5" }}>每月 {sub.renewDay} 日自動續訂</div>
+              <div style={{ fontSize: 11, color: "#378ADD" }}>如需取消，請在續訂日前操作</div>
+            </div>
+          </div>
+          {/* 僅保留設定提醒，移除「前往管理訂閱」 */}
+          <button style={{ width: "100%", padding: "8px", borderRadius: 9, background: "#F2F2F7", color: "#3C3C43", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>設定提醒</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubscriptionsPage() {
+  const [seg, setSeg] = useState("sub");
+  const [expSub, setExpSub] = useState("ubereats");
+  const [expFlat, setExpFlat] = useState("apple");
+
+  const monthTotals = [
+    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[0], 0),
+    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[1], 0),
+    SUBSCRIPTIONS.reduce((s, x) => s + x.fee, 0) + FLAT_SUBS.reduce((s, x) => s + x.months[2], 0),
+  ];
+  const maxT = Math.max(...monthTotals);
+  const dangerCount = SUBSCRIPTIONS.filter(x => x.roiStatus === "danger").length;
+
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>訂閱管理</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
+      </div>
+
+      <div style={{ margin: "10px 16px 10px", borderRadius: 14, background: "#1C1C1E", padding: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>本月訂閱總支出</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "#fff" }}>${monthTotals[2]}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>較上月</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: monthTotals[2] > monthTotals[1] ? "#F09595" : "#9FE1CB" }}>
+              {monthTotals[2] > monthTotals[1] ? "+" : ""}{monthTotals[2] - monthTotals[1]}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, marginBottom: 8 }}>
+          {["12月", "1月", "2月"].map((m, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <div style={{ width: "100%", borderRadius: "3px 3px 0 0", background: i === 2 ? (monthTotals[2] > monthTotals[1] ? "#F09595" : "#5DCAA5") : "rgba(255,255,255,0.2)", height: `${(monthTotals[i] / maxT) * 32}px` }} />
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{m}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 0, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 10 }}>
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{SUBSCRIPTIONS.length + FLAT_SUBS.length}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>訂閱項目</div>
+          </div>
+          <div style={{ width: 1, background: "rgba(255,255,255,0.12)" }} />
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: dangerCount > 0 ? "#F09595" : "#9FE1CB" }}>{dangerCount} 個</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>效益偏低</div>
+          </div>
+          <div style={{ width: 1, background: "rgba(255,255,255,0.12)" }} />
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>1 個</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>本週續訂</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={S.segment}>
+        <button style={S.segItem(seg === "sub")} onClick={() => setSeg("sub")}>外送訂閱（效益分析）</button>
+        <button style={S.segItem(seg === "flat")} onClick={() => setSeg("flat")}>定額訂閱（費用追蹤）</button>
+      </div>
+
+      <div style={{ padding: "0 16px" }}>
+        {seg === "sub" && (
+          <>
+            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
+              外送訂閱費用可從你的發票計算實際效益，幫助你判斷是否值得繼續訂閱。
+            </div>
+            {SUBSCRIPTIONS.map(sub => (
+              <RoiCard key={sub.id} sub={sub} expanded={expSub === sub.id}
+                onToggle={() => setExpSub(expSub === sub.id ? null : sub.id)} />
+            ))}
+          </>
+        )}
+        {seg === "flat" && (
+          <>
+            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
+              定額訂閱無法計算使用效益，AI 幫你追蹤費用變化、提醒續訂時間，讓你自主決定是否繼續。
+            </div>
+            {FLAT_SUBS.map(sub => (
+              <FlatSubCard key={sub.id} sub={sub} expanded={expFlat === sub.id}
+                onToggle={() => setExpFlat(expFlat === sub.id ? null : sub.id)} />
+            ))}
+          </>
+        )}
+      </div>
+      <div style={{ height: 16 }} />
+    </div>
+  );
+}
+
+// ─── 帳單提醒頁 ───────────────────────────────────────────────────────────────
+
+function BillCard({ bill }) {
+  const urgencyColor = bill.status === "urgent" ? "#A32D2D" : bill.status === "normal" ? "#185FA5" : "#5F5E5A";
+  const urgencyBg    = bill.status === "urgent" ? "#FCEBEB" : bill.status === "normal" ? "#E6F1FB" : "#F2F2F7";
+  const urgencyLabel = bill.status === "urgent" ? `⚠️ 後天到期` : `${bill.daysLeft}天後到期`;
+  const diff = bill.amount - bill.lastMonth;
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 13, padding: "12px 14px", marginBottom: 8, border: bill.status === "urgent" ? "1.5px solid #F09595" : "1px solid #EBEBEB" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: urgencyBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{bill.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{bill.name}</span>
+            {diff > 0 && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: "#FCEBEB", color: "#A32D2D" }}>比上月多 ${diff}</span>}
+          </div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>繳款期限 {bill.dueDate} · 上月 ${bill.lastMonth}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#1C1C1E" }}>${bill.amount.toLocaleString()}</div>
+          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor, marginTop: 3 }}>{urgencyLabel}</div>
+        </div>
+      </div>
+      {/* 移除「立即繳費」CTA */}
+    </div>
+  );
+}
+
+// 帳單趨勢圖表
+function BillTrendChart() {
+  const months = ["12月", "1月", "2月"];
+  const bills = Object.values(BILL_HISTORY);
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: "16px", margin: "0 16px 10px" }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>帳單趨勢分析</div>
+      <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 16 }}>近 3 個月各項帳單金額變化</div>
+
+      {bills.map((bill) => {
+        const max = Math.max(...bill.data);
+        const min = Math.min(...bill.data);
+        const isRising = bill.data[2] > bill.data[1];
+        const diff = bill.data[2] - bill.data[1];
+
+        return (
+          <div key={bill.name} style={{ marginBottom: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15 }}>{bill.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#1C1C1E" }}>{bill.name}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {diff !== 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
+                    {isRising ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
+                  </span>
+                )}
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>${bill.data[2].toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* 柱狀圖 */}
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 56 }}>
+              {bill.data.map((val, i) => {
+                const heightPct = max > 0 ? (val / max) * 48 : 0;
+                const isLatest = i === bill.data.length - 1;
+                const barColor = isLatest
+                  ? (isRising && diff !== 0 ? "#E05C5C" : bill.color)
+                  : "#E0E8F0";
+                return (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: isLatest ? 700 : 400, color: isLatest ? "#1C1C1E" : "#AEAEB2" }}>${val >= 1000 ? (val / 1000).toFixed(1) + "k" : val}</span>
+                    <div style={{ width: "100%", height: `${heightPct}px`, borderRadius: "4px 4px 0 0", background: barColor, minHeight: 4 }} />
+                    <span style={{ fontSize: 10, color: "#8E8E93" }}>{months[i]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 總覽摘要 */}
+      <div style={{ marginTop: 8, padding: "10px 12px", background: "#F2F2F7", borderRadius: 10 }}>
+        <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>本月帳單合計</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#1C1C1E" }}>
+            ${BILLS.reduce((s, b) => s + b.amount, 0).toLocaleString()}
+          </span>
+          <span style={{ fontSize: 11, color: "#A32D2D", fontWeight: 600 }}>
+            較上月 +${BILLS.reduce((s, b) => s + (b.amount - b.lastMonth), 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BillsPage() {
+  const urgent = BILLS.filter(b => b.status === "urgent");
+  const totalDue = BILLS.reduce((s, b) => s + b.amount, 0);
+
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>帳單提醒</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
+      </div>
+
+      {/* 緊急提醒橫幅（移除「立即繳」按鈕） */}
+      {urgent.length > 0 && (
+        <div style={{ margin: "10px 16px 10px", borderRadius: 13, background: "#FCEBEB", border: "1.5px solid #F7C1C1", padding: "12px 14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 20 }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>台電電費後天（3/25）就到期！</div>
+              <div style={{ fontSize: 12, color: "#D85A30" }}>共 $1,240，比上月多 $260，請記得儘快繳清</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>近期待繳總額</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#1C1C1E" }}>${totalDue.toLocaleString()}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>共 {BILLS.length} 筆帳單</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#A32D2D" }}>{urgent.length} 筆即將到期</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 16px 4px" }}>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>AI 根據你的發票紀錄偵測固定帳單，自動追蹤繳費期限</div>
+        {BILLS.map(bill => <BillCard key={bill.id} bill={bill} />)}
+      </div>
+
+      {/* 帳單趨勢圖表 */}
+      <BillTrendChart />
+
+      <div style={{ ...S.card, background: "#F2F2F7", textAlign: "center", padding: "12px" }}>
+        <div style={{ fontSize: 12, color: "#8E8E93", lineHeight: 1.7 }}>
+          📌 帳單資料由 AI 從發票自動偵測，若有漏偵或已不再使用，可手動管理
+        </div>
+      </div>
+      <div style={{ height: 16 }} />
+    </div>
+  );
+}
+
+// ─── AI Panel（僅限發票頁使用） ────────────────────────────────────────────────
+function AIPanel({ tabKey }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [displayText, setDisplayText] = useState("");
+  const endRef = useRef(null);
+  const questions = QUICK_QUESTIONS[tabKey] || [];
+
+  const sendQ = (q) => {
+    const question = q || input.trim();
+    if (!question) return;
+    setMessages(p => [...p, { role: "user", text: question }]);
+    setInput(""); setTyping(true); setDisplayText("");
+    const ans = AI_ANSWERS[question] || { text: "根據你的發票資料分析中...😊" };
+    let i = 0;
+    const iv = setInterval(() => {
+      i++; setDisplayText(ans.text.slice(0, i));
+      if (i >= ans.text.length) { clearInterval(iv); setTyping(false); setMessages(p => [...p, { role: "ai", text: ans.text }]); setDisplayText(""); }
+    }, 18);
+  };
+
+  return (
+    <div style={{ position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)", width: 375, zIndex: 98 }}>
+      {!open ? (
+        <div style={{ padding: "6px 16px" }}>
+          <button onClick={() => setOpen(true)} style={{ width: "100%", padding: "10px 14px", borderRadius: 22, border: "1px solid #E0E0E0", background: "#fff", fontSize: 13, color: "#8E8E93", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>💬</span><span>問 AI 管家...</span>
+            <span style={{ marginLeft: "auto", fontSize: 11, color: "#378ADD", fontWeight: 600 }}>省錢找我</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: "#fff", borderRadius: "18px 18px 0 0", boxShadow: "0 -4px 24px rgba(0,0,0,0.10)", padding: "12px 14px 14px", maxHeight: 380, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>🤖 AI 管家</span>
+              <span style={{ fontSize: 10, background: "#E6F1FB", color: "#185FA5", padding: "2px 6px", borderRadius: 5, fontWeight: 600 }}>省錢顧問</span>
+            </div>
+            <button onClick={() => { setOpen(false); setMessages([]); }} style={{ border: "none", background: "none", fontSize: 20, cursor: "pointer", color: "#8E8E93" }}>×</button>
+          </div>
+          <div style={{ overflowY: "auto", flex: 1, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign: "center", padding: "10px 0" }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>💡</div>
+                <div style={{ fontSize: 12, color: "#8E8E93", lineHeight: 1.6 }}>問我發票相關的省錢問題！</div>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%", padding: "8px 12px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.role === "user" ? "#378ADD" : "#F2F2F7", color: m.role === "user" ? "#fff" : "#1C1C1E", fontSize: 13, lineHeight: 1.5 }}>{m.text}</div>
+            ))}
+            {typing && displayText && (
+              <div style={{ alignSelf: "flex-start", maxWidth: "85%", padding: "8px 12px", borderRadius: "16px 16px 16px 4px", background: "#F2F2F7", fontSize: 13, lineHeight: 1.5 }}>
+                {displayText}<span>|</span>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+          {!typing && questions.length > 0 && (
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+              {questions.map(q => <button key={q} onClick={() => sendQ(q)} style={{ padding: "5px 8px", borderRadius: 11, border: "1px solid #378ADD", background: "#E6F1FB", color: "#185FA5", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>{q}</button>)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendQ()}
+              placeholder="輸入問題..." style={{ flex: 1, padding: "8px 12px", borderRadius: 18, border: "1px solid #E0E0E0", fontSize: 13, outline: "none" }} />
+            <button onClick={() => sendQ()} style={{ width: 36, height: 36, borderRadius: 18, background: "#378ADD", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>➤</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 任務更換 Modal ────────────────────────────────────────────────────────────
+function TaskSwapModal({ task, onConfirm, onClose }) {
+  const [mode, setMode] = useState("channel"); // "channel" | "category"
+  const [selected, setSelected] = useState(null);
+
+  const options = mode === "channel" ? TASK_SWAP_CHANNELS : TASK_SWAP_CATEGORIES;
+  const preview = selected ? TASK_SWAP_MOCK[selected] : null;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: 375, padding: "20px 16px 32px", maxHeight: "80vh", overflowY: "auto" }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: "#E0E0E0" }} />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C1E" }}>更換任務</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: "#8E8E93", cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 16 }}>選擇通路或商品類型，AI 幫你找對應任務</div>
+
+        {/* 切換 mode */}
+        <div style={{ display: "flex", background: "#F2F2F7", borderRadius: 10, padding: 2, marginBottom: 16 }}>
+          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: mode === "channel" ? "#fff" : "transparent", color: mode === "channel" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("channel"); setSelected(null); }}>選擇通路</button>
+          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: mode === "category" ? "#fff" : "transparent", color: mode === "category" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("category"); setSelected(null); }}>選擇商品類型</button>
+        </div>
+
+        {/* 選項列表 */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {options.map(opt => (
+            <button key={opt} onClick={() => setSelected(opt)}
+              style={{ padding: "8px 16px", borderRadius: 20, border: `1.5px solid ${selected === opt ? "#378ADD" : "#E0E0E0"}`, background: selected === opt ? "#E6F1FB" : "#fff", color: selected === opt ? "#185FA5" : "#1C1C1E", fontSize: 13, fontWeight: selected === opt ? 700 : 400, cursor: "pointer", transition: "all 0.15s" }}>
+              {opt}
+            </button>
+          ))}
+        </div>
+
+        {/* 預覽任務 */}
+        {preview && (
+          <div style={{ background: "#E6F1FB", borderRadius: 12, padding: "12px 14px", marginBottom: 16, border: "1px solid #B5D4F4" }}>
+            <div style={{ fontSize: 11, color: "#185FA5", fontWeight: 600, marginBottom: 6 }}>替換任務預覽</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>{preview.title}</div>
+            <div style={{ fontSize: 12, color: "#636366", marginBottom: 8 }}>{preview.desc}</div>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <span style={{ fontSize: 12, background: "#EAF3DE", color: "#3B6D11", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>獎勵 ${preview.reward}</span>
+              <span style={{ fontSize: 11, color: "#8E8E93" }}>期限 {preview.daysLeft} 天</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "1px solid #E0E0E0", background: "#fff", color: "#636366", fontSize: 14, cursor: "pointer", fontWeight: 500 }}>取消</button>
+          <button onClick={() => preview && onConfirm(preview)} disabled={!preview}
+            style={{ flex: 2, padding: "11px", borderRadius: 12, border: "none", background: preview ? "#378ADD" : "#E0E0E0", color: "#fff", fontSize: 14, cursor: preview ? "pointer" : "not-allowed", fontWeight: 700 }}>
+            確認更換
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 任務頁 ───────────────────────────────────────────────────────────────────
+function TaskCard({ task, joined, onJoin, onSwap }) {
+  const pct = Math.min((task.progress / task.target) * 100, 100);
+  const rem = task.unit === "$" ? `差 $${task.target - task.progress}` : `差 ${task.target - task.progress} 次`;
+  return (
+    <div style={{ background: "#fff", borderRadius: 13, padding: 14, marginBottom: 8, border: task.urgency === "high" ? "1.5px solid #F7C1C1" : "1px solid #EBEBEB" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 9, background: "#F2F2F7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{task.icon}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{task.title}</span>
+            {task.urgency === "high" && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: "#FCEBEB", color: "#A32D2D" }}>限{task.daysLeft}天</span>}
+          </div>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>{task.desc}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#378ADD" }}>${task.reward}</div>
+          <div style={{ fontSize: 10, color: "#8E8E93" }}>獎勵</div>
+        </div>
+      </div>
+      <div style={{ height: 5, borderRadius: 3, background: "#F2F2F7", overflow: "hidden", marginBottom: 4 }}>
+        <div style={{ height: "100%", borderRadius: 3, background: pct >= 100 ? "#639922" : "#378ADD", width: `${pct}%`, transition: "width 0.6s" }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8E8E93", marginBottom: 8 }}>
+        <span>{rem}</span><span>{Math.round(pct)}% 完成</span>
+      </div>
+      <div style={{ fontSize: 11, color: "#8E8E93", background: "#F8F8F8", borderRadius: 6, padding: "5px 8px", marginBottom: 8 }}>🤖 {task.basis}</div>
+      {/* 操作按鈕：加入任務 + 更換任務 */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={() => onJoin(task.id)}
+          style={{ flex: 2, padding: "8px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: joined ? "#EAF3DE" : "#378ADD", color: joined ? "#3B6D11" : "#fff" }}>
+          {joined ? "✅ 已加入任務" : "加入任務，開始省錢"}
+        </button>
+        <button onClick={() => onSwap(task)}
+          style={{ flex: 1, padding: "8px", borderRadius: 9, border: "1.5px solid #E0E0E0", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "#fff", color: "#636366" }}>
+          🔄 更換任務
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RewardsPage() {
+  const [joined, setJoined] = useState({});
+  const [swapTarget, setSwapTarget] = useState(null);
+  const [tasks, setTasks] = useState(AUTO_TASKS);
+  const total = tasks.reduce((s, t) => s + t.reward, 0);
+
+  function handleSwapConfirm(preview) {
+    setTasks(prev => prev.map(t =>
+      t.id === swapTarget.id
+        ? { ...t, title: preview.title, desc: preview.desc, reward: preview.reward, daysLeft: preview.daysLeft }
+        : t
+    ));
+    setSwapTarget(null);
+  }
+
+  return (
+    <div>
+      <div style={S.header}><span style={S.headerTitle}>AI 自動任務</span></div>
+      <div style={{ margin: "10px 16px 10px", borderRadius: 13, background: "#E6F1FB", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0C447C", marginBottom: 2 }}>🤖 AI 根據你的發票自動生成任務</div>
+          <div style={{ fontSize: 12, color: "#185FA5" }}>全部完成可得 <strong>${total}</strong> 獎勵</div>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: "#185FA5" }}>${total}</div>
+      </div>
+      <div style={{ padding: "0 16px 4px" }}>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>以下任務都是你本來就會去的店家，加入後順手省錢。不適合可以更換。</div>
+        {tasks.map(t => (
+          <TaskCard
+            key={t.id}
+            task={t}
+            joined={!!joined[t.id]}
+            onJoin={id => setJoined(j => ({ ...j, [id]: true }))}
+            onSwap={task => setSwapTarget(task)}
+          />
+        ))}
+      </div>
+      {swapTarget && (
+        <TaskSwapModal
+          task={swapTarget}
+          onConfirm={handleSwapConfirm}
+          onClose={() => setSwapTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── 發票頁 ───────────────────────────────────────────────────────────────────
+function InvoicesPage() {
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>我的發票</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔍</button><button style={S.iconBtn}>⋯</button></div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "10px 0", background: "#fff", marginBottom: 8 }}>
+        <button style={{ border: "none", background: "none", fontSize: 18, color: "#378ADD", cursor: "pointer" }}>‹</button>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>115年 1-2月</span>
+        <button style={{ border: "none", background: "none", fontSize: 18, color: "#378ADD", cursor: "pointer" }}>›</button>
+      </div>
+      <div style={{ ...S.card, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 9, background: "#E6F1FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📅</div>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>開獎倒數 <span style={{ color: "#378ADD" }}>21天</span></div><div style={{ fontSize: 11, color: "#8E8E93" }}>共 63 張發票參與對獎</div></div>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 7, background: "#E6F1FB", color: "#185FA5" }}>即將開獎</span>
+      </div>
+      <div style={{ padding: "0 16px 6px" }}>
+        <span style={{ fontSize: 13, color: "#8E8E93" }}>2月 總計 </span>
+        <span style={{ fontSize: 16, fontWeight: 800 }}>$75,737</span>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 13, margin: "0 16px", overflow: "hidden" }}>
+        {INVOICES.map((inv, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", padding: "11px 14px", borderBottom: i < INVOICES.length - 1 ? "1px solid #F5F5F5" : "none" }}>
+            <div style={{ width: 34, textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{inv.day}</div>
+              <div style={{ fontSize: 10, color: "#8E8E93" }}>{inv.week}</div>
+            </div>
+            <div style={{ flex: 1, paddingLeft: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{inv.shop}</div>
+              <div style={{ fontSize: 11, color: "#8E8E93" }}>{inv.type}</div>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: inv.highlight ? "#E24B4A" : "#1C1C1E" }}>${inv.amount.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ height: 80 }} />
+    </div>
+  );
+}
+
+// ─── 掃描頁（移除 AI 管家） ────────────────────────────────────────────────────
+function ScanPage() {
+  const [done] = useState(true);
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>掃描對獎</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>❓</button></div>
+      </div>
+      <div style={{ ...S.card, textAlign: "center" }}>
+        <div style={{ width: "100%", aspectRatio: "1", background: "#1C1C1E", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, position: "relative" }}>
+          <div style={{ width: "60%", height: "60%", border: "2px solid #fff", borderRadius: 10, position: "relative" }}>
+            {[["0%","0%"],["0%","auto"],["auto","0%"],["auto","auto"]].map(([t,b],i) => (
+              <div key={i} style={{ position:"absolute", width:16, height:16, top:t==="0%"?-2:"auto", bottom:b==="0%"?-2:"auto", left:i%2===0?-2:"auto", right:i%2===1?-2:"auto", borderTop:t==="0%"?"3px solid #378ADD":"none", borderBottom:b==="0%"?"3px solid #378ADD":"none", borderLeft:i%2===0?"3px solid #378ADD":"none", borderRight:i%2===1?"3px solid #378ADD":"none" }} />
+            ))}
+          </div>
+          <div style={{ position:"absolute", bottom:10, color:"#fff", fontSize:12 }}>請對準發票QRCode</div>
+        </div>
+        <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
+          {["電子發票","傳統發票"].map((t,i) => <button key={t} style={{ padding:"7px 16px", borderRadius:18, border:i===0?"2px solid #378ADD":"1px solid #E0E0E0", background:i===0?"#E6F1FB":"#fff", color:i===0?"#185FA5":"#8E8E93", fontSize:13, fontWeight:600, cursor:"pointer" }}>{t}</button>)}
+        </div>
+      </div>
+      {done && (
+        <div style={{ ...S.card, background: "#EAF3DE" }}>
+          <div style={{ fontWeight:700, fontSize:14, color:"#3B6D11", marginBottom:8 }}>✅ 掃描成功！</div>
+          <div style={{ fontSize:14, color:"#1C1C1E", lineHeight:1.6, marginBottom:8 }}>🎉 <strong>1 張發票中獎 $200</strong>，可在全家超商兌換，截止 2026/04/30</div>
+          <div style={{ fontSize:12, color:"#27500A", background:"#fff", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>💡 AI 省錢提示：路易莎改用 APP 付款可集點，5 杯換免費咖啡</div>
+          <div style={{ display:"flex", gap:8 }}>
+            <button style={{ flex:1, padding:"8px", borderRadius:9, background:"#639922", color:"#fff", border:"none", cursor:"pointer", fontSize:13, fontWeight:700 }}>兌獎提醒</button>
+            <button style={{ flex:1, padding:"8px", borderRadius:9, background:"#378ADD", color:"#fff", border:"none", cursor:"pointer", fontSize:13, fontWeight:700 }}>省錢建議</button>
+          </div>
+        </div>
+      )}
+      {/* 無 AI 管家版位 */}
+    </div>
+  );
+}
+
+// ─── 首頁 ─────────────────────────────────────────────────────────────────────
+function HomePage({ setTab }) {
+  const [idx, setIdx] = useState(0);
+  const touchX = useRef(null);
+  const INSIGHTS = [
+    { text: "台電電費後天到期！$1,240 記得今天繳清 ⚡", action: "立即查看帳單" },
+    { text: "UberEats+ 本月虧損 $80，只叫了 2 次外送 😬", action: "查看訂閱分析" },
+    { text: "Apple iCloud 本月 $90，續訂日 24 日 ☁️", action: "查看訂閱" },
+    { text: "全聯任務差 $11 就完成，$80 禮券唾手可得！", action: "加入任務" },
+  ];
+
+  return (
+    <div>
+      <div style={{ background:"#fff", padding:"12px 16px 12px", borderBottom:"1px solid #F0F0F0" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <Logo />
+          <div style={{ display:"flex", gap:8 }}><button style={S.iconBtn}>🐥</button><button style={S.iconBtn}>⚙️</button></div>
+        </div>
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontSize:14, color:"#1D9E75", fontWeight:500 }}>Hello！Kirk</div>
+          <div style={{ fontSize:12, color:"#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
+        </div>
+        <div style={{ display:"flex", background:"#F2F2F7", borderRadius:10, padding:"8px 0" }}>
+          {[{label:"本月發票",value:"63"},{label:"本週帳單",value:"2筆",red:true},{label:"任務獎勵",value:"$160",blue:true}].map((s,i)=>(
+            <div key={i} style={{ flex:1, textAlign:"center", borderRight:i<2?"1px solid #E8E8E8":"none" }}>
+              <div style={{ fontSize:17, fontWeight:800, color:s.red?"#A32D2D":s.blue?"#185FA5":"#1C1C1E" }}>{s.value}</div>
+              <div style={{ fontSize:10, color:"#8E8E93" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 快速入口 2x2 */}
+      <div style={{ margin:"10px 16px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+        <button onClick={()=>setTab("subscriptions")} style={{ background:"#fff", border:"1.5px solid #FAC775", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
+          <div style={{ fontSize:16, marginBottom:3 }}>📱</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>訂閱管理</div>
+          <div style={{ fontSize:10, color:"#854F0B", marginTop:1 }}>1 個效益偏低</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#A32D2D", marginTop:4 }}>UberEats 虧損</div>
+        </button>
+        <button onClick={()=>setTab("bills")} style={{ background:"#fff", border:"1.5px solid #F09595", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
+          <div style={{ fontSize:16, marginBottom:3 }}>⚡</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>帳單提醒</div>
+          <div style={{ fontSize:10, color:"#A32D2D", marginTop:1 }}>後天到期！</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#A32D2D", marginTop:4 }}>台電 $1,240</div>
+        </button>
+        <button onClick={()=>setTab("rewards")} style={{ background:"#fff", border:"1px solid #B5D4F4", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
+          <div style={{ fontSize:16, marginBottom:3 }}>🎯</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>AI 任務</div>
+          <div style={{ fontSize:10, color:"#378ADD", marginTop:1 }}>3 個任務等你</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#185FA5", marginTop:4 }}>最高 $160</div>
+        </button>
+        <button onClick={()=>setTab("invoices")} style={{ background:"#fff", border:"1px solid #EBEBEB", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
+          <div style={{ fontSize:16, marginBottom:3 }}>🧾</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>我的發票</div>
+          <div style={{ fontSize:10, color:"#8E8E93", marginTop:1 }}>63 張已收錄</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#8E8E93", marginTop:4 }}>開獎倒數 21 天</div>
+        </button>
+      </div>
+
+      {/* AI 洞察 */}
+      <div style={{ padding:"10px 16px 0" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <span style={{ fontSize:14, fontWeight:700 }}>🤖 AI 洞察</span>
+          <span style={{ fontSize:11, color:"#8E8E93" }}>左右滑動</span>
+        </div>
+        <div onTouchStart={e=>{touchX.current=e.touches[0].clientX}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchX.current;if(dx<-40)setIdx(i=>(i+1)%INSIGHTS.length);if(dx>40)setIdx(i=>(i-1+INSIGHTS.length)%INSIGHTS.length)}}
+          style={{ borderRadius:13, background:"#1C1C1E", padding:14, cursor:"grab", userSelect:"none", minHeight:88 }}>
+          <p style={{ color:"#fff", fontSize:13, lineHeight:1.6, margin:"0 0 10px" }}>{INSIGHTS[idx].text}</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <button style={{ padding:"5px 11px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>⚡ {INSIGHTS[idx].action}</button>
+            <div style={{ marginLeft:"auto", display:"flex", gap:4 }}>
+              {INSIGHTS.map((_,i)=><div key={i} onClick={()=>setIdx(i)} style={{ width:i===idx?12:5, height:5, borderRadius:3, background:i===idx?"#fff":"rgba(255,255,255,0.3)", cursor:"pointer", transition:"all 0.3s" }} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 消費分析 */}
+      <div style={{ ...S.card, marginTop:10 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <span style={{ fontSize:14, fontWeight:700 }}>消費分析</span>
+          <button style={{ border:"none", background:"none", color:"#378ADD", fontSize:12, cursor:"pointer" }}>詳細 →</button>
+        </div>
+        <DonutChart />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+const TABS = [
+  { key:"invoices",      icon:"🧾", label:"發票" },
+  { key:"rewards",       icon:"🎯", label:"任務" },
+  { key:"scan",          icon:null, label:"掃描" },
+  { key:"subscriptions", icon:"📱", label:"訂閱" },
+  { key:"bills",         icon:"⚡", label:"帳單" },
+];
+
+export default function App() {
+  const [tab, setTab] = useState("home");
+  const pages = {
+    home:          <HomePage setTab={setTab}/>,
+    invoices:      <InvoicesPage/>,
+    rewards:       <RewardsPage/>,
+    scan:          <ScanPage/>,
+    subscriptions: <SubscriptionsPage/>,
+    bills:         <BillsPage/>,
+  };
+
+  return (
+    <>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
+      <div style={S.root}>
+        <div style={S.screen}>{pages[tab] || <HomePage setTab={setTab}/>}</div>
+
+        {/* AI 管家僅在發票頁顯示 */}
+        {tab === "invoices" && <AIPanel tabKey={tab} />}
+
+        <div style={S.tabBar}>
+          {TABS.map(t => {
+            if (t.key === "scan") return (
+              <button key={t.key} style={S.tabScan} onClick={()=>setTab(t.key)}>
+                <div style={S.scanBubble}>📷</div>
+                <span style={{ fontSize:9, marginTop:2, color:tab===t.key?"#378ADD":"#8E8E93", fontWeight:tab===t.key?700:400 }}>{t.label}</span>
+              </button>
+            );
+            const active = tab === t.key;
+            return (
+              <button key={t.key} style={S.tabItem} onClick={()=>setTab(t.key)}>
+                <span style={{ fontSize:19 }}>{t.icon}</span>
+                <span style={{ fontSize:9, color:active?"#378ADD":"#8E8E93", fontWeight:active?700:400 }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 首頁按鈕 */}
+        {tab !== "home" && (
+          <button onClick={()=>setTab("home")} style={{ position:"fixed", bottom:70, right:"calc(50% - 187px + 12px)", width:36, height:36, borderRadius:18, background:"#fff", border:"1px solid #E0E0E0", cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", zIndex:99, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>🏠</button>
+        )}
+      </div>
+    </>
+  );
+}
