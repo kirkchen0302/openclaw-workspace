@@ -47,12 +47,12 @@ const FLAT_SUBS = [
   { id: "apple", name: "Apple iCloud", icon: "☁️", fee: 90, renewDay: 24, trend: "stable", months: [90, 90, 90] },
 ];
 
-// ─── 帳單提醒資料 ─────────────────────────────────────────────────────────────
+// ─── 帳單提醒資料（根據發票週期推估，無確定金額與日期） ──────────────────────
 const BILLS = [
-  { id: "b1", name: "台電電費",     icon: "⚡",  amount: 1240, dueDate: "3/25", daysLeft: 2,  status: "urgent",   lastMonth: 980  },
-  { id: "b2", name: "台灣大哥大",   icon: "📶",  amount: 599,  dueDate: "3/31", daysLeft: 8,  status: "normal",   lastMonth: 599  },
-  { id: "b3", name: "國泰人壽保費", icon: "🛡️", amount: 3200, dueDate: "4/5",  daysLeft: 13, status: "upcoming", lastMonth: 3200 },
-  { id: "b4", name: "台灣自來水",   icon: "💧",  amount: 320,  dueDate: "4/10", daysLeft: 18, status: "upcoming", lastMonth: 280  },
+  { id: "b1", name: "台電電費",     icon: "⚡",  cycle: "約每 2 個月",  lastSeen: "1月底",  daysEstimate: 2,  status: "urgent",   tip: "過去紀錄約 60 天一期，距上次發票約 58 天"  },
+  { id: "b2", name: "台灣大哥大",   icon: "📶",  cycle: "約每個月",     lastSeen: "2月底",  daysEstimate: 8,  status: "normal",   tip: "過去紀錄每月固定出現，距上次約 22 天"       },
+  { id: "b3", name: "國泰人壽保費", icon: "🛡️", cycle: "約每個月",     lastSeen: "2月中",  daysEstimate: 13, status: "upcoming", tip: "過去紀錄每月固定出現，距上次約 17 天"       },
+  { id: "b4", name: "台灣自來水",   icon: "💧",  cycle: "約每 2 個月",  lastSeen: "1月底",  daysEstimate: 18, status: "upcoming", tip: "過去紀錄約 60 天一期，距上次發票約 42 天"  },
 ];
 
 // 帳單歷史趨勢資料（近3個月）
@@ -376,26 +376,24 @@ function SubscriptionsPage() {
 function BillCard({ bill }) {
   const urgencyColor = bill.status === "urgent" ? "#A32D2D" : bill.status === "normal" ? "#185FA5" : "#5F5E5A";
   const urgencyBg    = bill.status === "urgent" ? "#FCEBEB" : bill.status === "normal" ? "#E6F1FB" : "#F2F2F7";
-  const urgencyLabel = bill.status === "urgent" ? `⚠️ 後天到期` : `${bill.daysLeft}天後到期`;
-  const diff = bill.amount - bill.lastMonth;
+  const urgencyLabel = bill.status === "urgent" ? "⚠️ 可能快到了" : `約 ${bill.daysEstimate} 天後`;
 
   return (
     <div style={{ background: "#fff", borderRadius: 13, padding: "12px 14px", marginBottom: 8, border: bill.status === "urgent" ? "1.5px solid #F09595" : "1px solid #EBEBEB" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, borderRadius: 9, background: urgencyBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{bill.icon}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{bill.name}</span>
-            {diff > 0 && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: "#FCEBEB", color: "#A32D2D" }}>比上月多 ${diff}</span>}
-          </div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>繳款期限 {bill.dueDate} · 上月 ${bill.lastMonth}</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E", marginBottom: 2 }}>{bill.name}</div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>{bill.cycle} · 上次：{bill.lastSeen}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#1C1C1E" }}>${bill.amount.toLocaleString()}</div>
-          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor, marginTop: 3 }}>{urgencyLabel}</div>
+          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor }}>{urgencyLabel}</div>
         </div>
       </div>
-      {/* 移除「立即繳費」CTA */}
+      {/* AI 推估說明 */}
+      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 11, color: "#8E8E93", lineHeight: 1.5 }}>
+        🤖 {bill.tip}
+      </div>
     </div>
   );
 }
@@ -472,7 +470,6 @@ function BillTrendChart() {
 
 function BillsPage() {
   const urgent = BILLS.filter(b => b.status === "urgent");
-  const totalDue = BILLS.reduce((s, b) => s + b.amount, 0);
 
   return (
     <div>
@@ -481,32 +478,21 @@ function BillsPage() {
         <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
       </div>
 
-      {/* 緊急提醒橫幅（移除「立即繳」按鈕） */}
+      {/* 緊急提醒橫幅 */}
       {urgent.length > 0 && (
         <div style={{ margin: "10px 16px 10px", borderRadius: 13, background: "#FCEBEB", border: "1.5px solid #F7C1C1", padding: "12px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 20 }}>⚠️</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>台電電費後天（3/25）就到期！</div>
-              <div style={{ fontSize: 12, color: "#D85A30" }}>共 $1,240，比上月多 $260，請記得儘快繳清</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>台電電費繳費週期到了！</div>
+              <div style={{ fontSize: 12, color: "#D85A30", lineHeight: 1.5 }}>AI 根據你的發票推估，台電帳單可能近期就會到，記得確認繳費狀態</div>
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>近期待繳總額</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#1C1C1E" }}>${totalDue.toLocaleString()}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>共 {BILLS.length} 筆帳單</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#A32D2D" }}>{urgent.length} 筆即將到期</div>
-        </div>
-      </div>
-
       <div style={{ padding: "0 16px 4px" }}>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>AI 根據你的發票紀錄偵測固定帳單，自動追蹤繳費期限</div>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>AI 根據你的發票出現頻率推估繳費週期，提醒你大概什麼時候該繳費了</div>
         {BILLS.map(bill => <BillCard key={bill.id} bill={bill} />)}
       </div>
 
