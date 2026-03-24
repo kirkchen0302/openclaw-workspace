@@ -211,14 +211,11 @@ function RoiCard({ sub, expanded, onToggle }) {
               })}
             </div>
           </div>
-          <div style={{ background: statusBg, borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
+          <div style={{ background: statusBg, borderRadius: 9, padding: "9px 11px" }}>
             <div style={{ fontSize: 12, color: statusColor, lineHeight: 1.6 }}>
               {sub.roiStatus === "danger" ? "⚠️ " : "✅ "}{sub.roiTip}
             </div>
           </div>
-          <button style={{ width: "100%", padding: "9px", borderRadius: 9, background: sub.actionBg, color: sub.actionColor, border: `1px solid ${sub.actionColor}30`, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
-            {sub.actionLabel} →
-          </button>
         </div>
       )}
     </div>
@@ -822,14 +819,11 @@ function ScanPage() {
         <div style={{ ...S.card, background: "#EAF3DE" }}>
           <div style={{ fontWeight:700, fontSize:14, color:"#3B6D11", marginBottom:8 }}>✅ 掃描成功！</div>
           <div style={{ fontSize:14, color:"#1C1C1E", lineHeight:1.6, marginBottom:8 }}>🎉 <strong>1 張發票中獎 $200</strong>，可在全家超商兌換，截止 2026/04/30</div>
-          <div style={{ fontSize:12, color:"#27500A", background:"#fff", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>💡 AI 省錢提示：路易莎改用 APP 付款可集點，5 杯換免費咖啡</div>
           <div style={{ display:"flex", gap:8 }}>
             <button style={{ flex:1, padding:"8px", borderRadius:9, background:"#639922", color:"#fff", border:"none", cursor:"pointer", fontSize:13, fontWeight:700 }}>兌獎提醒</button>
-            <button style={{ flex:1, padding:"8px", borderRadius:9, background:"#378ADD", color:"#fff", border:"none", cursor:"pointer", fontSize:13, fontWeight:700 }}>省錢建議</button>
           </div>
         </div>
       )}
-      {/* 無 AI 管家版位 */}
     </div>
   );
 }
