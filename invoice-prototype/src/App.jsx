@@ -242,7 +242,7 @@ function FlatSubCard({ sub, expanded, onToggle }) {
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
             {trendUp && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#FAEEDA", color: "#854F0B" }}>費用調漲</span>}
           </div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${latestFee} · {sub.renewDay}日續訂{diff > 0 ? ` · 比上月多 $${diff}` : ""}</div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${latestFee} · 下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}{diff > 0 ? ` · 比上月多 $${diff}` : ""}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <MiniTrend vals={sub.months} color={trendUp ? "#EF9F27" : "#378ADD"} />
@@ -271,7 +271,7 @@ function FlatSubCard({ sub, expanded, onToggle }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#E6F1FB", borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>📅</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#185FA5" }}>每月 {sub.renewDay} 日自動續訂</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#185FA5" }}>預計下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}</div>
               <div style={{ fontSize: 11, color: "#378ADD" }}>如需取消，請在續訂日前操作</div>
             </div>
           </div>
@@ -283,10 +283,75 @@ function FlatSubCard({ sub, expanded, onToggle }) {
   );
 }
 
-function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS }) {
+function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS, invoices = [] }) {
   const [seg, setSeg] = useState("sub");
   const [expSub, setExpSub] = useState(deliverySubs[0]?.id || "");
-  const [expFlat, setExpFlat] = useState(flatSubs[0]?.id || "apple");
+  const [expFlat, setExpFlat] = useState(flatSubs[0]?.id || "");
+  const [subConfig, setSubConfig] = useState(null);
+
+  // 從 RTDB 讀訂閱設定
+  useEffect(() => {
+    fetch("https://pm-prototype-a75ce-default-rtdb.asia-southeast1.firebasedatabase.app/subscriptionConfig.json")
+      .then(r => r.json())
+      .then(d => { if (d) setSubConfig(d); })
+      .catch(() => {});
+  }, []);
+
+  // 計算下次續訂日：從最近一張發票日期往後推一個月
+  function calcNextRenew(shopKeywords) {
+    const matched = invoices
+      .filter(inv => shopKeywords.some(k => inv.shop.includes(k)))
+      .sort((a, b) => (b.yearMonth || "").localeCompare(a.yearMonth || ""));
+    if (matched.length === 0) return null;
+    // 取最近一筆的 yearMonth，往後推1個月
+    const ym = matched[0].yearMonth; // e.g. "2026-03"
+    if (!ym) return null;
+    const [y, m] = ym.split("-").map(Number);
+    const nextM = m === 12 ? 1 : m + 1;
+    const nextY = m === 12 ? y + 1 : y;
+    return `${nextY}/${nextM}月`;
+  }
+
+  // 定額訂閱：從 RTDB config 或用戶發票自動建
+  const computedFlatSubs = useMemo(() => {
+    const FLAT_KEYWORDS = {
+      "Google":    ["Google"],
+      "Apple":     ["Apple"],
+      "Nintendo":  ["Nintendo"],
+      "YouTube":   ["YouTube", "Youtube"],
+      "Netflix":   ["Netflix"],
+      "Disney+":   ["Disney"],
+    };
+    const result = [];
+    const configList = subConfig?.flatSubs || Object.keys(FLAT_KEYWORDS);
+    for (const name of configList) {
+      const keywords = FLAT_KEYWORDS[name] || [name];
+      const matched = invoices.filter(inv => keywords.some(k => inv.shop.includes(k)));
+      if (matched.length === 0) continue;
+      // 依月份統計金額
+      const byMonth = {};
+      for (const inv of matched) {
+        const ym = inv.yearMonth || "";
+        if (!byMonth[ym]) byMonth[ym] = inv.amount;
+      }
+      const sorted = Object.keys(byMonth).sort();
+      const fees = sorted.map(k => byMonth[k]);
+      const recent = fees.slice(-3);
+      while (recent.length < 3) recent.unshift(recent[0] || 0);
+      const trend = recent[2] > recent[1] ? "up" : "stable";
+      const nextRenew = calcNextRenew(keywords);
+      result.push({
+        id: name.toLowerCase().replace(/[^a-z]/g, ""),
+        name,
+        icon: name === "Apple" ? "☁️" : name === "Nintendo" ? "🎮" : name === "Netflix" ? "🎬" : name === "Disney+" ? "🏰" : name === "YouTube" ? "▶️" : "📱",
+        fee: recent[2] || 0,
+        renewDay: nextRenew || "—",
+        trend,
+        months: recent,
+      });
+    }
+    return result.length > 0 ? result : flatSubs;
+  }, [invoices, subConfig, flatSubs]);
 
   const safeMonths = (arr, idx) => arr.reduce((s, x) => {
     const m = x.months?.[idx];
@@ -369,8 +434,8 @@ function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS 
             <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
               定額訂閱無法計算使用效益，AI 幫你追蹤費用變化、提醒續訂時間，讓你自主決定是否繼續。
             </div>
-            {flatSubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無定額訂閱紀錄</div>}
-            {flatSubs.map(sub => (
+            {computedFlatSubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無定額訂閱紀錄</div>}
+            {computedFlatSubs.map(sub => (
               <FlatSubCard key={sub.id} sub={sub} expanded={expFlat === sub.id}
                 onToggle={() => setExpFlat(expFlat === sub.id ? null : sub.id)} />
             ))}
@@ -627,17 +692,15 @@ function BillsPage({ invoices = [] }) {
       )}
 
       {/* 總覽 */}
-      <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center" }}>
+      <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>偵測到的帳單項目</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#1C1C1E" }}>{detectedBills.length} 項</div>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>AI 從發票偵測到的固定帳單</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1C1C1E" }}>{detectedBills.length} 項帳單週期追蹤中</div>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 4 }}>依歷史發票頻率推估，實際金額以收到帳單為準</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 2 }}>近期繳費估計</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#378ADD" }}>
-            ${monthlyTotal > 0 ? monthlyTotal.toLocaleString() : "—"}
-          </div>
-        </div>
+        <button style={{ flexShrink: 0, padding: "10px 16px", borderRadius: 12, border: "none", background: "#378ADD", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(55,138,221,0.35)" }}>
+          立即繳費
+        </button>
       </div>
 
       {/* 帳單列表 */}
@@ -714,34 +777,36 @@ function DynamicBillTrendChart({ bills }) {
         const diff = vals.length >= 2 ? vals[vals.length-1] - vals[vals.length-2] : 0;
 
         return (
-          <div key={bill.id} style={{ marginBottom: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div key={bill.id} style={{ marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid #F2F2F7" }}>
+            {/* 標題列 */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 15 }}>{bill.icon}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#1C1C1E" }}>{bill.displayName}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {diff !== 0 && (
                   <span style={{ fontSize: 11, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
                     {isRising ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
                   </span>
                 )}
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#1C1C1E" }}>
                   ${vals[vals.length-1].toLocaleString()}
                 </span>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 56 }}>
+            {/* 柱狀圖：金額標籤在上，月份標籤在下，不堆疊 */}
+            <div style={{ display: "flex", gap: 8 }}>
               {bill.trendData.map((t, i) => {
-                const h = Math.max((t.amount / max) * 48, 4);
+                const h = Math.max((t.amount / max) * 64, 4);
                 const isLast = i === bill.trendData.length - 1;
                 return (
-                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2" }}>
-                      ${t.amount >= 1000 ? (t.amount/1000).toFixed(1)+"k" : t.amount}
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2", marginBottom: 4, whiteSpace: "nowrap" }}>
+                      {t.amount >= 1000 ? `$${(t.amount/1000).toFixed(1)}k` : `$${t.amount}`}
                     </span>
                     <div style={{ width: "100%", height: `${h}px`, borderRadius: "4px 4px 0 0", background: isLast ? (isRising && diff !== 0 ? "#E05C5C" : bill.color) : "#E0E8F0" }} />
-                    <span style={{ fontSize: 10, color: "#8E8E93" }}>{t.label}</span>
+                    <span style={{ fontSize: 10, color: "#8E8E93", marginTop: 5 }}>{t.label}</span>
                   </div>
                 );
               })}
@@ -749,41 +814,58 @@ function DynamicBillTrendChart({ bills }) {
           </div>
         );
       })}
-
-      {/* 本月帳單合計 */}
-      <div style={{ marginTop: 8, padding: "10px 12px", background: "#F2F2F7", borderRadius: 10 }}>
-        <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>近期帳單合計估算</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 18, fontWeight: 800, color: "#1C1C1E" }}>
-            ${bills.filter(b=>b.lastAmount).reduce((s,b)=>s+b.lastAmount,0).toLocaleString()}
-          </span>
-          <span style={{ fontSize: 11, color: "#8E8E93" }}>依上次發票金額估算</span>
-        </div>
-      </div>
     </div>
   );
 }
 
 // ─── AI Panel（僅限發票頁使用） ────────────────────────────────────────────────
-function AIPanel({ tabKey }) {
+function AIPanel({ tabKey, userData }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const [displayText, setDisplayText] = useState("");
+  const [rtdbQA, setRtdbQA] = useState({});
   const endRef = useRef(null);
-  const questions = QUICK_QUESTIONS[tabKey] || [];
+
+  // 從 RTDB 讀問題集
+  useEffect(() => {
+    import("./firebase").then(({ fetchUserData: fetchData }) => {
+      fetch("https://pm-prototype-a75ce-default-rtdb.asia-southeast1.firebasedatabase.app/qa.json")
+        .then(r => r.json())
+        .then(d => { if (d) setRtdbQA(d); })
+        .catch(() => {});
+    });
+  }, []);
+
+  // 依用戶消費行為動態生成問題
+  const dynamicQuestions = useMemo(() => {
+    const base = [];
+    const topShops = (userData?.autoTasks || []).map(t => t.shop);
+    const hasFoodpanda = (userData?.deliverySubs || []).some(s => s.id === "foodpandapro");
+    const hasUber = (userData?.deliverySubs || []).some(s => s.id === "ubereats+");
+    if (topShops[0]) base.push(`我在 ${topShops[0]} 花了多少？`);
+    if (topShops[1]) base.push(`${topShops[1]} 值得繼續去嗎？`);
+    if (hasFoodpanda || hasUber) base.push("我的外送訂閱划算嗎？");
+    base.push("幫我分析這個月消費");
+    base.push("哪家我最常去？");
+    return base.slice(0, 4);
+  }, [userData]);
+
+  const questions = dynamicQuestions;
 
   const sendQ = (q) => {
     const question = q || input.trim();
     if (!question) return;
     setMessages(p => [...p, { role: "user", text: question }]);
     setInput(""); setTyping(true); setDisplayText("");
-    const ans = AI_ANSWERS[question] || { text: "根據你的發票資料分析中...😊" };
+    // 先查 RTDB 問題集，再查本地，最後 fallback
+    const ans = rtdbQA[question] || AI_ANSWERS[question] || { text: "根據你的發票資料分析中...😊 目前 AI 正在學習你的消費習慣，即將提供個人化建議。" };
+    const text = typeof ans === "string" ? ans : ans.text || "";
     let i = 0;
     const iv = setInterval(() => {
-      i++; setDisplayText(ans.text.slice(0, i));
-      if (i >= ans.text.length) { clearInterval(iv); setTyping(false); setMessages(p => [...p, { role: "ai", text: ans.text }]); setDisplayText(""); }
+      i++; setDisplayText(text.slice(0, i));
+      if (i >= text.length) { clearInterval(iv); setTyping(false); setMessages(p => [...p, { role: "ai", text }]); setDisplayText(""); }
     }, 18);
   };
 
@@ -839,12 +921,38 @@ function AIPanel({ tabKey }) {
 }
 
 // ─── 任務更換 Modal ────────────────────────────────────────────────────────────
-function TaskSwapModal({ task, onConfirm, onClose }) {
-  const [mode, setMode] = useState("channel"); // "channel" | "category"
+function TaskSwapModal({ task, onConfirm, onClose, userData }) {
+  const [mode, setMode] = useState("channel");
   const [selected, setSelected] = useState(null);
 
   const options = mode === "channel" ? TASK_SWAP_CHANNELS : TASK_SWAP_CATEGORIES;
-  const preview = selected ? TASK_SWAP_MOCK[selected] : null;
+
+  // 依用戶消費能力動態調整任務條件
+  const preview = useMemo(() => {
+    if (!selected) return null;
+    const base = TASK_SWAP_MOCK[selected];
+    if (!base) return null;
+    // 從用戶發票統計選定通路的消費
+    const invoices = userData?.invoices || [];
+    const shopInvs = invoices.filter(inv => inv.shop === selected || inv.shop.includes(selected.split(" ")[0]));
+    const avgAmt = shopInvs.length > 0
+      ? Math.round(shopInvs.reduce((s, i) => s + i.amount, 0) / shopInvs.length)
+      : 0;
+    const monthlyCount = Math.round(shopInvs.length / 6); // 6個月平均月次
+
+    // 挑戰目標：比平均月次多 30%
+    const challengeCount = Math.max(monthlyCount + 2, 3);
+    const challengeAmt = avgAmt > 0 ? Math.round(avgAmt * challengeCount * 1.1 / 100) * 100 : base.reward + 20;
+
+    return {
+      ...base,
+      desc: shopInvs.length > 0
+        ? `你每月平均去 ${monthlyCount} 次，本月再去 ${Math.max(1, challengeCount - monthlyCount)} 次就達標`
+        : base.desc,
+      reward: Math.min(Math.max(base.reward, avgAmt > 500 ? 80 : 30), 150),
+      daysLeft: base.daysLeft,
+    };
+  }, [selected, userData]);
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
@@ -944,7 +1052,7 @@ function TaskCard({ task, joined, onJoin, onSwap }) {
   );
 }
 
-function RewardsPage({ autoTasks = AUTO_TASKS }) {
+function RewardsPage({ autoTasks = AUTO_TASKS, user }) {
   const [joined, setJoined] = useState({});
   const [swapTarget, setSwapTarget] = useState(null);
   const [tasks, setTasks] = useState(autoTasks);
@@ -988,6 +1096,7 @@ function RewardsPage({ autoTasks = AUTO_TASKS }) {
           task={swapTarget}
           onConfirm={handleSwapConfirm}
           onClose={() => setSwapTarget(null)}
+          userData={user?.data}
         />
       )}
     </div>
@@ -995,7 +1104,7 @@ function RewardsPage({ autoTasks = AUTO_TASKS }) {
 }
 
 // ─── 發票頁 ───────────────────────────────────────────────────────────────────
-function InvoicesPage({ invoices = INVOICES, totalAmount = 75737, invoiceCount = 63 }) {
+function InvoicesPage({ invoices = INVOICES, totalAmount = 75737, invoiceCount = 63, userData }) {
   return (
     <div>
       <div style={S.header}>
@@ -1072,15 +1181,26 @@ function ScanPage() {
 }
 
 // ─── 首頁 ─────────────────────────────────────────────────────────────────────
-function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend }) {
+function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detectedBillCount, autoTasks }) {
   const [idx, setIdx] = useState(0);
-  const touchX = useRef(null);
+
+  // 從用戶數據動態產生 AI 洞察
+  const data = user?.data;
+  const topShop = data?.autoTasks?.[0]?.shop || "";
+  const topTask = data?.autoTasks?.[0];
+  const deliverySub = data?.deliverySubs?.[0];
+  const totalFmt = totalAmount ? `$${totalAmount.toLocaleString()}` : "";
+
   const INSIGHTS = [
-    { text: "台電電費後天到期！$1,240 記得今天繳清 ⚡", action: "立即查看帳單" },
-    { text: "UberEats+ 本月虧損 $80，只叫了 2 次外送 😬", action: "查看訂閱分析" },
-    { text: "Apple iCloud 本月 $90，續訂日 24 日 ☁️", action: "查看訂閱" },
-    { text: "全聯任務差 $11 就完成，$80 禮券唾手可得！", action: "加入任務" },
-  ];
+    ...(detectedBillCount > 0 ? [{ text: `AI 偵測到 ${detectedBillCount} 筆固定帳單本月週期將到 📋`, action: "查看帳單", tab: "bills" }] : []),
+    ...(deliverySub ? [{ text: `${deliverySub.name} ${deliverySub.roiLabel}，${deliverySub.roiStatus === "danger" ? "評估是否調整使用頻率 😬" : "繼續保持划算 ✅"}`, action: "查看訂閱分析", tab: "subscriptions" }] : []),
+    ...(topTask ? [{ text: `${topTask.shop} 消費達標任務等你！完成可得 $${topTask.reward} 獎勵 🎯`, action: "加入任務", tab: "rewards" }] : []),
+    ...(totalFmt ? [{ text: `近6個月累積消費 ${totalFmt}，AI 幫你找出省錢機會 💡`, action: "查看發票分析", tab: "invoices" }] : []),
+    { text: "發票存摺幫你掌握每一筆消費，讓數據說話 📊", action: "查看我的發票", tab: "invoices" },
+  ].filter(Boolean);
+
+  const prev = () => setIdx(i => (i - 1 + INSIGHTS.length) % INSIGHTS.length);
+  const next = () => setIdx(i => (i + 1) % INSIGHTS.length);
 
   return (
     <div>
@@ -1094,7 +1214,11 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend }) {
           <div style={{ fontSize:12, color:"#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
         </div>
         <div style={{ display:"flex", background:"#F2F2F7", borderRadius:10, padding:"8px 0" }}>
-          {[{label:"本月發票",value:`${invoiceCount || 63}張`},{label:"本週帳單",value:"2筆",red:true},{label:"任務獎勵",value:"$160",blue:true}].map((s,i)=>(
+          {[
+            {label:"發票數",value:`${invoiceCount || 0}張`},
+            {label:"帳單項目",value:`${detectedBillCount || 0}筆`,red:detectedBillCount>0},
+            {label:"任務獎勵",value:`$${(autoTasks||[]).reduce((s,t)=>s+t.reward,0)||0}`,blue:true}
+          ].map((s,i)=>(
             <div key={i} style={{ flex:1, textAlign:"center", borderRight:i<2?"1px solid #E8E8E8":"none" }}>
               <div style={{ fontSize:17, fontWeight:800, color:s.red?"#A32D2D":s.blue?"#185FA5":"#1C1C1E" }}>{s.value}</div>
               <div style={{ fontSize:10, color:"#8E8E93" }}>{s.label}</div>
@@ -1108,26 +1232,30 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend }) {
         <button onClick={()=>setTab("subscriptions")} style={{ background:"#fff", border:"1.5px solid #FAC775", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>📱</div>
           <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>訂閱管理</div>
-          <div style={{ fontSize:10, color:"#854F0B", marginTop:1 }}>1 個效益偏低</div>
-          <div style={{ fontSize:14, fontWeight:800, color:"#A32D2D", marginTop:4 }}>UberEats 虧損</div>
+          <div style={{ fontSize:10, color:"#854F0B", marginTop:1 }}>{(data?.deliverySubs||[]).length + (data?.flatSubs||[]).length} 個訂閱追蹤中</div>
+          <div style={{ fontSize:14, fontWeight:800, color: (data?.deliverySubs||[]).some(s=>s.roiStatus==="danger")?"#A32D2D":"#3B6D11", marginTop:4 }}>
+            {(data?.deliverySubs||[]).some(s=>s.roiStatus==="danger") ? "有訂閱效益偏低" : "訂閱狀態良好"}
+          </div>
         </button>
-        <button onClick={()=>setTab("bills")} style={{ background:"#fff", border:"1.5px solid #F09595", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
-          <div style={{ fontSize:16, marginBottom:3 }}>⚡</div>
+        <button onClick={()=>setTab("bills")} style={{ background:"#fff", border: detectedBillCount>0?"1.5px solid #F09595":"1px solid #EBEBEB", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
+          <div style={{ fontSize:16, marginBottom:3 }}>📋</div>
           <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>帳單提醒</div>
-          <div style={{ fontSize:10, color:"#A32D2D", marginTop:1 }}>後天到期！</div>
-          <div style={{ fontSize:14, fontWeight:800, color:"#A32D2D", marginTop:4 }}>台電 $1,240</div>
+          <div style={{ fontSize:10, color: detectedBillCount>0?"#A32D2D":"#8E8E93", marginTop:1 }}>偵測到 {detectedBillCount||0} 筆帳單</div>
+          <div style={{ fontSize:14, fontWeight:800, color: detectedBillCount>0?"#A32D2D":"#8E8E93", marginTop:4 }}>
+            {detectedBillCount>0 ? "週期即將到來" : "暫無偵測"}
+          </div>
         </button>
         <button onClick={()=>setTab("rewards")} style={{ background:"#fff", border:"1px solid #B5D4F4", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>🎯</div>
           <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>AI 任務</div>
-          <div style={{ fontSize:10, color:"#378ADD", marginTop:1 }}>3 個任務等你</div>
-          <div style={{ fontSize:14, fontWeight:800, color:"#185FA5", marginTop:4 }}>最高 $160</div>
+          <div style={{ fontSize:10, color:"#378ADD", marginTop:1 }}>{(autoTasks||[]).length} 個任務等你</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#185FA5", marginTop:4 }}>最高 ${Math.max(...(autoTasks||[{reward:0}]).map(t=>t.reward))} 獎勵</div>
         </button>
         <button onClick={()=>setTab("invoices")} style={{ background:"#fff", border:"1px solid #EBEBEB", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>🧾</div>
           <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>我的發票</div>
-          <div style={{ fontSize:10, color:"#8E8E93", marginTop:1 }}>63 張已收錄</div>
-          <div style={{ fontSize:14, fontWeight:800, color:"#8E8E93", marginTop:4 }}>開獎倒數 21 天</div>
+          <div style={{ fontSize:10, color:"#8E8E93", marginTop:1 }}>{invoiceCount||0} 張已收錄</div>
+          <div style={{ fontSize:14, fontWeight:800, color:"#8E8E93", marginTop:4 }}>近6個月紀錄</div>
         </button>
       </div>
 
@@ -1135,15 +1263,15 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend }) {
       <div style={{ padding:"10px 16px 0" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <span style={{ fontSize:14, fontWeight:700 }}>🤖 AI 洞察</span>
-          <span style={{ fontSize:11, color:"#8E8E93" }}>左右滑動</span>
+          <span style={{ fontSize:11, color:"#8E8E93" }}>{idx+1} / {INSIGHTS.length}</span>
         </div>
-        <div onTouchStart={e=>{touchX.current=e.touches[0].clientX}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchX.current;if(dx<-40)setIdx(i=>(i+1)%INSIGHTS.length);if(dx>40)setIdx(i=>(i-1+INSIGHTS.length)%INSIGHTS.length)}}
-          style={{ borderRadius:13, background:"#1C1C1E", padding:14, cursor:"grab", userSelect:"none", minHeight:88 }}>
+        <div style={{ borderRadius:13, background:"#1C1C1E", padding:14, userSelect:"none", minHeight:88 }}>
           <p style={{ color:"#fff", fontSize:13, lineHeight:1.6, margin:"0 0 10px" }}>{INSIGHTS[idx].text}</p>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <button style={{ padding:"5px 11px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>⚡ {INSIGHTS[idx].action}</button>
-            <div style={{ marginLeft:"auto", display:"flex", gap:4 }}>
-              {INSIGHTS.map((_,i)=><div key={i} onClick={()=>setIdx(i)} style={{ width:i===idx?12:5, height:5, borderRadius:3, background:i===idx?"#fff":"rgba(255,255,255,0.3)", cursor:"pointer", transition:"all 0.3s" }} />)}
+            <button onClick={()=>setTab(INSIGHTS[idx].tab)} style={{ padding:"5px 11px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>⚡ {INSIGHTS[idx].action}</button>
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
+              <button onClick={prev} style={{ width:28, height:28, borderRadius:99, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>‹</button>
+              <button onClick={next} style={{ width:28, height:28, borderRadius:99, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>›</button>
             </div>
           </div>
         </div>
@@ -1275,6 +1403,13 @@ export default function App() {
   const liveAutoTasks     = user?.data?.autoTasks      || AUTO_TASKS;
   const liveMonthlyTrend  = user?.data?.monthlyTrend  || null;
 
+  // 計算帳單偵測數（給 HomePage 用）
+  const liveDetectedBillCount = useMemo(() => {
+    if (!liveInvoices || liveInvoices.length === 0) return 0;
+    const BILL_KEYWORDS = [["台電","電力"],["自來水"],["大哥大","遠傳","中華電信"],["人壽","保險","國泰","新光"]];
+    return BILL_KEYWORDS.filter(kws => liveInvoices.some(inv => kws.some(k => inv.shop.includes(k)))).length;
+  }, [liveInvoices]);
+
   function handleLogin(phone, data) {
     setUser({ phone, data });
     setTab("home");
@@ -1290,11 +1425,11 @@ export default function App() {
   }
 
   const pages = {
-    home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt} monthlyTrend={liveMonthlyTrend}/>,
-    invoices:      <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount}/>,
-    rewards:       <RewardsPage autoTasks={liveAutoTasks}/>,
+    home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt} monthlyTrend={liveMonthlyTrend} detectedBillCount={liveDetectedBillCount} autoTasks={liveAutoTasks}/>,
+    invoices:      <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount} userData={user?.data}/>,
+    rewards:       <RewardsPage autoTasks={liveAutoTasks} user={user}/>,
     scan:          <ScanPage/>,
-    subscriptions: <SubscriptionsPage deliverySubs={liveDeliverySubs} flatSubs={liveFlatSubs}/>,
+    subscriptions: <SubscriptionsPage deliverySubs={liveDeliverySubs} flatSubs={liveFlatSubs} invoices={liveInvoices}/>,
     bills:         <BillsPage invoices={liveInvoices}/>,
   };
 
@@ -1305,7 +1440,7 @@ export default function App() {
         <div style={S.screen}>{pages[tab] || <HomePage setTab={setTab}/>}</div>
 
         {/* AI 管家僅在發票頁顯示 */}
-        {tab === "invoices" && <AIPanel tabKey={tab} />}
+        {tab === "invoices" && <AIPanel tabKey={tab} userData={user?.data} />}
 
         <div style={S.tabBar}>
           {TABS.map(t => {
