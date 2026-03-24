@@ -141,9 +141,10 @@ function Logo() {
   );
 }
 
-function DonutChart() {
+function DonutChart({ pieData }) {
+  const data = pieData || PIE_DATA;
   const stops = []; let acc = 0;
-  PIE_DATA.forEach(d => { stops.push(`${d.color} ${acc}% ${acc + d.pct}%`); acc += d.pct; });
+  data.forEach(d => { stops.push(`${d.color} ${acc}% ${acc + d.pct}%`); acc += d.pct; });
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
       <div style={{ position: "relative", width: 68, height: 68, flexShrink: 0 }}>
@@ -153,7 +154,7 @@ function DonutChart() {
         </div>
       </div>
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-        {PIE_DATA.map(d => (
+        {data.map(d => (
           <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
             <span style={{ fontSize: 11, color: "#8E8E93" }}>{d.label} {d.pct}%</span>
@@ -855,7 +856,7 @@ function ScanPage() {
 }
 
 // ─── 首頁 ─────────────────────────────────────────────────────────────────────
-function HomePage({ setTab, user, invoiceCount, totalAmount }) {
+function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend }) {
   const [idx, setIdx] = useState(0);
   const touchX = useRef(null);
   const INSIGHTS = [
@@ -938,7 +939,25 @@ function HomePage({ setTab, user, invoiceCount, totalAmount }) {
           <span style={{ fontSize:14, fontWeight:700 }}>消費分析</span>
           <button style={{ border:"none", background:"none", color:"#378ADD", fontSize:12, cursor:"pointer" }}>詳細 →</button>
         </div>
-        <DonutChart />
+        {/* 月趨勢柱狀圖 */}
+        {monthlyTrend && monthlyTrend.length > 0 && (() => {
+          const maxAmt = Math.max(...monthlyTrend.map(t=>t.amount), 1);
+          const latest = monthlyTrend[monthlyTrend.length-1];
+          return (
+            <div style={{ marginBottom:12 }}>
+              <div style={{ display:"flex", gap:5, alignItems:"flex-end", height:52, marginBottom:6 }}>
+                {monthlyTrend.map((t,i)=>(
+                  <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+                    <div style={{ width:"100%", background:i===monthlyTrend.length-1?"#378ADD":"#E0E8F0", borderRadius:"3px 3px 0 0", height:`${(t.amount/maxAmt)*44}px`, minHeight:2, transition:"height .6s ease"}}/>
+                    <div style={{ fontSize:9, color:"#AEAEB2"}}>{t.month}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize:11, color:"#6C6C70" }}>{latest.month} 消費 <strong style={{ color:"#1C1C1E"}}>${latest.amount.toLocaleString()}</strong>・共 {invoiceCount} 張發票</div>
+            </div>
+          );
+        })()}
+        <DonutChart pieData={user?.data?.pieData} />
       </div>
     </div>
   );
@@ -1035,9 +1054,10 @@ export default function App() {
   const livePieData      = user?.data?.pieData        || PIE_DATA;
   const liveTotalAmt     = user?.data?.totalAmount    || 75737;
   const liveInvCount     = user?.data?.invoiceCount   || 63;
-  const liveDeliverySubs = user?.data?.deliverySubs   || SUBSCRIPTIONS;
-  const liveFlatSubs     = user?.data?.flatSubs       || FLAT_SUBS;
-  const liveAutoTasks    = user?.data?.autoTasks      || AUTO_TASKS;
+  const liveDeliverySubs  = user?.data?.deliverySubs   || SUBSCRIPTIONS;
+  const liveFlatSubs      = user?.data?.flatSubs       || FLAT_SUBS;
+  const liveAutoTasks     = user?.data?.autoTasks      || AUTO_TASKS;
+  const liveMonthlyTrend  = user?.data?.monthlyTrend  || null;
 
   function handleLogin(phone, data) {
     setUser({ phone, data });
@@ -1054,7 +1074,7 @@ export default function App() {
   }
 
   const pages = {
-    home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt}/>,
+    home:          <HomePage setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt} monthlyTrend={liveMonthlyTrend}/>,
     invoices:      <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount}/>,
     rewards:       <RewardsPage autoTasks={liveAutoTasks}/>,
     scan:          <ScanPage/>,
