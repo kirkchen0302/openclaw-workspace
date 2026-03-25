@@ -411,7 +411,7 @@
 
 <script>
 // ─── Data ───────────────────────────────────────────────────────────────────
-const groups = [{"group_name": "ios_active_30d", "label": "iOS 近30天活躍", "color": "#007AFF", "total": 1876591, "returned": 1087257, "not_returned": 789334, "is_919": 1874031, "policy_never": 1572, "policy_expired": 75289, "policy_valid": 1799730, "carrier_valid": 1874030, "carrier_invalid": 2561, "has_invoice_30d": 1697158}, {"group_name": "ios_inactive_30d", "label": "iOS >30天未活躍", "color": "#5AC8FA", "total": 774483, "returned": 120270, "not_returned": 654213, "is_919": 756097, "policy_never": 8261, "policy_expired": 286524, "policy_valid": 479698, "carrier_valid": 756081, "carrier_invalid": 18402, "has_invoice_30d": 365350}, {"group_name": "android_active_30d", "label": "Android 近30天活躍", "color": "#34C759", "total": 501681, "returned": 337252, "not_returned": 164429, "is_919": 500227, "policy_never": 668, "policy_expired": 16410, "policy_valid": 484603, "carrier_valid": 500227, "carrier_invalid": 1454, "has_invoice_30d": 436843}, {"group_name": "android_inactive_30d", "label": "Android >30天未活躍", "color": "#30D158", "total": 225508, "returned": 26365, "not_returned": 199143, "is_919": 208791, "policy_never": 4978, "policy_expired": 112162, "policy_valid": 108368, "carrier_valid": 208778, "carrier_invalid": 16730, "has_invoice_30d": 67395}];
+const groups = [{"group_name": "ios_active_30d", "label": "iOS 近30天活躍", "color": "#007AFF", "total": 1876591, "returned": 1087257, "not_returned": 789334, "is_919": 597370, "policy_never": 1572, "policy_expired": 75289, "policy_valid": 1799730, "carrier_valid": 1874030, "carrier_invalid": 2561, "has_invoice_30d": 1697158}, {"group_name": "ios_inactive_30d", "label": "iOS >30天未活躍", "color": "#5AC8FA", "total": 774483, "returned": 120270, "not_returned": 654213, "is_919": 257638, "policy_never": 8261, "policy_expired": 286524, "policy_valid": 479698, "carrier_valid": 756081, "carrier_invalid": 18402, "has_invoice_30d": 365350}, {"group_name": "android_active_30d", "label": "Android 近30天活躍", "color": "#34C759", "total": 501681, "returned": 337252, "not_returned": 164429, "is_919": 127788, "policy_never": 668, "policy_expired": 16410, "policy_valid": 484603, "carrier_valid": 500227, "carrier_invalid": 1454, "has_invoice_30d": 436843}, {"group_name": "android_inactive_30d", "label": "Android >30天未活躍", "color": "#30D158", "total": 225508, "returned": 26365, "not_returned": 199143, "is_919": 62796, "policy_never": 4978, "policy_expired": 112162, "policy_valid": 108368, "carrier_valid": 208778, "carrier_invalid": 16730, "has_invoice_30d": 67395}];
 
 const trend = [{"date": "2026-03-15", "ios_active_30d": 273987, "ios_inactive_30d": 14054, "android_active_30d": 108006, "android_inactive_30d": 2716}, {"date": "2026-03-16", "ios_active_30d": 259784, "ios_inactive_30d": 13168, "android_active_30d": 107077, "android_inactive_30d": 2840}, {"date": "2026-03-17", "ios_active_30d": 258153, "ios_inactive_30d": 13983, "android_active_30d": 107938, "android_inactive_30d": 3187}, {"date": "2026-03-18", "ios_active_30d": 258783, "ios_inactive_30d": 13862, "android_active_30d": 104878, "android_inactive_30d": 2930}, {"date": "2026-03-19", "ios_active_30d": 268324, "ios_inactive_30d": 15428, "android_active_30d": 111418, "android_inactive_30d": 3628}, {"date": "2026-03-20", "ios_active_30d": 259564, "ios_inactive_30d": 14195, "android_active_30d": 106708, "android_inactive_30d": 3381}, {"date": "2026-03-21", "ios_active_30d": 271578, "ios_inactive_30d": 15919, "android_active_30d": 111185, "android_inactive_30d": 3681}, {"date": "2026-03-22", "ios_active_30d": 279874, "ios_inactive_30d": 16295, "android_active_30d": 110403, "android_inactive_30d": 3672}, {"date": "2026-03-23", "ios_active_30d": 297033, "ios_inactive_30d": 21713, "android_active_30d": 126303, "android_inactive_30d": 6031}, {"date": "2026-03-24", "ios_active_30d": 289995, "ios_inactive_30d": 19089, "android_active_30d": 117629, "android_inactive_30d": 4751}];
 
@@ -427,7 +427,7 @@ const pct = (a, b) => ((a / b) * 100).toFixed(1) + '%';
 const pctNum = (a, b) => (a / b) * 100;
 
 // ─── Update Time ─────────────────────────────────────────────────────────────
-document.getElementById('updateTime').textContent = '資料更新時間：2026-03-25 15:54 (Asia/Taipei)';
+document.getElementById('updateTime').textContent = '資料更新時間：2026-03-25 17:15 (Asia/Taipei)';
 
 // ─── Section 1: KPI Cards ────────────────────────────────────────────────────
 const kpiGrid = document.getElementById('kpiGrid');
@@ -684,63 +684,6 @@ insights.forEach(text => {
   card.innerHTML = text;
   insightGrid.appendChild(card);
 });
-
-// ─── Daily Return Table ───────────────────────────────────────────────────────
-(function() {
-  // Inject section title and table into DOM
-  const tableSection = document.createElement('div');
-  tableSection.innerHTML = `
-    <div class="section-title" style="margin-top:32px">每日回訪人數明細（3/15 起）</div>
-    <div style="overflow-x:auto;border-radius:12px;border:1px solid #334155;margin-bottom:24px">
-      <table style="width:100%;border-collapse:collapse;font-size:.8rem;background:#1E293B">
-        <thead>
-          <tr style="background:#1a2744">
-            <th style="padding:10px 12px;text-align:left;font-size:.72rem;font-weight:600;color:#94A3B8">日期</th>
-            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#007AFF">iOS 活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
-            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#5AC8FA">iOS 未活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
-            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#34C759">Android 活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
-            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#30D158">Android 未活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
-            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#E2E8F0">合計</th>
-          </tr>
-        </thead>
-        <tbody id="dailyRetBody"></tbody>
-      </table>
-    </div>`;
-  document.body.insertBefore(tableSection, document.querySelector('.tooltip') || document.body.lastChild);
-
-  const tbody = document.getElementById('dailyRetBody');
-  const totals = {ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_inactive_30d:0};
-  const tdStyle = 'padding:9px 12px;text-align:right;font-variant-numeric:tabular-nums;border-top:1px solid #334155';
-
-  [...trend].reverse().forEach(d => {
-    const ia = d.ios_active_30d||0, ii = d.ios_inactive_30d||0;
-    const aa = d.android_active_30d||0, ai = d.android_inactive_30d||0;
-    const tot = ia+ii+aa+ai;
-    totals.ios_active_30d += ia; totals.ios_inactive_30d += ii;
-    totals.android_active_30d += aa; totals.android_inactive_30d += ai;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="${tdStyle};text-align:left;color:#94A3B8;font-size:.75rem">${d.date}</td>
-      <td style="${tdStyle};color:#007AFF">${ia.toLocaleString()}</td>
-      <td style="${tdStyle};color:#5AC8FA">${ii.toLocaleString()}</td>
-      <td style="${tdStyle};color:#34C759">${aa.toLocaleString()}</td>
-      <td style="${tdStyle};color:#30D158">${ai.toLocaleString()}</td>
-      <td style="${tdStyle};font-weight:700">${tot.toLocaleString()}</td>`;
-    tbody.appendChild(tr);
-  });
-
-  const totAll = totals.ios_active_30d+totals.ios_inactive_30d+totals.android_active_30d+totals.android_inactive_30d;
-  const totTr = document.createElement('tr');
-  totTr.style.background = '#1a2744'; totTr.style.fontWeight = '700';
-  totTr.innerHTML = `
-    <td style="${tdStyle};text-align:left;color:#E2E8F0">累計合計</td>
-    <td style="${tdStyle};color:#007AFF">${totals.ios_active_30d.toLocaleString()}</td>
-    <td style="${tdStyle};color:#5AC8FA">${totals.ios_inactive_30d.toLocaleString()}</td>
-    <td style="${tdStyle};color:#34C759">${totals.android_active_30d.toLocaleString()}</td>
-    <td style="${tdStyle};color:#30D158">${totals.android_inactive_30d.toLocaleString()}</td>
-    <td style="${tdStyle};color:#60A5FA">${totAll.toLocaleString()}</td>`;
-  tbody.appendChild(totTr);
-})();
 </script>
 </body>
 </html>
