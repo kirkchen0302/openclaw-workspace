@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 受眾回訪分析 Dashboard 每日更新腳本
-快照基準：2026-03-14（固定時間點定義四群）
+快照基準：2026-03-22（固定時間點定義四群）
+趨勢起始：2026-03-01
 每天跑一次，更新資料並推到 GitHub Pages
 """
 import json, subprocess, sys, os
@@ -11,8 +12,9 @@ from google.auth.transport.requests import Request
 from google.cloud import bigquery
 
 WORKSPACE = os.path.expanduser("~/.openclaw/workspace")
-SNAPSHOT_DATE = "2026-03-14"
-REPORT_PATH = f"{WORKSPACE}/reports/audience_dashboard_v2.html"
+SNAPSHOT_DATE = "2026-03-22"
+TREND_START   = "2026-03-01"
+REPORT_PATH = f"{WORKSPACE}/docs/audience_dashboard.html"
 BQ_PROJECT = "production-379804"
 
 LABELS = {
@@ -92,7 +94,7 @@ returned AS (
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
     ON ls.session_hk = sa.session_hk
-  WHERE sa.created_date >= '2026-03-15'
+  WHERE sa.created_date >= '{TREND_START}'
 ),
 is_919 AS (
   SELECT DISTINCT lmc.member_hk
@@ -157,7 +159,7 @@ daily_ret AS (
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
     ON ls.session_hk = sa.session_hk
-  WHERE sa.created_date BETWEEN '2026-03-15' AND CURRENT_DATE('Asia/Taipei')
+  WHERE sa.created_date BETWEEN '{TREND_START}' AND CURRENT_DATE('Asia/Taipei')
 )
 SELECT dr.created_date AS date,
   COUNT(DISTINCT CASE WHEN g.grp = 'ios_active_30d' THEN g.member_hk END) AS ios_active_30d,
@@ -219,7 +221,7 @@ td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
 <body>
 <div class="header">
   <h1>受眾回訪分析 Dashboard</h1>
-  <p class="sub">四群用戶自 2026-03-15（快照基準：3/14）起的每日回訪追蹤</p>
+  <p class="sub">追蹤四群用戶自 {TREND_START} 起的每日回訪（快照基準：{SNAPSHOT_DATE}）</p>
   <p class="update-time">資料更新時間：{update_time}</p>
 </div>
 <div class="section-title">各群總覽</div>
