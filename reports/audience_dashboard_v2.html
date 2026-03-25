@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>受眾回訪分析 Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0F172A;
+    --card: #1E293B;
+    --card2: #253347;
+    --blue: #3B82F6;
+    --amber: #F59E0B;
+    --text: #E2E8F0;
+    --muted: #94A3B8;
+    --border: #334155;
+    --ios-active: #007AFF;
+    --ios-inactive: #5AC8FA;
+    --and-active: #34C759;
+    --and-inactive: #30D158;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--blue), #60A5FA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .header .update-time {
+    display: inline-block;
+    margin-top: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    color: var(--amber);
+  }
+
+  /* Section */
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: var(--blue);
+    border-radius: 2px;
+  }
+
+  section { margin-bottom: 40px; }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+  }
+
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .kpi-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .kpi-total {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .kpi-total span {
+    font-size: 0.6em;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .kpi-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+  }
+  .kpi-row .returned { color: #4ADE80; }
+  .kpi-row .not-returned { color: #F87171; }
+  .kpi-row .pct { color: var(--muted); font-size: 0.76rem; }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  /* Line Chart */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 12px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  #lineChart {
+    width: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .tooltip {
+    position: fixed;
+    background: #0F172A;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1000;
+    min-width: 160px;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-date { font-weight: 700; color: var(--amber); margin-bottom: 6px; }
+  .tooltip-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
+
+  /* Attribute Analysis */
+  .attr-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 700px) {
+    .attr-grid { grid-template-columns: 1fr; }
+  }
+
+  .attr-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: transform 0.2s;
+  }
+  .attr-card:hover { transform: translateY(-2px); }
+
+  .attr-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .attr-section-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    margin-top: 14px;
+  }
+  .attr-section-label:first-of-type { margin-top: 0; }
+
+  /* Donut ring */
+  .ring-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ring-svg { flex-shrink: 0; }
+  .ring-info { font-size: 0.82rem; }
+  .ring-pct { font-size: 1.4rem; font-weight: 800; color: #fff; }
+  .ring-label { color: var(--muted); font-size: 0.75rem; }
+
+  /* Mini horiz bars */
+  .mini-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 0.78rem;
+  }
+  .mini-bar-label { width: 40px; color: var(--muted); flex-shrink: 0; }
+  .mini-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .mini-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  .mini-bar-val { width: 42px; text-align: right; color: var(--text); flex-shrink: 0; }
+
+  /* Bar Chart (Section 4) */
+  .bar-chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .bar-chart-inner {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(16px, 5vw, 60px);
+    height: 200px;
+    padding-bottom: 0;
+  }
+  .bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    max-width: 120px;
+  }
+  .bar-pct-label {
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-weight: 800;
+    color: #fff;
+  }
+  .bar-col-wrap {
+    width: 100%;
+    max-width: 70px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 140px;
+  }
+  .bar-col {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    transition: height 1s ease;
+    position: relative;
+    cursor: default;
+  }
+  .bar-col:hover { filter: brightness(1.2); }
+  .bar-name {
+    font-size: clamp(0.65rem, 1.5vw, 0.78rem);
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 90px;
+  }
+
+  /* Insights */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 600px) {
+    .insight-grid { grid-template-columns: 1fr; }
+  }
+
+  .insight-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .insight-card:hover { transform: translateX(4px); }
+  .insight-card em {
+    font-style: normal;
+    color: var(--amber);
+    font-weight: 700;
+  }
+
+  /* Utility */
+  .num { font-variant-numeric: tabular-nums; }
+  .green { color: #4ADE80; }
+  .red { color: #F87171; }
+  .amber { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>受眾回訪分析 Dashboard｜3/15 起追蹤</h1>
+  <p class="subtitle">追蹤四群用戶自 2026-03-15 起的每日回訪狀況</p>
+  <span class="update-time" id="updateTime"></span>
+</div>
+
+<!-- Section 1: KPI Cards -->
+<section>
+  <div class="section-title">四群受眾 KPI 總覽</div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+</section>
+
+<!-- Section 2: Line Chart -->
+<section>
+  <div class="section-title">每日回訪趨勢（3/15 – 3/24）</div>
+  <div class="chart-card">
+    <div class="chart-legend" id="chartLegend"></div>
+    <svg id="lineChart" viewBox="0 0 800 320"></svg>
+  </div>
+</section>
+
+<!-- Section 3: Attribute Analysis -->
+<section>
+  <div class="section-title">各群屬性深度分析</div>
+  <div class="attr-grid" id="attrGrid"></div>
+</section>
+
+<!-- Section 4: Bar Chart -->
+<section>
+  <div class="section-title">回訪率比較</div>
+  <div class="bar-chart-card">
+    <div class="bar-chart-inner" id="barChart"></div>
+  </div>
+</section>
+
+<!-- Section 5: Insights -->
+<section>
+  <div class="section-title">數據洞察摘要</div>
+  <div class="insight-grid" id="insightGrid"></div>
+</section>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────────────
+const groups = [{"group_name": "ios_active_30d", "label": "iOS 近30天活躍", "color": "#007AFF", "total": 1876591, "returned": 1087257, "not_returned": 789334, "is_919": 1874031, "policy_never": 1572, "policy_expired": 75289, "policy_valid": 1799730, "carrier_valid": 1874030, "carrier_invalid": 2561, "has_invoice_30d": 1697158}, {"group_name": "ios_inactive_30d", "label": "iOS >30天未活躍", "color": "#5AC8FA", "total": 774483, "returned": 120270, "not_returned": 654213, "is_919": 756097, "policy_never": 8261, "policy_expired": 286524, "policy_valid": 479698, "carrier_valid": 756081, "carrier_invalid": 18402, "has_invoice_30d": 365350}, {"group_name": "android_active_30d", "label": "Android 近30天活躍", "color": "#34C759", "total": 501681, "returned": 337252, "not_returned": 164429, "is_919": 500227, "policy_never": 668, "policy_expired": 16410, "policy_valid": 484603, "carrier_valid": 500227, "carrier_invalid": 1454, "has_invoice_30d": 436843}, {"group_name": "android_inactive_30d", "label": "Android >30天未活躍", "color": "#30D158", "total": 225508, "returned": 26365, "not_returned": 199143, "is_919": 208791, "policy_never": 4978, "policy_expired": 112162, "policy_valid": 108368, "carrier_valid": 208778, "carrier_invalid": 16730, "has_invoice_30d": 67395}];
+
+const trend = [{"date": "2026-03-15", "ios_active_30d": 273987, "ios_inactive_30d": 14054, "android_active_30d": 108006, "android_inactive_30d": 2716}, {"date": "2026-03-16", "ios_active_30d": 259784, "ios_inactive_30d": 13168, "android_active_30d": 107077, "android_inactive_30d": 2840}, {"date": "2026-03-17", "ios_active_30d": 258153, "ios_inactive_30d": 13983, "android_active_30d": 107938, "android_inactive_30d": 3187}, {"date": "2026-03-18", "ios_active_30d": 258783, "ios_inactive_30d": 13862, "android_active_30d": 104878, "android_inactive_30d": 2930}, {"date": "2026-03-19", "ios_active_30d": 268324, "ios_inactive_30d": 15428, "android_active_30d": 111418, "android_inactive_30d": 3628}, {"date": "2026-03-20", "ios_active_30d": 259564, "ios_inactive_30d": 14195, "android_active_30d": 106708, "android_inactive_30d": 3381}, {"date": "2026-03-21", "ios_active_30d": 271578, "ios_inactive_30d": 15919, "android_active_30d": 111185, "android_inactive_30d": 3681}, {"date": "2026-03-22", "ios_active_30d": 279874, "ios_inactive_30d": 16295, "android_active_30d": 110403, "android_inactive_30d": 3672}, {"date": "2026-03-23", "ios_active_30d": 297033, "ios_inactive_30d": 21713, "android_active_30d": 126303, "android_inactive_30d": 6031}, {"date": "2026-03-24", "ios_active_30d": 289995, "ios_inactive_30d": 19089, "android_active_30d": 117629, "android_inactive_30d": 4751}];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const fmt = n => n >= 1e6
+  ? (n/1e6).toFixed(2) + 'M'
+  : n >= 1e4
+    ? (n/1e4).toFixed(1) + '萬'
+    : n.toLocaleString();
+
+const fmtFull = n => n.toLocaleString();
+const pct = (a, b) => ((a / b) * 100).toFixed(1) + '%';
+const pctNum = (a, b) => (a / b) * 100;
+
+// ─── Update Time ─────────────────────────────────────────────────────────────
+document.getElementById('updateTime').textContent = '資料更新時間：2026-03-25 15:54 (Asia/Taipei)';
+
+// ─── Section 1: KPI Cards ────────────────────────────────────────────────────
+const kpiGrid = document.getElementById('kpiGrid');
+groups.forEach(g => {
+  const retPct = pctNum(g.returned, g.total);
+  const card = document.createElement('div');
+  card.className = 'kpi-card';
+  card.innerHTML = `
+    <div class="kpi-label" style="color:${g.color}">${g.label}</div>
+    <div class="kpi-total num">${fmt(g.total)}<span>人</span></div>
+    <div class="kpi-row">
+      <span>✅ 已回訪</span>
+      <span class="returned num">${fmtFull(g.returned)}</span>
+      <span class="pct">(${pct(g.returned, g.total)})</span>
+    </div>
+    <div class="kpi-row">
+      <span>⬜ 未回訪</span>
+      <span class="not-returned num">${fmtFull(g.not_returned)}</span>
+      <span class="pct">(${pct(g.not_returned, g.total)})</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:0%;background:${g.color}" data-w="${retPct.toFixed(2)}"></div>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;text-align:right">回訪率 <strong style="color:#fff">${retPct.toFixed(1)}%</strong></div>
+  `;
+  kpiGrid.appendChild(card);
+});
+
+// Animate progress bars
+setTimeout(() => {
+  document.querySelectorAll('.progress-fill').forEach(el => {
+    el.style.width = el.dataset.w + '%';
+  });
+}, 100);
+
+// ─── Section 2: Line Chart ───────────────────────────────────────────────────
+const legend = document.getElementById('chartLegend');
+groups.forEach(g => {
+  legend.innerHTML += `<div class="legend-item">
+    <div class="legend-dot" style="background:${g.color}"></div>
+    ${g.label}
+  </div>`;
+});
+
+function buildLineChart() {
+  const svg = document.getElementById('lineChart');
+  const W = 800, H = 320;
+  const padL = 64, padR = 24, padT = 20, padB = 50;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
+
+  // all values
+  const keys = ['ios_active_30d','ios_inactive_30d','android_active_30d','android_inactive_30d'];
+  const allVals = trend.flatMap(d => keys.map(k => d[k]));
+  const maxV = Math.max(...allVals);
+  const minV = 0;
+
+  const xStep = cW / (trend.length - 1);
+  const yScale = v => padT + cH - ((v - minV) / (maxV - minV)) * cH;
+  const xScale = i => padL + i * xStep;
+
+  let svgContent = '';
+
+  // Grid lines
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (maxV / yTicks) * i;
+    const y = yScale(v);
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}"
+      stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/>`;
+    svgContent += `<text x="${padL - 6}" y="${y + 4}" fill="#64748B" font-size="11" text-anchor="end"
+      font-family="system-ui">${v >= 1e4 ? (v/1e4).toFixed(0)+'萬' : v.toFixed(0)}</text>`;
+  }
+
+  // X axis labels
+  trend.forEach((d, i) => {
+    const x = xScale(i);
+    const label = d.date.slice(5).replace('-', '/');
+    svgContent += `<text x="${x}" y="${H - padB + 20}" fill="#64748B" font-size="11"
+      text-anchor="middle" font-family="system-ui">${label}</text>`;
+    svgContent += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H - padB}"
+      stroke="#334155" stroke-width="0.5"/>`;
+  });
+
+  // Lines
+  groups.forEach(g => {
+    const pts = trend.map((d, i) => `${xScale(i)},${yScale(d[g.group_name])}`).join(' ');
+    svgContent += `<polyline points="${pts}" fill="none" stroke="${g.color}"
+      stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    // Dots
+    trend.forEach((d, i) => {
+      svgContent += `<circle cx="${xScale(i)}" cy="${yScale(d[g.group_name])}" r="4"
+        fill="${g.color}" stroke="#1E293B" stroke-width="2"
+        class="chart-dot" data-i="${i}" data-group="${g.group_name}"/>`;
+    });
+  });
+
+  // Hover overlay rects
+  trend.forEach((d, i) => {
+    const x = i === 0 ? padL : xScale(i) - xStep / 2;
+    const w = i === 0 || i === trend.length - 1 ? xStep / 2 : xStep;
+    svgContent += `<rect x="${x - (i===0?0:0)}" y="${padT}" width="${xStep}"
+      height="${cH}" fill="transparent" class="hover-zone" data-i="${i}"/>`;
+  });
+
+  svg.innerHTML = svgContent;
+
+  // Hover tooltip
+  const tooltip = document.getElementById('tooltip');
+  svg.querySelectorAll('.hover-zone').forEach(rect => {
+    rect.addEventListener('mousemove', e => {
+      const i = +rect.dataset.i;
+      const d = trend[i];
+      const label = d.date.slice(5).replace('-', '/');
+      let html = `<div class="tooltip-date">📅 ${label}</div>`;
+      groups.forEach(g => {
+        html += `<div class="tooltip-row">
+          <span style="color:${g.color}">${g.label}</span>
+          <span class="num" style="color:#fff">${fmtFull(d[g.group_name])}</span>
+        </div>`;
+      });
+      tooltip.innerHTML = html;
+      tooltip.classList.add('visible');
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    });
+    rect.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (tooltip.classList.contains('visible')) {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    }
+  });
+}
+buildLineChart();
+
+// ─── Section 3: Attribute Cards ─────────────────────────────────────────────
+function makeRing(pctVal, color, size=64) {
+  const r = (size - 10) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pctVal / 100) * circ;
+  return `<svg width="${size}" height="${size}" class="ring-svg">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#334155" stroke-width="7"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="7"
+      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}"
+      stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})"/>
+  </svg>`;
+}
+
+function miniBar(label, val, total, color) {
+  const p = Math.min(100, (val / total) * 100);
+  return `<div class="mini-bar-row">
+    <div class="mini-bar-label">${label}</div>
+    <div class="mini-bar-track">
+      <div class="mini-bar-fill" style="width:${p.toFixed(1)}%;background:${color}"></div>
+    </div>
+    <div class="mini-bar-val num">${p.toFixed(1)}%</div>
+  </div>`;
+}
+
+const attrGrid = document.getElementById('attrGrid');
+groups.forEach(g => {
+  const p919 = pctNum(g.is_919, g.total);
+  const pInvoice = pctNum(g.has_invoice_30d, g.total);
+  const policyTotal = g.policy_never + g.policy_expired + g.policy_valid;
+
+  const card = document.createElement('div');
+  card.className = 'attr-card';
+  card.innerHTML = `
+    <div class="attr-card-title">
+      <div class="color-dot" style="background:${g.color}"></div>
+      ${g.label}
+    </div>
+
+    <div class="attr-section-label">919 比例</div>
+    <div class="ring-wrapper">
+      ${makeRing(p919, g.color, 64)}
+      <div class="ring-info">
+        <div class="ring-pct">${p919.toFixed(1)}%</div>
+        <div class="ring-label">${fmtFull(g.is_919)} / ${fmtFull(g.total)}</div>
+      </div>
+    </div>
+
+    <div class="attr-section-label">合規狀態</div>
+    ${miniBar('有效', g.policy_valid, policyTotal, '#4ADE80')}
+    ${miniBar('到期', g.policy_expired, policyTotal, '#F87171')}
+    ${miniBar('從未', g.policy_never, policyTotal, '#94A3B8')}
+
+    <div class="attr-section-label">載具狀態</div>
+    ${miniBar('有效', g.carrier_valid, g.total, '#60A5FA')}
+    ${miniBar('無效', g.carrier_invalid, g.total, '#F87171')}
+
+    <div class="attr-section-label">近30天有發票比例</div>
+    <div class="ring-wrapper">
+      ${makeRing(pInvoice, g.color === '#007AFF' ? '#F59E0B' : g.color, 48)}
+      <div class="ring-info">
+        <div class="ring-pct" style="font-size:1.1rem">${pInvoice.toFixed(1)}%</div>
+        <div class="ring-label">${fmt(g.has_invoice_30d)} 人有發票</div>
+      </div>
+    </div>
+  `;
+  attrGrid.appendChild(card);
+});
+
+// ─── Section 4: Bar Chart ─────────────────────────────────────────────────────
+const barChart = document.getElementById('barChart');
+const maxPct = Math.max(...groups.map(g => pctNum(g.returned, g.total)));
+
+groups.forEach(g => {
+  const retPct = pctNum(g.returned, g.total);
+  const barH = Math.round((retPct / maxPct) * 140);
+  const div = document.createElement('div');
+  div.className = 'bar-group';
+  div.innerHTML = `
+    <div class="bar-pct-label">${retPct.toFixed(1)}%</div>
+    <div class="bar-col-wrap">
+      <div class="bar-col" style="height:0px;background:linear-gradient(to top,${g.color}CC,${g.color})" data-h="${barH}px"></div>
+    </div>
+    <div class="bar-name" style="color:${g.color}">${g.label}</div>
+  `;
+  barChart.appendChild(div);
+});
+
+setTimeout(() => {
+  document.querySelectorAll('.bar-col').forEach(el => {
+    el.style.height = el.dataset.h;
+  });
+}, 150);
+
+// ─── Section 5: Insights ─────────────────────────────────────────────────────
+const iosA = groups[0], iosI = groups[1], andA = groups[2], andI = groups[3];
+const iosActiveRate = pctNum(iosA.returned, iosA.total);
+const iosInactiveRate = pctNum(iosI.returned, iosI.total);
+const andActiveRate = pctNum(andA.returned, andA.total);
+const andInactiveRate = pctNum(andI.returned, andI.total);
+const iosMult = (iosActiveRate / iosInactiveRate).toFixed(1);
+const andMult = (andActiveRate / andInactiveRate).toFixed(1);
+
+const insights = [
+  `iOS 近30天活躍用戶的回訪率為 <em>${iosActiveRate.toFixed(1)}%</em>，是沉睡用戶（<em>${iosInactiveRate.toFixed(1)}%</em>）的 <em>${iosMult} 倍</em>，活躍用戶黏著度遠高於沉睡族群。`,
+  `Android 活躍用戶回訪率 <em>${andActiveRate.toFixed(1)}%</em>，為四群中最高；Android 沉睡用戶僅 <em>${andInactiveRate.toFixed(1)}%</em>，是四群中最低，兩者相差 <em>${andMult} 倍</em>。`,
+  `iOS 活躍群的 919（載具驗證碼錯誤）比例為 <em>${pctNum(iosA.is_919, iosA.total).toFixed(1)}%</em>，代表約 1/3 的用戶發票無法同步，合規有效率 <em>${pctNum(iosA.policy_valid, iosA.total).toFixed(1)}%</em>。`,
+  `iOS 沉睡群有 <em>${pctNum(iosI.policy_expired, iosI.total).toFixed(1)}%</em> 合規已到期，Android 沉睡群則有 <em>${pctNum(andI.policy_expired, andI.total).toFixed(1)}%</em>，兩群均為高潛力再觸達對象。`
+];
+
+const insightGrid = document.getElementById('insightGrid');
+insights.forEach(text => {
+  const card = document.createElement('div');
+  card.className = 'insight-card';
+  card.innerHTML = text;
+  insightGrid.appendChild(card);
+});
+
+// ─── Daily Return Table ───────────────────────────────────────────────────────
+(function() {
+  // Inject section title and table into DOM
+  const tableSection = document.createElement('div');
+  tableSection.innerHTML = `
+    <div class="section-title" style="margin-top:32px">每日回訪人數明細（3/15 起）</div>
+    <div style="overflow-x:auto;border-radius:12px;border:1px solid #334155;margin-bottom:24px">
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem;background:#1E293B">
+        <thead>
+          <tr style="background:#1a2744">
+            <th style="padding:10px 12px;text-align:left;font-size:.72rem;font-weight:600;color:#94A3B8">日期</th>
+            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#007AFF">iOS 活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
+            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#5AC8FA">iOS 未活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
+            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#34C759">Android 活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
+            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#30D158">Android 未活躍<br><span style="color:#64748B;font-weight:400">回訪人數</span></th>
+            <th style="padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:#E2E8F0">合計</th>
+          </tr>
+        </thead>
+        <tbody id="dailyRetBody"></tbody>
+      </table>
+    </div>`;
+  document.body.insertBefore(tableSection, document.querySelector('.tooltip') || document.body.lastChild);
+
+  const tbody = document.getElementById('dailyRetBody');
+  const totals = {ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_inactive_30d:0};
+  const tdStyle = 'padding:9px 12px;text-align:right;font-variant-numeric:tabular-nums;border-top:1px solid #334155';
+
+  [...trend].reverse().forEach(d => {
+    const ia = d.ios_active_30d||0, ii = d.ios_inactive_30d||0;
+    const aa = d.android_active_30d||0, ai = d.android_inactive_30d||0;
+    const tot = ia+ii+aa+ai;
+    totals.ios_active_30d += ia; totals.ios_inactive_30d += ii;
+    totals.android_active_30d += aa; totals.android_inactive_30d += ai;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="${tdStyle};text-align:left;color:#94A3B8;font-size:.75rem">${d.date}</td>
+      <td style="${tdStyle};color:#007AFF">${ia.toLocaleString()}</td>
+      <td style="${tdStyle};color:#5AC8FA">${ii.toLocaleString()}</td>
+      <td style="${tdStyle};color:#34C759">${aa.toLocaleString()}</td>
+      <td style="${tdStyle};color:#30D158">${ai.toLocaleString()}</td>
+      <td style="${tdStyle};font-weight:700">${tot.toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const totAll = totals.ios_active_30d+totals.ios_inactive_30d+totals.android_active_30d+totals.android_inactive_30d;
+  const totTr = document.createElement('tr');
+  totTr.style.background = '#1a2744'; totTr.style.fontWeight = '700';
+  totTr.innerHTML = `
+    <td style="${tdStyle};text-align:left;color:#E2E8F0">累計合計</td>
+    <td style="${tdStyle};color:#007AFF">${totals.ios_active_30d.toLocaleString()}</td>
+    <td style="${tdStyle};color:#5AC8FA">${totals.ios_inactive_30d.toLocaleString()}</td>
+    <td style="${tdStyle};color:#34C759">${totals.android_active_30d.toLocaleString()}</td>
+    <td style="${tdStyle};color:#30D158">${totals.android_inactive_30d.toLocaleString()}</td>
+    <td style="${tdStyle};color:#60A5FA">${totAll.toLocaleString()}</td>`;
+  tbody.appendChild(totTr);
+})();
+</script>
+</body>
+</html>
