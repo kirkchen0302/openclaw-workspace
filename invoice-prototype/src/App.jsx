@@ -133,7 +133,7 @@ const S = {
   tabScan:    { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", border: "none", background: "transparent", position: "relative", paddingBottom: 4 },
   scanBubble: { width: 50, height: 50, borderRadius: 13, background: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center", marginTop: -16, boxShadow: "0 4px 12px rgba(55,138,221,0.35)", fontSize: 22 },
   segment:    { display: "flex", background: "#F2F2F7", borderRadius: 10, padding: 2, margin: "0 16px 10px" },
-  segItem:    (a) => ({ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: a ? "#fff" : "transparent", color: a ? "#1C1C1E" : "#8E8E93", boxShadow: a ? "0 1px 3px rgba(0,0,0,0.08)" : "none", transition: "all 0.2s" }),
+  segItem:    (a) => ({ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, background: a ? "#fff" : "transparent", color: a ? "#1C1C1E" : "#8E8E93", boxShadow: a ? "0 1px 3px rgba(0,0,0,0.08)" : "none", transition: "all 0.2s" }),
 };
 
 function Logo() {
@@ -160,7 +160,7 @@ function DonutChart({ pieData }) {
         {data.map(d => (
           <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: "#8E8E93" }}>{d.label} {d.pct}%</span>
+            <span style={{ fontSize: 12, color: "#8E8E93" }}>{d.label} {d.pct}%</span>
           </div>
         ))}
       </div>
@@ -193,31 +193,31 @@ function RoiCard({ sub, expanded, onToggle }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
-            <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: statusBg, color: statusColor }}>{sub.roiLabel}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 7px", borderRadius: 6, background: statusBg, color: statusColor }}>{sub.roiLabel}</span>
           </div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂 · 本月省運費 ${latest.feeWaived}</div>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂 · 本月省運費 ${latest.feeWaived}</div>
         </div>
         <span style={{ color: "#C7C7CC", fontSize: 13 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
           <div style={{ marginTop: 12, marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 8 }}>近3個月：省運費 vs 月費</div>
+            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>近3個月：省運費 vs 月費</div>
             <div style={{ display: "flex", gap: 8 }}>
               {sub.months.map((m, i) => {
                 const r = m.feeWaived - sub.fee;
                 return (
                   <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "8px", textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "#8E8E93", marginBottom: 4 }}>{m.m}</div>
+                    <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>{m.m}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: r >= 0 ? "#3B6D11" : "#A32D2D" }}>{r >= 0 ? "+" : ""}{r}</div>
-                    <div style={{ fontSize: 10, color: "#8E8E93" }}>{m.orders}次外送</div>
+                    <div style={{ fontSize: 11, color: "#8E8E93" }}>{m.orders}次外送</div>
                   </div>
                 );
               })}
             </div>
           </div>
           <div style={{ background: statusBg, borderRadius: 9, padding: "9px 11px" }}>
-            <div style={{ fontSize: 12, color: statusColor, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: statusColor, lineHeight: 1.6 }}>
               {sub.roiStatus === "danger" ? "⚠️ " : "✅ "}{sub.roiTip}
             </div>
           </div>
@@ -240,9 +240,9 @@ function FlatSubCard({ sub, expanded, onToggle }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
-            {trendUp && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#FAEEDA", color: "#854F0B" }}>費用調漲</span>}
+            {trendUp && <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 7px", borderRadius: 6, background: "#FAEEDA", color: "#854F0B" }}>費用調漲</span>}
           </div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>月費 ${latestFee} · 下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}{diff > 0 ? ` · 比上月多 $${diff}` : ""}</div>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>月費 ${latestFee} · 下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}{diff > 0 ? ` · 比上月多 $${diff}` : ""}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <MiniTrend vals={sub.months} color={trendUp ? "#EF9F27" : "#378ADD"} />
@@ -252,18 +252,18 @@ function FlatSubCard({ sub, expanded, onToggle }) {
       {expanded && (
         <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
           <div style={{ marginTop: 12, marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 6 }}>近3個月費用</div>
+            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 6 }}>近3個月費用</div>
             <div style={{ display: "flex", gap: 6 }}>
               {["12月", "1月", "2月"].map((m, i) => (
                 <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "7px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#8E8E93", marginBottom: 3 }}>{m}</div>
+                  <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 3 }}>{m}</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E" }}>${sub.months[i]}</div>
                 </div>
               ))}
             </div>
           </div>
           <div style={{ background: "#F8F8F8", borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
-            <div style={{ fontSize: 12, color: "#636366", lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: "#636366", lineHeight: 1.6 }}>
               💡 此訂閱為定額方案，AI 僅追蹤費用變化。是否續訂請依個人使用習慣決定。
               {trendUp && <span style={{ color: "#854F0B", fontWeight: 600 }}> 本月費用已調漲，建議重新評估使用需求。</span>}
             </div>
@@ -271,8 +271,8 @@ function FlatSubCard({ sub, expanded, onToggle }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#E6F1FB", borderRadius: 9, padding: "9px 11px", marginBottom: 10 }}>
             <span style={{ fontSize: 16 }}>📅</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#185FA5" }}>預計下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}</div>
-              <div style={{ fontSize: 11, color: "#378ADD" }}>如需取消，請在續訂日前操作</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#185FA5" }}>預計下次續訂：{typeof sub.renewDay === "number" ? `每月${sub.renewDay}日` : sub.renewDay}</div>
+              <div style={{ fontSize: 12, color: "#378ADD" }}>如需取消，請在續訂日前操作</div>
             </div>
           </div>
           {/* 僅保留設定提醒，移除「前往管理訂閱」 */}
@@ -380,11 +380,11 @@ function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS,
       <div style={{ margin: "10px 16px 10px", borderRadius: 14, background: "#1C1C1E", padding: "16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
           <div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>本月訂閱總支出</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>本月訂閱總支出</div>
             <div style={{ fontSize: 28, fontWeight: 800, color: "#fff" }}>${monthTotals[2]}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>較上月</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>較上月</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: monthTotals[2] > monthTotals[1] ? "#F09595" : "#9FE1CB" }}>
               {monthTotals[2] > monthTotals[1] ? "+" : ""}{monthTotals[2] - monthTotals[1]}
             </div>
@@ -401,17 +401,17 @@ function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS,
         <div style={{ display: "flex", gap: 0, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 10 }}>
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{SUBSCRIPTIONS.length + FLAT_SUBS.length}</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>訂閱項目</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>訂閱項目</div>
           </div>
           <div style={{ width: 1, background: "rgba(255,255,255,0.12)" }} />
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: dangerCount > 0 ? "#F09595" : "#9FE1CB" }}>{dangerCount} 個</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>效益偏低</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>效益偏低</div>
           </div>
           <div style={{ width: 1, background: "rgba(255,255,255,0.12)" }} />
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>1 個</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>本週續訂</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>本週續訂</div>
           </div>
         </div>
       </div>
@@ -424,7 +424,7 @@ function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS,
       <div style={{ padding: "0 16px" }}>
         {seg === "sub" && (
           <>
-            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
               外送訂閱費用可從你的發票計算實際效益，幫助你判斷是否值得繼續訂閱。
             </div>
             {deliverySubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無外送訂閱紀錄</div>}
@@ -436,7 +436,7 @@ function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS,
         )}
         {seg === "flat" && (
           <>
-            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
               定額訂閱無法計算使用效益，AI 幫你追蹤費用變化、提醒續訂時間，讓你自主決定是否繼續。
             </div>
             {computedFlatSubs.length === 0 && <div style={{ fontSize: 13, color: "#8E8E93", textAlign: "center", padding: 20 }}>近期無定額訂閱紀錄</div>}
@@ -465,14 +465,14 @@ function BillCard({ bill }) {
         <div style={{ width: 36, height: 36, borderRadius: 9, background: urgencyBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{bill.icon}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E", marginBottom: 2 }}>{bill.name}</div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>{bill.cycle} · 上次：{bill.lastSeen}</div>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>{bill.cycle} · 上次：{bill.lastSeen}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: urgencyBg, color: urgencyColor }}>{urgencyLabel}</div>
+          <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: urgencyBg, color: urgencyColor }}>{urgencyLabel}</div>
         </div>
       </div>
       {/* AI 推估說明 */}
-      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 11, color: "#8E8E93", lineHeight: 1.5 }}>
+      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 12, color: "#8E8E93", lineHeight: 1.5 }}>
         🤖 {bill.tip}
       </div>
     </div>
@@ -487,7 +487,7 @@ function BillTrendChart() {
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "16px", margin: "0 16px 10px" }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>帳單趨勢分析</div>
-      <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 16 }}>近 3 個月各項帳單金額變化</div>
+      <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 16 }}>近 3 個月各項帳單金額變化</div>
 
       {bills.map((bill) => {
         const max = Math.max(...bill.data);
@@ -504,7 +504,7 @@ function BillTrendChart() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 {diff !== 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
                     {isRising ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
                   </span>
                 )}
@@ -522,9 +522,9 @@ function BillTrendChart() {
                   : "#E0E8F0";
                 return (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: isLatest ? 700 : 400, color: isLatest ? "#1C1C1E" : "#AEAEB2" }}>${val >= 1000 ? (val / 1000).toFixed(1) + "k" : val}</span>
+                    <span style={{ fontSize: 11, fontWeight: isLatest ? 700 : 400, color: isLatest ? "#1C1C1E" : "#AEAEB2" }}>${val >= 1000 ? (val / 1000).toFixed(1) + "k" : val}</span>
                     <div style={{ width: "100%", height: `${heightPct}px`, borderRadius: "4px 4px 0 0", background: barColor, minHeight: 4 }} />
-                    <span style={{ fontSize: 10, color: "#8E8E93" }}>{months[i]}</span>
+                    <span style={{ fontSize: 11, color: "#8E8E93" }}>{months[i]}</span>
                   </div>
                 );
               })}
@@ -535,12 +535,12 @@ function BillTrendChart() {
 
       {/* 總覽摘要 */}
       <div style={{ marginTop: 8, padding: "10px 12px", background: "#F2F2F7", borderRadius: 10 }}>
-        <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>本月帳單合計</div>
+        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 4 }}>本月帳單合計</div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 18, fontWeight: 800, color: "#1C1C1E" }}>
             ${BILLS.reduce((s, b) => s + b.amount, 0).toLocaleString()}
           </span>
-          <span style={{ fontSize: 11, color: "#A32D2D", fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: "#A32D2D", fontWeight: 600 }}>
             較上月 +${BILLS.reduce((s, b) => s + (b.amount - b.lastMonth), 0).toLocaleString()}
           </span>
         </div>
@@ -688,7 +688,7 @@ function BillsPage({ invoices = [] }) {
               <div style={{ fontWeight: 700, fontSize: 14, color: "#A32D2D" }}>
                 {urgent.map(b => b.displayName).join("、")} 繳費週期快到了！
               </div>
-              <div style={{ fontSize: 12, color: "#D85A30", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "#D85A30", lineHeight: 1.5 }}>
                 AI 推估距繳費日剩 {urgent[0].daysLeft} 天，請確認繳費狀態
               </div>
             </div>
@@ -699,9 +699,9 @@ function BillsPage({ invoices = [] }) {
       {/* 總覽 */}
       <div style={{ margin: "0 16px 10px", borderRadius: 13, background: "#fff", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>AI 從發票偵測到的固定帳單</div>
+          <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 4 }}>AI 從發票偵測到的固定帳單</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: "#1C1C1E" }}>{detectedBills.length} 項帳單週期追蹤中</div>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 4 }}>依歷史發票頻率推估，實際金額以收到帳單為準</div>
+          <div style={{ fontSize: 12, color: "#8E8E93", marginTop: 4 }}>依歷史發票頻率推估，實際金額以收到帳單為準</div>
         </div>
         <button style={{ flexShrink: 0, padding: "10px 16px", borderRadius: 12, border: "none", background: "#378ADD", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 3px 10px rgba(55,138,221,0.35)" }}>
           立即繳費
@@ -710,7 +710,7 @@ function BillsPage({ invoices = [] }) {
 
       {/* 帳單列表 */}
       <div style={{ padding: "0 16px 4px" }}>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 8 }}>
           AI 根據你的發票推估繳費週期（基準日：2026/3/25）
         </div>
         {detectedBills.length === 0
@@ -723,7 +723,7 @@ function BillsPage({ invoices = [] }) {
       {detectedBills.length > 0 && <DynamicBillTrendChart bills={detectedBills} />}
 
       <div style={{ ...S.card, background: "#F2F2F7", textAlign: "center", padding: "12px" }}>
-        <div style={{ fontSize: 12, color: "#8E8E93", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 13, color: "#8E8E93", lineHeight: 1.7 }}>
           📌 帳單資料由 AI 從發票自動偵測，若有漏偵或已不再使用，可手動管理
         </div>
       </div>
@@ -748,21 +748,21 @@ function DynamicBillCard({ bill }) {
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{bill.displayName}</span>
             {diff !== null && diff !== 0 && (
-              <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: diff > 0 ? "#FCEBEB" : "#EAF3DE", color: diff > 0 ? "#A32D2D" : "#3B6D11" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 6px", borderRadius: 5, background: diff > 0 ? "#FCEBEB" : "#EAF3DE", color: diff > 0 ? "#A32D2D" : "#3B6D11" }}>
                 {diff > 0 ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
               </span>
             )}
           </div>
-          <div style={{ fontSize: 11, color: "#8E8E93" }}>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>
             {bill.cycleLabel}繳一次 · 上次：{bill.trendData.length > 0 ? `$${bill.lastAmount?.toLocaleString()}` : "無紀錄"}
           </div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0, minWidth: 80 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: urgencyBg, color: urgencyColor, whiteSpace: "nowrap" }}>{urgencyLabel}</div>
-          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 4, whiteSpace: "nowrap" }}>預計 {bill.dueLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: urgencyBg, color: urgencyColor, whiteSpace: "nowrap" }}>{urgencyLabel}</div>
+          <div style={{ fontSize: 12, color: "#8E8E93", marginTop: 4, whiteSpace: "nowrap" }}>預計 {bill.dueLabel}</div>
         </div>
       </div>
-      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 11, color: "#8E8E93", lineHeight: 1.5 }}>
+      <div style={{ marginTop: 8, padding: "7px 10px", background: "#F8F8F8", borderRadius: 8, fontSize: 12, color: "#8E8E93", lineHeight: 1.5 }}>
         🤖 {bill.tip}
       </div>
     </div>
@@ -773,7 +773,7 @@ function DynamicBillTrendChart({ bills }) {
   return (
     <div style={{ background: "#fff", borderRadius: 14, padding: "16px", margin: "0 16px 10px" }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>帳單趨勢分析</div>
-      <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 16 }}>近6個月各項帳單金額變化</div>
+      <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 16 }}>近6個月各項帳單金額變化</div>
 
       {bills.filter(b => b.trendData.length > 0).map(bill => {
         const vals = bill.trendData.map(t => t.amount);
@@ -791,7 +791,7 @@ function DynamicBillTrendChart({ bills }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {diff !== 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: isRising ? "#A32D2D" : "#3B6D11", background: isRising ? "#FCEBEB" : "#EAF3DE", borderRadius: 5, padding: "2px 6px" }}>
                     {isRising ? `↑ +$${diff}` : `↓ -$${Math.abs(diff)}`}
                   </span>
                 )}
@@ -808,13 +808,13 @@ function DynamicBillTrendChart({ bills }) {
                 return (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                     {/* 金額標籤固定在柱子上方 */}
-                    <span style={{ fontSize: 10, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2", marginBottom: 5, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 11, fontWeight: isLast ? 700 : 400, color: isLast ? "#1C1C1E" : "#AEAEB2", marginBottom: 5, whiteSpace: "nowrap" }}>
                       {t.amount >= 1000 ? `$${(t.amount/1000).toFixed(1)}k` : `$${t.amount}`}
                     </span>
                     {/* 柱子：高度由下往上長，底部自然對齊 */}
                     <div style={{ width: "100%", height: `${h}px`, borderRadius: "4px 4px 0 0", background: isLast ? (isRising && diff !== 0 ? "#E05C5C" : bill.color) : "#E0E8F0" }} />
                     {/* 月份標籤在柱子下方 */}
-                    <span style={{ fontSize: 10, color: "#8E8E93", marginTop: 6 }}>{t.label}</span>
+                    <span style={{ fontSize: 11, color: "#8E8E93", marginTop: 6 }}>{t.label}</span>
                   </div>
                 );
               })}
@@ -883,7 +883,7 @@ function AIPanel({ tabKey, userData }) {
         <div style={{ padding: "6px 16px" }}>
           <button onClick={() => setOpen(true)} style={{ width: "100%", padding: "10px 14px", borderRadius: 22, border: "1px solid #E0E0E0", background: "#fff", fontSize: 13, color: "#8E8E93", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 14 }}>💬</span><span>問 AI 管家...</span>
-            <span style={{ marginLeft: "auto", fontSize: 11, color: "#378ADD", fontWeight: 600 }}>省錢找我</span>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: "#378ADD", fontWeight: 600 }}>省錢找我</span>
           </button>
         </div>
       ) : (
@@ -891,7 +891,7 @@ function AIPanel({ tabKey, userData }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontWeight: 700, fontSize: 14 }}>🤖 AI 管家</span>
-              <span style={{ fontSize: 10, background: "#E6F1FB", color: "#185FA5", padding: "2px 6px", borderRadius: 5, fontWeight: 600 }}>省錢顧問</span>
+              <span style={{ fontSize: 11, background: "#E6F1FB", color: "#185FA5", padding: "3px 7px", borderRadius: 5, fontWeight: 600 }}>省錢顧問</span>
             </div>
             <button onClick={() => { setOpen(false); setMessages([]); }} style={{ border: "none", background: "none", fontSize: 20, cursor: "pointer", color: "#8E8E93" }}>×</button>
           </div>
@@ -899,7 +899,7 @@ function AIPanel({ tabKey, userData }) {
             {messages.length === 0 && (
               <div style={{ textAlign: "center", padding: "10px 0" }}>
                 <div style={{ fontSize: 22, marginBottom: 4 }}>💡</div>
-                <div style={{ fontSize: 12, color: "#8E8E93", lineHeight: 1.6 }}>問我發票相關的省錢問題！</div>
+                <div style={{ fontSize: 13, color: "#8E8E93", lineHeight: 1.6 }}>問我發票相關的省錢問題！</div>
               </div>
             )}
             {messages.map((m, i) => (
@@ -914,7 +914,7 @@ function AIPanel({ tabKey, userData }) {
           </div>
           {!typing && questions.length > 0 && (
             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
-              {questions.map(q => <button key={q} onClick={() => sendQ(q)} style={{ padding: "5px 8px", borderRadius: 11, border: "1px solid #378ADD", background: "#E6F1FB", color: "#185FA5", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>{q}</button>)}
+              {questions.map(q => <button key={q} onClick={() => sendQ(q)} style={{ padding: "5px 8px", borderRadius: 11, border: "1px solid #378ADD", background: "#E6F1FB", color: "#185FA5", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>{q}</button>)}
             </div>
           )}
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -975,12 +975,12 @@ function TaskSwapModal({ task, onConfirm, onClose, userData }) {
           <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C1E" }}>更換任務</div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, color: "#8E8E93", cursor: "pointer" }}>×</button>
         </div>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 16 }}>選擇通路或商品類型，AI 幫你找對應任務</div>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 16 }}>選擇通路或商品類型，AI 幫你找對應任務</div>
 
         {/* 切換 mode */}
         <div style={{ display: "flex", background: "#F2F2F7", borderRadius: 10, padding: 2, marginBottom: 16 }}>
-          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: mode === "channel" ? "#fff" : "transparent", color: mode === "channel" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("channel"); setSelected(null); }}>選擇通路</button>
-          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, background: mode === "category" ? "#fff" : "transparent", color: mode === "category" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("category"); setSelected(null); }}>選擇商品類型</button>
+          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, background: mode === "channel" ? "#fff" : "transparent", color: mode === "channel" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("channel"); setSelected(null); }}>選擇通路</button>
+          <button style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, background: mode === "category" ? "#fff" : "transparent", color: mode === "category" ? "#1C1C1E" : "#8E8E93", transition: "all 0.2s" }} onClick={() => { setMode("category"); setSelected(null); }}>選擇商品類型</button>
         </div>
 
         {/* 選項列表 */}
@@ -996,12 +996,12 @@ function TaskSwapModal({ task, onConfirm, onClose, userData }) {
         {/* 預覽任務 */}
         {preview && (
           <div style={{ background: "#E6F1FB", borderRadius: 12, padding: "12px 14px", marginBottom: 16, border: "1px solid #B5D4F4" }}>
-            <div style={{ fontSize: 11, color: "#185FA5", fontWeight: 600, marginBottom: 6 }}>替換任務預覽</div>
+            <div style={{ fontSize: 12, color: "#185FA5", fontWeight: 600, marginBottom: 6 }}>替換任務預覽</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 4 }}>{preview.title}</div>
-            <div style={{ fontSize: 12, color: "#636366", marginBottom: 8 }}>{preview.desc}</div>
+            <div style={{ fontSize: 13, color: "#636366", marginBottom: 8 }}>{preview.desc}</div>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <span style={{ fontSize: 12, background: "#EAF3DE", color: "#3B6D11", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>獎勵 ${preview.reward}</span>
-              <span style={{ fontSize: 11, color: "#8E8E93" }}>期限 {preview.daysLeft} 天</span>
+              <span style={{ fontSize: 13, background: "#EAF3DE", color: "#3B6D11", padding: "3px 8px", borderRadius: 6, fontWeight: 600 }}>獎勵 ${preview.reward}</span>
+              <span style={{ fontSize: 12, color: "#8E8E93" }}>期限 {preview.daysLeft} 天</span>
             </div>
           </div>
         )}
@@ -1029,22 +1029,22 @@ function TaskCard({ task, joined, onJoin, onSwap }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{task.title}</span>
-            {task.urgency === "high" && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 5px", borderRadius: 5, background: "#FCEBEB", color: "#A32D2D" }}>限{task.daysLeft}天</span>}
+            {task.urgency === "high" && <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 6px", borderRadius: 5, background: "#FCEBEB", color: "#A32D2D" }}>限{task.daysLeft}天</span>}
           </div>
-          <div style={{ fontSize: 12, color: "#8E8E93" }}>{task.desc}</div>
+          <div style={{ fontSize: 13, color: "#8E8E93" }}>{task.desc}</div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: "#378ADD" }}>${task.reward}</div>
-          <div style={{ fontSize: 10, color: "#8E8E93" }}>獎勵</div>
+          <div style={{ fontSize: 11, color: "#8E8E93" }}>獎勵</div>
         </div>
       </div>
       <div style={{ height: 5, borderRadius: 3, background: "#F2F2F7", overflow: "hidden", marginBottom: 4 }}>
         <div style={{ height: "100%", borderRadius: 3, background: pct >= 100 ? "#639922" : "#378ADD", width: `${pct}%`, transition: "width 0.6s" }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8E8E93", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>
         <span>{rem}</span><span>{Math.round(pct)}% 完成</span>
       </div>
-      <div style={{ fontSize: 11, color: "#8E8E93", background: "#F8F8F8", borderRadius: 6, padding: "5px 8px", marginBottom: 8 }}>🤖 {task.basis}</div>
+      <div style={{ fontSize: 12, color: "#8E8E93", background: "#F8F8F8", borderRadius: 6, padding: "5px 8px", marginBottom: 8 }}>🤖 {task.basis}</div>
       {/* 操作按鈕：加入任務 + 更換任務 */}
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => onJoin(task.id)}
@@ -1083,12 +1083,12 @@ function RewardsPage({ autoTasks = AUTO_TASKS, user }) {
       <div style={{ margin: "10px 16px 10px", borderRadius: 13, background: "#E6F1FB", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#0C447C", marginBottom: 2 }}>🤖 AI 根據你的發票自動生成任務</div>
-          <div style={{ fontSize: 12, color: "#185FA5" }}>全部完成可得 <strong>${total}</strong> 獎勵</div>
+          <div style={{ fontSize: 13, color: "#185FA5" }}>全部完成可得 <strong>${total}</strong> 獎勵</div>
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#185FA5" }}>${total}</div>
       </div>
       <div style={{ padding: "0 16px 4px" }}>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>以下任務都是你本來就會去的店家，加入後順手省錢。不適合可以更換。</div>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 8 }}>以下任務都是你本來就會去的店家，加入後順手省錢。不適合可以更換。</div>
         {tasks.map(t => (
           <TaskCard
             key={t.id}
@@ -1126,8 +1126,8 @@ function InvoicesPage({ invoices = INVOICES, totalAmount = 75737, invoiceCount =
       </div>
       <div style={{ ...S.card, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: 9, background: "#E6F1FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📅</div>
-        <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>開獎倒數 <span style={{ color: "#378ADD" }}>21天</span></div><div style={{ fontSize: 11, color: "#8E8E93" }}>共 {invoiceCount} 張發票參與對獎</div></div>
-        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 7, background: "#E6F1FB", color: "#185FA5" }}>即將開獎</span>
+        <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>開獎倒數 <span style={{ color: "#378ADD" }}>21天</span></div><div style={{ fontSize: 12, color: "#8E8E93" }}>共 {invoiceCount} 張發票參與對獎</div></div>
+        <span style={{ fontSize: 12, fontWeight: 600, padding: "3px 8px", borderRadius: 7, background: "#E6F1FB", color: "#185FA5" }}>即將開獎</span>
       </div>
       <div style={{ padding: "0 16px 6px" }}>
         <span style={{ fontSize: 13, color: "#8E8E93" }}>近2個月 總計 </span>
@@ -1138,11 +1138,11 @@ function InvoicesPage({ invoices = INVOICES, totalAmount = 75737, invoiceCount =
           <div key={i} style={{ display: "flex", alignItems: "center", padding: "11px 14px", borderBottom: i < invoices.length - 1 ? "1px solid #F5F5F5" : "none" }}>
             <div style={{ width: 34, textAlign: "center", flexShrink: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{inv.day}</div>
-              <div style={{ fontSize: 10, color: "#8E8E93" }}>{inv.week}</div>
+              <div style={{ fontSize: 11, color: "#8E8E93" }}>{inv.week}</div>
             </div>
             <div style={{ flex: 1, paddingLeft: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{inv.shop}</div>
-              <div style={{ fontSize: 11, color: "#8E8E93" }}>{inv.type}</div>
+              <div style={{ fontSize: 12, color: "#8E8E93" }}>{inv.type}</div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: inv.highlight ? "#E24B4A" : "#1C1C1E" }}>${inv.amount.toLocaleString()}</div>
           </div>
@@ -1169,7 +1169,7 @@ function ScanPage() {
               <div key={i} style={{ position:"absolute", width:16, height:16, top:t==="0%"?-2:"auto", bottom:b==="0%"?-2:"auto", left:i%2===0?-2:"auto", right:i%2===1?-2:"auto", borderTop:t==="0%"?"3px solid #378ADD":"none", borderBottom:b==="0%"?"3px solid #378ADD":"none", borderLeft:i%2===0?"3px solid #378ADD":"none", borderRight:i%2===1?"3px solid #378ADD":"none" }} />
             ))}
           </div>
-          <div style={{ position:"absolute", bottom:10, color:"#fff", fontSize:12 }}>請對準發票QRCode</div>
+          <div style={{ position:"absolute", bottom:10, color:"#fff", fontSize:13 }}>請對準發票QRCode</div>
         </div>
         <div style={{ display:"flex", gap:8, justifyContent:"center" }}>
           {["電子發票","傳統發票"].map((t,i) => <button key={t} style={{ padding:"7px 16px", borderRadius:18, border:i===0?"2px solid #378ADD":"1px solid #E0E0E0", background:i===0?"#E6F1FB":"#fff", color:i===0?"#185FA5":"#8E8E93", fontSize:13, fontWeight:600, cursor:"pointer" }}>{t}</button>)}
@@ -1219,7 +1219,7 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
         </div>
         <div style={{ marginBottom:10 }}>
           <div style={{ fontSize:14, color:"#1D9E75", fontWeight:500 }}>Hello！{user?.phone || ""}</div>
-          <div style={{ fontSize:12, color:"#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
+          <div style={{ fontSize:13, color:"#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
         </div>
         <div style={{ display:"flex", background:"#F2F2F7", borderRadius:10, padding:"8px 0" }}>
           {[
@@ -1229,7 +1229,7 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
           ].map((s,i)=>(
             <div key={i} style={{ flex:1, textAlign:"center", borderRight:i<2?"1px solid #E8E8E8":"none" }}>
               <div style={{ fontSize:17, fontWeight:800, color:s.red?"#A32D2D":s.blue?"#185FA5":"#1C1C1E" }}>{s.value}</div>
-              <div style={{ fontSize:10, color:"#8E8E93" }}>{s.label}</div>
+              <div style={{ fontSize:11, color:"#8E8E93" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -1239,30 +1239,30 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
       <div style={{ margin:"10px 16px 0", display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
         <button onClick={()=>setTab("subscriptions")} style={{ background:"#fff", border:"1.5px solid #FAC775", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>📱</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>訂閱管理</div>
-          <div style={{ fontSize:10, color:"#854F0B", marginTop:1 }}>{(data?.deliverySubs||[]).length + (data?.flatSubs||[]).length} 個訂閱追蹤中</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1C1C1E" }}>訂閱管理</div>
+          <div style={{ fontSize:11, color:"#854F0B", marginTop:1 }}>{(data?.deliverySubs||[]).length + (data?.flatSubs||[]).length} 個訂閱追蹤中</div>
           <div style={{ fontSize:14, fontWeight:800, color: (data?.deliverySubs||[]).some(s=>s.roiStatus==="danger")?"#A32D2D":"#3B6D11", marginTop:4 }}>
             {(data?.deliverySubs||[]).some(s=>s.roiStatus==="danger") ? "有訂閱效益偏低" : "訂閱狀態良好"}
           </div>
         </button>
         <button onClick={()=>setTab("bills")} style={{ background:"#fff", border: detectedBillCount>0?"1.5px solid #F09595":"1px solid #EBEBEB", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>📋</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>帳單提醒</div>
-          <div style={{ fontSize:10, color: detectedBillCount>0?"#A32D2D":"#8E8E93", marginTop:1 }}>偵測到 {detectedBillCount||0} 筆帳單</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1C1C1E" }}>帳單提醒</div>
+          <div style={{ fontSize:11, color: detectedBillCount>0?"#A32D2D":"#8E8E93", marginTop:1 }}>偵測到 {detectedBillCount||0} 筆帳單</div>
           <div style={{ fontSize:14, fontWeight:800, color: detectedBillCount>0?"#A32D2D":"#8E8E93", marginTop:4 }}>
             {detectedBillCount>0 ? "週期即將到來" : "暫無偵測"}
           </div>
         </button>
         <button onClick={()=>setTab("rewards")} style={{ background:"#fff", border:"1px solid #B5D4F4", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>🎯</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>AI 任務</div>
-          <div style={{ fontSize:10, color:"#378ADD", marginTop:1 }}>{(autoTasks||[]).length} 個任務等你</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1C1C1E" }}>AI 任務</div>
+          <div style={{ fontSize:11, color:"#378ADD", marginTop:1 }}>{(autoTasks||[]).length} 個任務等你</div>
           <div style={{ fontSize:14, fontWeight:800, color:"#185FA5", marginTop:4 }}>最高 ${Math.max(...(autoTasks||[{reward:0}]).map(t=>t.reward))} 獎勵</div>
         </button>
         <button onClick={()=>setTab("invoices")} style={{ background:"#fff", border:"1px solid #EBEBEB", borderRadius:13, padding:"12px", cursor:"pointer", textAlign:"left" }}>
           <div style={{ fontSize:16, marginBottom:3 }}>🧾</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"#1C1C1E" }}>我的發票</div>
-          <div style={{ fontSize:10, color:"#8E8E93", marginTop:1 }}>{invoiceCount||0} 張已收錄</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1C1C1E" }}>我的發票</div>
+          <div style={{ fontSize:11, color:"#8E8E93", marginTop:1 }}>{invoiceCount||0} 張已收錄</div>
           <div style={{ fontSize:14, fontWeight:800, color:"#8E8E93", marginTop:4 }}>近6個月紀錄</div>
         </button>
       </div>
@@ -1271,12 +1271,12 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
       <div style={{ padding:"10px 16px 0" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <span style={{ fontSize:14, fontWeight:700 }}>🤖 AI 洞察</span>
-          <span style={{ fontSize:11, color:"#8E8E93" }}>{idx+1} / {INSIGHTS.length}</span>
+          <span style={{ fontSize:12, color:"#8E8E93" }}>{idx+1} / {INSIGHTS.length}</span>
         </div>
         <div style={{ borderRadius:13, background:"#1C1C1E", padding:14, userSelect:"none", minHeight:88 }}>
           <p style={{ color:"#fff", fontSize:13, lineHeight:1.6, margin:"0 0 10px" }}>{INSIGHTS[idx].text}</p>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <button onClick={()=>setTab(INSIGHTS[idx].tab)} style={{ padding:"5px 11px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", fontSize:11, fontWeight:600, cursor:"pointer" }}>⚡ {INSIGHTS[idx].action}</button>
+            <button onClick={()=>setTab(INSIGHTS[idx].tab)} style={{ padding:"5px 11px", borderRadius:7, border:"none", background:"rgba(255,255,255,0.15)", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>⚡ {INSIGHTS[idx].action}</button>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
               <button onClick={prev} style={{ width:28, height:28, borderRadius:99, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>‹</button>
               <button onClick={next} style={{ width:28, height:28, borderRadius:99, background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>›</button>
@@ -1289,7 +1289,7 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
       <div style={{ ...S.card, marginTop:10 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
           <span style={{ fontSize:14, fontWeight:700 }}>消費分析</span>
-          <button style={{ border:"none", background:"none", color:"#378ADD", fontSize:12, cursor:"pointer" }}>詳細 →</button>
+          <button style={{ border:"none", background:"none", color:"#378ADD", fontSize:13, cursor:"pointer" }}>詳細 →</button>
         </div>
         {/* 月趨勢柱狀圖 */}
         {monthlyTrend && monthlyTrend.length > 0 && (() => {
@@ -1305,7 +1305,7 @@ function HomePage({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detec
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize:11, color:"#6C6C70" }}>{latest.month} 消費 <strong style={{ color:"#1C1C1E"}}>${latest.amount.toLocaleString()}</strong>・共 {invoiceCount} 張發票</div>
+              <div style={{ fontSize:12, color:"#6C6C70" }}>{latest.month} 消費 <strong style={{ color:"#1C1C1E"}}>${latest.amount.toLocaleString()}</strong>・共 {invoiceCount} 張發票</div>
             </div>
           );
         })()}
@@ -1352,7 +1352,7 @@ function LoginPage({ onLogin }) {
       {/* 輸入卡片 */}
       <div style={{ background: "#fff", borderRadius: 20, padding: "28px 24px", width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: "#1C1C1E", marginBottom: 6 }}>手機號碼登入</div>
-        <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 20 }}>輸入你的手機號碼，查看個人發票分析</div>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 20 }}>輸入你的手機號碼，查看個人發票分析</div>
 
         <div style={{ position: "relative", marginBottom: 16 }}>
           <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "#8E8E93", pointerEvents: "none", zIndex: 1 }}>📱</div>
@@ -1367,7 +1367,7 @@ function LoginPage({ onLogin }) {
         </div>
 
         {error && (
-          <div style={{ fontSize: 12, color: "#FF3B30", marginBottom: 12, padding: "8px 12px", background: "#FFF2F1", borderRadius: 8 }}>
+          <div style={{ fontSize: 13, color: "#FF3B30", marginBottom: 12, padding: "8px 12px", background: "#FFF2F1", borderRadius: 8 }}>
             ⚠️ {error}
           </div>
         )}
@@ -1380,7 +1380,7 @@ function LoginPage({ onLogin }) {
         </button>
       </div>
 
-      <div style={{ marginTop: 24, fontSize: 11, color: "#AEAEB2", textAlign: "center", lineHeight: 1.6 }}>
+      <div style={{ marginTop: 24, fontSize: 12, color: "#AEAEB2", textAlign: "center", lineHeight: 1.6 }}>
         此為內部測試版本<br />© 麻布數據科技股份有限公司
       </div>
     </div>
