@@ -357,7 +357,7 @@ def main():
 
     print("推送到 GitHub...")
     os.chdir(WORKSPACE)
-    subprocess.run(["git", "add", "reports/audience_dashboard_v2.html"], check=True)
+    subprocess.run(["git", "add", "docs/audience_dashboard.html"], check=True)
     subprocess.run(["git", "commit", "-m", f"chore: 每日更新 audience dashboard ({update_time[:10]})"], check=True)
     subprocess.run(["git", "push"], check=True)
     print(f"✅ 完成！{update_time}")
