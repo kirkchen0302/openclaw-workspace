@@ -1,0 +1,46 @@
+name: Deploy invoice-prototype to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'invoice-prototype/**'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: INVOICE_BFD85
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: invoice-prototype/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: invoice-prototype
+
+      - name: Build
+        run: npm run build
+        working-directory: invoice-prototype
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE }}
+          channelId: live
+          projectId: pm-prototype-a75ce
+          entryPoint: invoice-prototype
