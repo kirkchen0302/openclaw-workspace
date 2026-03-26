@@ -303,8 +303,8 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
       .filter(inv => shopKeywords.some(k => inv.shop.includes(k)))
       .sort((a, b) => (b.yearMonth || "").localeCompare(a.yearMonth || ""));
     if (matched.length === 0) return null;
-    // 取最近一筆的 yearMonth，往後推1個月
-    const ym = matched[0].yearMonth; // e.g. "2026-03"
+    // 取最近一筆的 yearMonth，取其日期推算下次續訂
+    const ym = matched[0].yearMonth; // e.g. "2026-02"
     if (!ym) return null;
     const [y, m] = ym.split("-").map(Number);
     const nextM = m === 12 ? 1 : m + 1;
@@ -312,12 +312,25 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
     return `${nextY}/${nextM}月`;
   }
 
+  // 從 invoices 找某訂閱最後一筆的日期，取「日」作為每月續訂日
+  function calcRenewDay(shopKeywords) {
+    const matched = invoices
+      .filter(inv => shopKeywords.some(k => inv.shop.includes(k)) && inv.issuedDate)
+      .sort((a, b) => (b.issuedDate || "").localeCompare(a.issuedDate || ""));
+    if (matched.length > 0 && matched[0].issuedDate) {
+      const day = parseInt(matched[0].issuedDate.split("-")[2], 10);
+      if (day > 0 && day <= 31) return day;
+    }
+    // fallback：用 yearMonth 的月底前幾天估算（不返回固定值）
+    return null;
+  }
+
   // 定額訂閱：只用 RTDB 傳進來的 flatSubs，沒資料就空陣列（不從 invoices 重算）
   const computedFlatSubs = useMemo(() => {
     if (!flatSubs || flatSubs.length === 0) return [];
     return flatSubs.map(sub => ({
       ...sub,
-      renewDay: sub.renewDay || calcNextRenew([sub.name]) || "—",
+      renewDay: sub.renewDay ?? "—",
       icon: sub.icon || (sub.name === "Apple" ? "☁️" : sub.name === "Nintendo" ? "🎮" : sub.name === "Netflix" ? "🎬" : sub.name === "Disney+" ? "🏰" : sub.name === "YouTube" ? "▶️" : "📱"),
     }));
   }, [flatSubs]);
