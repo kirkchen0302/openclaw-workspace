@@ -490,6 +490,34 @@ groups.forEach(g => {
   </div>`;
 });
 
+function positionTooltip(tooltip, e) {
+  const gap = 14;
+  const margin = 8;
+  const tw = tooltip.offsetWidth || 180;
+  const th = tooltip.offsetHeight || 120;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let left = e.clientX + gap;
+  let top  = e.clientY - 10;
+
+  // 右邊超出 → 改成顯示在游標左側
+  if (left + tw + margin > vw) {
+    left = e.clientX - tw - gap;
+  }
+  // 左邊超出（保底）
+  if (left < margin) left = margin;
+
+  // 下方超出 → 往上移
+  if (top + th + margin > vh) {
+    top = vh - th - margin;
+  }
+  if (top < margin) top = margin;
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top  = top  + 'px';
+}
+
 function buildLineChart() {
   const svg = document.getElementById('lineChart');
   const W = 800, H = 320;
@@ -569,8 +597,7 @@ function buildLineChart() {
       });
       tooltip.innerHTML = html;
       tooltip.classList.add('visible');
-      tooltip.style.left = (e.clientX + 14) + 'px';
-      tooltip.style.top = (e.clientY - 10) + 'px';
+      positionTooltip(tooltip, e);
     });
     rect.addEventListener('mouseleave', () => {
       tooltip.classList.remove('visible');
@@ -579,8 +606,7 @@ function buildLineChart() {
 
   document.addEventListener('mousemove', e => {
     if (tooltip.classList.contains('visible')) {
-      tooltip.style.left = (e.clientX + 14) + 'px';
-      tooltip.style.top = (e.clientY - 10) + 'px';
+      positionTooltip(tooltip, e);
     }
   });
 }
