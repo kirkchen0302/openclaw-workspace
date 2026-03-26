@@ -338,19 +338,20 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
   // 計算近3個月訂閱總支出
   // deliverySubs.months 格式：[{m, orders, feeWaived}]，取 fee（月費固定）
   // flatSubs.months 格式：[number, number, number]
-  // 取 deliverySubs months 的最後3個月標籤（各訂閱取聯集，最多3個）
+  // 取 deliverySubs months 的月份標籤（各訂閱取聯集，有幾個顯示幾個）
   const subMonthLabels = (() => {
     const allLabels = deliverySubs.flatMap(s => (s.months || []).map(m => m.m));
     const unique = [...new Set(allLabels)];
-    return unique.slice(-3).length === 3 ? unique.slice(-3) : ["", "", "本月"].slice(3 - unique.slice(-3).length);
+    return unique.length > 0 ? unique : computedFlatSubs.length > 0 ? [""] : [];
   })();
+  const monthCount = Math.max(subMonthLabels.length, 1);
 
   const getFlatFee = (sub, idx) => {
     const m = sub.months?.[idx];
     return typeof m === "number" ? m : sub.fee || 0;
   };
-  // delivery fee 固定月費 × 3個月；flat fee 按月份索引取
-  const monthTotals = [0, 1, 2].map(idx =>
+  // delivery fee 固定月費；flat fee 按月份索引取
+  const monthTotals = Array.from({ length: monthCount }, (_, idx) =>
     deliverySubs.reduce((s, sub) => s + (sub.fee || 0), 0) +
     computedFlatSubs.reduce((s, sub) => s + getFlatFee(sub, idx), 0)
   );
