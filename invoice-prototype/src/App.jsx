@@ -195,21 +195,26 @@ function RoiCard({ sub, expanded, onToggle }) {
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
             <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 7px", borderRadius: 6, background: statusBg, color: statusColor }}>{sub.roiLabel}</span>
           </div>
-          <div style={{ fontSize: 12, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂 · 本月省運費 ${latest.feeWaived}</div>
+          <div style={{ fontSize: 12, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂 · 本月平台總花費 ${latest.totalSpend ?? (sub.fee + (latest.extraSpend || 0))}</div>
         </div>
         <span style={{ color: "#C7C7CC", fontSize: 13 }}>{expanded ? "▲" : "▼"}</span>
       </div>
       {expanded && (
         <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
           <div style={{ marginTop: 12, marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>近3個月：省運費 vs 月費</div>
+            <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>近幾個月消費明細</div>
             <div style={{ display: "flex", gap: 8 }}>
               {sub.months.map((m, i) => {
                 const r = m.feeWaived - sub.fee;
+                const extra = m.extraSpend ?? 0;
+                const total = m.totalSpend ?? (sub.fee + extra);
                 return (
                   <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "8px", textAlign: "center" }}>
                     <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>{m.m}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: r >= 0 ? "#3B6D11" : "#A32D2D" }}>{r >= 0 ? "+" : ""}{r}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1C1C1E" }}>月費 ${sub.fee}</div>
+                    {extra > 0 && <div style={{ fontSize: 11, color: "#636366" }}>額外 +${extra}</div>}
+                    <div style={{ fontSize: 11, color: "#378ADD", fontWeight: 600 }}>總花費 ${total}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: r >= 0 ? "#3B6D11" : "#A32D2D", marginTop: 2 }}>省運費 {r >= 0 ? "+" : ""}{r}</div>
                     <div style={{ fontSize: 11, color: "#8E8E93" }}>{m.orders}次外送</div>
                   </div>
                 );
