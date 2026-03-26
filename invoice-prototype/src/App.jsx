@@ -312,48 +312,15 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
     return `${nextY}/${nextM}月`;
   }
 
-  // 定額訂閱：優先用 RTDB 傳進來的 flatSubs（已依用戶真實發票計算）
-  // 只有 flatSubs 為空時才從 invoices 重算（fallback）
+  // 定額訂閱：只用 RTDB 傳進來的 flatSubs，沒資料就空陣列（不從 invoices 重算）
   const computedFlatSubs = useMemo(() => {
-    // RTDB 有資料就直接用，並補上 renewDay
-    if (flatSubs && flatSubs.length > 0) {
-      return flatSubs.map(sub => ({
-        ...sub,
-        renewDay: sub.renewDay || calcNextRenew([sub.name]) || "—",
-        icon: sub.icon || (sub.name === "Apple" ? "☁️" : sub.name === "Nintendo" ? "🎮" : sub.name === "Netflix" ? "🎬" : sub.name === "Disney+" ? "🏰" : sub.name === "YouTube" ? "▶️" : "📱"),
-      }));
-    }
-
-    // Fallback：從 invoices 計算
-    const FLAT_KEYWORDS = {
-      "Google":   ["Google"], "Apple":   ["Apple"], "Nintendo": ["Nintendo"],
-      "YouTube":  ["YouTube","Youtube"], "Netflix": ["Netflix"], "Disney+": ["Disney"],
-    };
-    const result = [];
-    const configList = subConfig?.flatSubs || Object.keys(FLAT_KEYWORDS);
-    for (const name of configList) {
-      const keywords = FLAT_KEYWORDS[name] || [name];
-      const matched = invoices.filter(inv => keywords.some(k => inv.shop.includes(k)));
-      if (matched.length === 0) continue;
-      const byMonth = {};
-      for (const inv of matched) {
-        const ym = inv.yearMonth || "";
-        if (!byMonth[ym]) byMonth[ym] = inv.amount;
-      }
-      const sorted = Object.keys(byMonth).sort();
-      const fees = sorted.map(k => byMonth[k]);
-      const recent = fees.slice(-3);
-      while (recent.length < 3) recent.unshift(recent[0] || 0);
-      const nextRenew = calcNextRenew(keywords);
-      result.push({
-        id: name.toLowerCase().replace(/[^a-z]/g, ""), name,
-        icon: name === "Apple" ? "☁️" : name === "Nintendo" ? "🎮" : name === "Netflix" ? "🎬" : name === "Disney+" ? "🏰" : name === "YouTube" ? "▶️" : "📱",
-        fee: recent[2] || 0, renewDay: nextRenew || "—",
-        trend: recent[2] > recent[1] ? "up" : "stable", months: recent,
-      });
-    }
-    return result;
-  }, [invoices, subConfig, flatSubs]);
+    if (!flatSubs || flatSubs.length === 0) return [];
+    return flatSubs.map(sub => ({
+      ...sub,
+      renewDay: sub.renewDay || calcNextRenew([sub.name]) || "—",
+      icon: sub.icon || (sub.name === "Apple" ? "☁️" : sub.name === "Nintendo" ? "🎮" : sub.name === "Netflix" ? "🎬" : sub.name === "Disney+" ? "🏰" : sub.name === "YouTube" ? "▶️" : "📱"),
+    }));
+  }, [flatSubs]);
 
   // 計算近3個月訂閱總支出
   // deliverySubs.months 格式：[{m, orders, feeWaived}]，取 fee（月費固定）
@@ -1406,8 +1373,8 @@ export default function App() {
   const livePieData      = user?.data?.pieData        || PIE_DATA;
   const liveTotalAmt     = user?.data?.totalAmount    || 75737;
   const liveInvCount     = user?.data?.invoiceCount   || 63;
-  const liveDeliverySubs  = user?.data?.deliverySubs   ?? [];
-  const liveFlatSubs      = user?.data?.flatSubs       ?? [];
+  const liveDeliverySubs  = Array.isArray(user?.data?.deliverySubs) ? user.data.deliverySubs : [];
+  const liveFlatSubs      = Array.isArray(user?.data?.flatSubs)      ? user.data.flatSubs      : [];
   const liveAutoTasks     = user?.data?.autoTasks      ?? AUTO_TASKS;
   const liveMonthlyTrend  = user?.data?.monthlyTrend  || null;
 
