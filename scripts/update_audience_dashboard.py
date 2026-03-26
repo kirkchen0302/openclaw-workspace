@@ -49,8 +49,8 @@ WITH latest_status AS (
 member_snapshot AS (
   SELECT ls.member_hk,
     MAX(sa.platform) AS platform,
-    MAX(CASE WHEN sa.created_date BETWEEN DATE_SUB('{SNAPSHOT_DATE}', INTERVAL 30 DAY)
-                                      AND DATE('{SNAPSHOT_DATE}')
+    MAX(CASE WHEN sa.created_date >= DATE_SUB('{SNAPSHOT_DATE}', INTERVAL 30 DAY)
+                  AND sa.created_date < '{SNAPSHOT_DATE}'
              THEN sa.created_date END) AS last_active_before_snapshot
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
@@ -132,8 +132,8 @@ WITH latest_status AS (
 member_snapshot AS (
   SELECT ls.member_hk,
     MAX(sa.platform) AS platform,
-    MAX(CASE WHEN sa.created_date BETWEEN DATE_SUB('{SNAPSHOT_DATE}', INTERVAL 30 DAY)
-                                      AND DATE('{SNAPSHOT_DATE}')
+    MAX(CASE WHEN sa.created_date >= DATE_SUB('{SNAPSHOT_DATE}', INTERVAL 30 DAY)
+                  AND sa.created_date < '{SNAPSHOT_DATE}'
              THEN sa.created_date END) AS last_active_before_snapshot
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
