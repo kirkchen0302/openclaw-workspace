@@ -338,17 +338,25 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
   // 計算近3個月訂閱總支出
   // deliverySubs.months 格式：[{m, orders, feeWaived}]，取 fee（月費固定）
   // flatSubs.months 格式：[number, number, number]
-  const getDeliveryFee = (sub) => sub.fee || 0;
+  // 取 deliverySubs months 的最後3個月標籤（各訂閱取聯集，最多3個）
+  const subMonthLabels = (() => {
+    const allLabels = deliverySubs.flatMap(s => (s.months || []).map(m => m.m));
+    const unique = [...new Set(allLabels)];
+    return unique.slice(-3).length === 3 ? unique.slice(-3) : ["", "", "本月"].slice(3 - unique.slice(-3).length);
+  })();
+
   const getFlatFee = (sub, idx) => {
     const m = sub.months?.[idx];
     return typeof m === "number" ? m : sub.fee || 0;
   };
+  // delivery fee 固定月費 × 3個月；flat fee 按月份索引取
   const monthTotals = [0, 1, 2].map(idx =>
-    deliverySubs.reduce((s, sub) => s + getDeliveryFee(sub), 0) +
+    deliverySubs.reduce((s, sub) => s + (sub.fee || 0), 0) +
     computedFlatSubs.reduce((s, sub) => s + getFlatFee(sub, idx), 0)
   );
   const maxT = Math.max(...monthTotals, 1);
   const dangerCount = deliverySubs.filter(x => x.roiStatus === "danger").length;
+  const totalSubCount = deliverySubs.length + computedFlatSubs.length;
 
   return (
     <div>
@@ -371,7 +379,7 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, marginBottom: 8 }}>
-          {["12月", "1月", "2月"].map((m, i) => (
+          {subMonthLabels.map((m, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
               <div style={{ width: "100%", borderRadius: "3px 3px 0 0", background: i === 2 ? (monthTotals[2] > monthTotals[1] ? "#F09595" : "#5DCAA5") : "rgba(255,255,255,0.2)", height: `${(monthTotals[i] / maxT) * 32}px` }} />
               <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{m}</span>
@@ -380,7 +388,7 @@ function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) 
         </div>
         <div style={{ display: "flex", gap: 0, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 10 }}>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{SUBSCRIPTIONS.length + FLAT_SUBS.length}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{totalSubCount}</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>訂閱項目</div>
           </div>
           <div style={{ width: 1, background: "rgba(255,255,255,0.12)" }} />
