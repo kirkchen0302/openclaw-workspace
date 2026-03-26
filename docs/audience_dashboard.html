@@ -48,7 +48,7 @@ td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
 <div class="header">
   <h1>受眾回訪分析 Dashboard</h1>
   <p class="sub">追蹤四群用戶自 2026-03-01 起的每日回訪（快照基準：2026-03-22）</p>
-  <p class="update-time">資料更新時間：2026-03-26 19:00 (Asia/Taipei)</p>
+  <p class="update-time">資料更新時間：2026-03-26 19:06 (Asia/Taipei)</p>
 </div>
 <div class="section-title">各群總覽</div>
 <div class="grid4" id="kpiGrid"></div>
@@ -98,7 +98,7 @@ const legend=document.getElementById('chartLegend');
 groups.forEach(g=>legend.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${g.color}"></div>${g.label}</div>`);
 function buildChart(){
   const svg=document.getElementById('lineChart');
-  const W=800,H=320,padL=70,padR=20,padT=20,padB=50,cW=W-padL-padR,cH=H-padT-padB;
+  const W=800,H=320,padL=70,padR=40,padT=20,padB=50,cW=W-padL-padR,cH=H-padT-padB;
   const keys=['ios_active_30d','ios_inactive_30d','android_active_30d','android_inactive_30d'];
   const allVals=trend.flatMap(d=>keys.map(k=>d[k]||0));
   const maxV=Math.max(...allVals,1),xStep=cW/Math.max(trend.length-1,1);
@@ -114,7 +114,7 @@ function buildChart(){
   svg.innerHTML=s;
   const tooltip=document.getElementById('tooltip');
   svg.querySelectorAll('circle').forEach(dot=>{
-    dot.addEventListener('mousemove',e=>{const grp=groups.find(g=>g.group_name===dot.dataset.group);tooltip.innerHTML=`<div style="color:${grp?.color}">${grp?.label}</div><div>${dot.dataset.date}</div><div style="font-size:1rem;font-weight:700">${Number(dot.dataset.val).toLocaleString()} 人</div>`;tooltip.style.opacity='1';tooltip.style.left=(e.clientX+12)+'px';tooltip.style.top=(e.clientY-40)+'px';});
+    dot.addEventListener('mousemove',e=>{const grp=groups.find(g=>g.group_name===dot.dataset.group);tooltip.innerHTML=`<div style="color:${grp?.color}">${grp?.label}</div><div>${dot.dataset.date}</div><div style="font-size:1rem;font-weight:700">${Number(dot.dataset.val).toLocaleString()} 人</div>`;tooltip.style.opacity='1';const tw=tooltip.offsetWidth||180,th=tooltip.offsetHeight||80,vw=window.innerWidth,vh=window.innerHeight,tx=e.clientX+12+tw>vw?e.clientX-tw-12:e.clientX+12,ty=e.clientY-40<0?e.clientY+12:e.clientY+40+th>vh?e.clientY-th-8:e.clientY-40;tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';});
     dot.addEventListener('mouseleave',()=>tooltip.style.opacity='0');
   });
 }
