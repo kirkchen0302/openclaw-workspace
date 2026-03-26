@@ -37,12 +37,17 @@
 
 ### audience_dashboard（受眾回訪分析）
 - **檔案**：`docs/audience_dashboard.html`、`docs/update_dashboard.py`
+- **定義文件**：`docs/DEFINITIONS.md`
 - **每日更新**：跑 `update_dashboard.py`，自動 git push 到 GitHub Pages
-- **快照基準**：2026-03-22（固定）
-- **趨勢起始**：2026-03-01
+- **快照基準**：2026-03-22（固定）；趨勢起始：2026-03-01
 - **四群**：iOS 活躍/未活躍 × Android 活躍/未活躍（以快照基準前 30 天 session_start 判斷）
 - **BQ 專案**：`production-379804`
-- **修正紀錄（2026-03-26）**：919 判斷從 barcode 改為 `mof_status = 'INACCURATE_AVAILABILITY'`
+
+**⚠️ Python template 注意事項**：
+- HTML template 用 `.replace()` 注入資料，**不是 f-string**
+- template 內的 JS 大括號必須是單層 `{` `}`，不能用 `{{` `}}`
+- placeholder 格式：`{groups_json}` `{trend_json}` `{update_time}` `{TREND_START}` `{SNAPSHOT_DATE}`
+- 每次改 template 後務必確認 `{{` 數量為 0：`grep -c '{{' docs/audience_dashboard.html`
 
 ### invoice-prototype（發票存摺 App Prototype）
 - **URL**：https://pm-prototype-a75ce.web.app
