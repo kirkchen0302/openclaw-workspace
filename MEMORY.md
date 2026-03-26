@@ -12,12 +12,20 @@
 
 ### 919 載具（手機載具驗證失敗）
 - **意義**：財政部回應代碼 919，該會員手機載具驗證碼錯誤，無法同步發票。
-- **正確 BQ 判斷**：
+- **`is_active`**：載具條碼是否存在，`FALSE` = 已刪除，不算 919
+- **`mof_status`**：sat__carrier 有多筆歷史，需取最新一筆（ROW_NUMBER + effective_from DESC）
+- **正確 BQ 判斷（最終版）**：
   ```sql
-  JOIN `production-379804.intermediate.sat__carrier` c ON lmc.carrier_hk = c.carrier_hk
-  WHERE c.mof_status = 'INACCURATE_AVAILABILITY'
+  JOIN (
+    SELECT carrier_hk, is_active, mof_status,
+      ROW_NUMBER() OVER (PARTITION BY carrier_hk ORDER BY effective_from DESC) AS rn
+    FROM `production-379804.intermediate.sat__carrier`
+  ) c ON lmc.carrier_hk = c.carrier_hk
+  WHERE c.rn = 1
+    AND c.is_active = TRUE
+    AND c.mof_status = 'INACCURATE_AVAILABILITY'
   ```
-- ❌ 舊錯誤寫法：`hub__carrier.barcode LIKE '/%'`（不代表財政部驗證失敗）
+- ❌ 舊錯誤：`barcode LIKE '/%'`、沒取最新一筆、`is_active = FALSE`
 
 ### 活躍使用者
 - **定義**：有 `session_start` event 即視為活躍，不參考其他 event
