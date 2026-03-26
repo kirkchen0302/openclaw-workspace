@@ -283,7 +283,7 @@ function FlatSubCard({ sub, expanded, onToggle }) {
   );
 }
 
-function SubscriptionsPage({ deliverySubs = SUBSCRIPTIONS, flatSubs = FLAT_SUBS, invoices = [] }) {
+function SubscriptionsPage({ deliverySubs = [], flatSubs = [], invoices = [] }) {
   const [seg, setSeg] = useState("sub");
   const [expSub, setExpSub] = useState(deliverySubs[0]?.id || "");
   const [expFlat, setExpFlat] = useState(flatSubs[0]?.id || "");
@@ -1406,9 +1406,9 @@ export default function App() {
   const livePieData      = user?.data?.pieData        || PIE_DATA;
   const liveTotalAmt     = user?.data?.totalAmount    || 75737;
   const liveInvCount     = user?.data?.invoiceCount   || 63;
-  const liveDeliverySubs  = user?.data?.deliverySubs   || SUBSCRIPTIONS;
-  const liveFlatSubs      = user?.data?.flatSubs       || FLAT_SUBS;
-  const liveAutoTasks     = user?.data?.autoTasks      || AUTO_TASKS;
+  const liveDeliverySubs  = user?.data?.deliverySubs   ?? [];
+  const liveFlatSubs      = user?.data?.flatSubs       ?? [];
+  const liveAutoTasks     = user?.data?.autoTasks      ?? AUTO_TASKS;
   const liveMonthlyTrend  = user?.data?.monthlyTrend  || null;
 
   // 計算帳單偵測數（給 HomePage 用）
