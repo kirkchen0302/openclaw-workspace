@@ -99,8 +99,8 @@ returned AS (
 is_919 AS (
   SELECT DISTINCT lmc.member_hk
   FROM `{BQ_PROJECT}.base_marts.base__link__member_carrier` lmc
-  JOIN `{BQ_PROJECT}.intermediate.hub__carrier` hc ON lmc.carrier_hk = hc.carrier_hk
-  WHERE hc.barcode LIKE '/%'
+  JOIN `{BQ_PROJECT}.intermediate.sat__carrier` c ON lmc.carrier_hk = c.carrier_hk
+  WHERE c.mof_status = 'INACCURATE_AVAILABILITY'
 )
 SELECT g.grp,
   COUNT(DISTINCT g.member_hk) AS total,
