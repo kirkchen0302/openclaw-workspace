@@ -11,8 +11,9 @@ from google.auth.transport.requests import Request
 from google.cloud import bigquery
 
 WORKSPACE = os.path.expanduser("~/.openclaw/workspace")
-SNAPSHOT_DATE = "2026-03-14"
-REPORT_PATH = f"{WORKSPACE}/reports/audience_dashboard_v2.html"
+SNAPSHOT_DATE = "2026-03-22"
+TREND_START = "2026-03-01"
+REPORT_PATH = f"{WORKSPACE}/docs/audience_dashboard.html"
 BQ_PROJECT = "production-379804"
 
 LABELS = {
@@ -92,7 +93,7 @@ returned AS (
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
     ON ls.session_hk = sa.session_hk
-  WHERE sa.created_date >= '2026-03-15'
+  WHERE sa.created_date > '{SNAPSHOT_DATE}'
 ),
 is_919 AS (
   SELECT DISTINCT lmc.member_hk
@@ -157,7 +158,7 @@ daily_ret AS (
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
     ON ls.session_hk = sa.session_hk
-  WHERE sa.created_date BETWEEN '2026-03-15' AND CURRENT_DATE('Asia/Taipei')
+  WHERE sa.created_date BETWEEN '{TREND_START}' AND CURRENT_DATE('Asia/Taipei')
 )
 SELECT dr.created_date AS date,
   COUNT(DISTINCT CASE WHEN g.grp = 'ios_active_30d' THEN g.member_hk END) AS ios_active_30d,
@@ -219,12 +220,12 @@ td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
 <body>
 <div class="header">
   <h1>受眾回訪分析 Dashboard</h1>
-  <p class="sub">四群用戶自 2026-03-15（快照基準：3/14）起的每日回訪追蹤</p>
+  <p class="sub">四群用戶自 2026-03-01 起的每日回訪追蹤（快照基準：3/22）</p>
   <p class="update-time">資料更新時間：{update_time}</p>
 </div>
 <div class="section-title">各群總覽</div>
 <div class="grid4" id="kpiGrid"></div>
-<div class="section-title">每日回訪人數趨勢（3/15 起）</div>
+<div class="section-title">每日回訪人數趨勢（3/1 起）</div>
 <div class="chart-wrap">
   <div class="chart-legend" id="chartLegend"></div>
   <svg class="line-chart" id="lineChart" viewBox="0 0 800 320"></svg>
@@ -355,7 +356,7 @@ def main():
 
     print("推送到 GitHub...")
     os.chdir(WORKSPACE)
-    subprocess.run(["git", "add", "reports/audience_dashboard_v2.html"], check=True)
+    subprocess.run(["git", "add", "docs/audience_dashboard.html"], check=True)
     subprocess.run(["git", "commit", "-m", f"chore: 每日更新 audience dashboard ({update_time[:10]})"], check=True)
     subprocess.run(["git", "push"], check=True)
     print(f"✅ 完成！{update_time}")
