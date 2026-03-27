@@ -48,7 +48,7 @@ td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
 <div class="header">
   <h1>受眾回訪分析 Dashboard</h1>
   <p class="sub">四群用戶回訪追蹤（快照基準：2026-03-22｜已/未回訪：2026-03-25 開獎日後是否開啟 App）</p>
-  <p class="update-time">資料更新時間：2026-03-27 14:51 (Asia/Taipei)</p>
+  <p class="update-time">資料更新時間：2026-03-27 15:00 (Asia/Taipei)</p>
 </div>
 <div class="section-title">各群總覽</div>
 <div class="grid4" id="kpiGrid"></div>
@@ -105,7 +105,7 @@ function buildChart(){
   const yScale=v=>padT+cH-(v/maxV)*cH,xScale=i=>padL+i*xStep;
   let s='';
   for(let i=0;i<=4;i++){const v=maxV/4*i,y=yScale(v);s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/><text x="${padL-6}" y="${y+4}" fill="#64748B" font-size="11" text-anchor="end">${v>=1e4?(v/1e4).toFixed(0)+'萬':v.toFixed(0)}</text>`;}
-  trend.forEach((d,i)=>{const x=xScale(i),lbl=d.date.slice(5).replace('-','/');s+=`<text x="${x}" y="${H-padB+20}" fill="#64748B" font-size="11" text-anchor="middle">${lbl}</text><line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="#334155" stroke-width="0.5"/>`;} );
+  trend.forEach((d,i)=>{const x=xScale(i),lbl=d.date.slice(5).replace('-','/');s+=`<text x="${x}" y="${H-padB+16}" fill="#64748B" font-size="9" text-anchor="end" transform="rotate(-45,${x},${H-padB+16})">${lbl}</text><line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="#334155" stroke-width="0.5"/>`;} );
   groups.forEach(g=>{
     const pts=trend.map((d,i)=>`${xScale(i)},${yScale(d[g.group_name]||0)}`).join(' ');
     s+=`<polyline points="${pts}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
@@ -128,10 +128,7 @@ const totals={ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_i
   row.innerHTML=`<td>${d.date}</td><td>${(d.ios_active_30d||0).toLocaleString()}</td><td>${(d.ios_inactive_30d||0).toLocaleString()}</td><td>${(d.android_active_30d||0).toLocaleString()}</td><td>${(d.android_inactive_30d||0).toLocaleString()}</td><td style="font-weight:700">${tot.toLocaleString()}</td>`;
   tbody.appendChild(row);
 });
-const totRow=document.createElement('tr');totRow.style.background='#1a2744';totRow.style.fontWeight='700';
-const totAll=Object.values(totals).reduce((s,v)=>s+v,0);
-totRow.innerHTML=`<td style="color:var(--text)">累計合計</td><td>${totals.ios_active_30d.toLocaleString()}</td><td>${totals.ios_inactive_30d.toLocaleString()}</td><td>${totals.android_active_30d.toLocaleString()}</td><td>${totals.android_inactive_30d.toLocaleString()}</td><td style="color:#60A5FA">${totAll.toLocaleString()}</td>`;
-tbody.appendChild(totRow);
+
 </script>
 </body>
 </html>
