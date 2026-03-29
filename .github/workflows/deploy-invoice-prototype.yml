@@ -37,6 +37,11 @@ jobs:
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}
 
+      - name: Inject Firebase API key into static HTML dashboards
+        run: |
+          sed -i "s|__FIREBASE_API_KEY__|${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}|g" \
+            invoice-prototype/dist/hyvs-mavs-dashboard.html
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
