@@ -42,6 +42,8 @@ jobs:
         run: |
           sed -i "s|__FIREBASE_API_KEY__|${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}|g" \
             invoice-prototype/dist/hyvs-mavs-dashboard.html
+          sed -i "s|__FIREBASE_API_KEY__|${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}|g" \
+            invoice-prototype/dist/audience-dashboard.html
 
       - name: Copy dashboards to clean URL paths
         run: |
