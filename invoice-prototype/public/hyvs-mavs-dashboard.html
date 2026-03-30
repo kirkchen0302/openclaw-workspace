@@ -332,7 +332,7 @@ footer{margin-top:40px;padding:20px 0;border-top:1px solid var(--border);text-al
 <div id="auth-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column">
   <div style="text-align:center;max-width:400px;padding:40px">
     <h2 style="color:var(--text-bright);font-size:1.5rem;margin-bottom:8px">📊 發票存摺 Dashboard</h2>
-    <p style="color:var(--text-dim);font-size:.88rem;margin-bottom:24px">請使用 invos.com.tw 的 Google 帳號登入</p>
+    <p style="color:var(--text-dim);font-size:.88rem;margin-bottom:24px">請使用 @invos.com.tw 或 @moneybook.com.tw 的 Google 帳號登入</p>
     <button id="google-signin-btn" style="
       padding:12px 28px;
       background:#4285f4;
@@ -351,7 +351,7 @@ footer{margin-top:40px;padding:20px 0;border-top:1px solid var(--border);text-al
       使用 Google 帳號登入
     </button>
     <p id="auth-error" style="color:#ef4444;font-size:.82rem;margin-top:16px;display:none"></p>
-    <p style="color:var(--text-dim);font-size:.72rem;margin-top:24px">僅限 @invos.com.tw 網域</p>
+    <p style="color:var(--text-dim);font-size:.72rem;margin-top:24px">僅限 @invos.com.tw / @moneybook.com.tw 網域</p>
   </div>
 </div>
 
@@ -5049,7 +5049,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
-provider.setCustomParameters({ hd: 'invos.com.tw' });
+// allow both domains
 
 const overlay = document.getElementById('auth-overlay');
 const errorEl = document.getElementById('auth-error');
@@ -5057,11 +5057,11 @@ const signinBtn = document.getElementById('google-signin-btn');
 
 auth.onAuthStateChanged(user => {
   if (user) {
-    if (user.email && user.email.endsWith('@invos.com.tw')) {
+    if (user.email && (user.email.endsWith('@invos.com.tw') || user.email.endsWith('@moneybook.com.tw'))) {
       overlay.style.display = 'none';
     } else {
       auth.signOut();
-      errorEl.textContent = '⚠️ 僅限 @invos.com.tw 帳號登入，您的帳號是 ' + user.email;
+      errorEl.textContent = '⚠️ 僅限 @invos.com.tw 或 @moneybook.com.tw 帳號，您的帳號是 ' + user.email;
       errorEl.style.display = 'block';
     }
   } else {
