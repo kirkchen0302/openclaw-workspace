@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'invoice-prototype/**'
+      - '.github/workflows/deploy-invoice-prototype.yml'
   workflow_dispatch:
 
 permissions:
