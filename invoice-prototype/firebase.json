@@ -10,16 +10,28 @@
     "redirects": [
       {
         "source": "/hyvs-mavs",
-        "destination": "/hyvs-mavs-dashboard.html",
+        "destination": "/dashboard/hyvs-mavs",
         "type": 301
       },
       {
         "source": "/audience",
-        "destination": "/audience-dashboard.html",
+        "destination": "/dashboard/audience",
         "type": 301
       }
     ],
     "rewrites": [
+      {
+        "source": "/prototype/invoice",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/dashboard/hyvs-mavs",
+        "destination": "/hyvs-mavs-dashboard.html"
+      },
+      {
+        "source": "/dashboard/audience",
+        "destination": "/audience-dashboard.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"
