@@ -7,15 +7,19 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
+    "redirects": [
       {
         "source": "/hyvs-mavs",
-        "destination": "/hyvs-mavs-dashboard.html"
+        "destination": "/hyvs-mavs-dashboard.html",
+        "type": 301
       },
       {
         "source": "/audience",
-        "destination": "/audience-dashboard.html"
-      },
+        "destination": "/audience-dashboard.html",
+        "type": 301
+      }
+    ],
+    "rewrites": [
       {
         "source": "**",
         "destination": "/index.html"
