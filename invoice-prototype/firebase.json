@@ -26,18 +26,6 @@
     ],
     "rewrites": [
       {
-        "source": "/prototype/ai_agent",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/dashboard/hyvs-mavs",
-        "destination": "/hyvs-mavs-dashboard.html"
-      },
-      {
-        "source": "/dashboard/audience",
-        "destination": "/audience-dashboard.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
