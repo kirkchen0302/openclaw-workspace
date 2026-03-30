@@ -9,6 +9,14 @@
     ],
     "rewrites": [
       {
+        "source": "/hyvs-mavs",
+        "destination": "/hyvs-mavs-dashboard.html"
+      },
+      {
+        "source": "/audience",
+        "destination": "/audience-dashboard.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
