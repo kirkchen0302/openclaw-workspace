@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>受眾回訪分析 Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0F172A;--card:#1E293B;--text:#E2E8F0;--muted:#94A3B8;--border:#334155}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:24px 16px}
+.header{text-align:center;margin-bottom:28px}
+.header h1{font-size:clamp(1.2rem,3vw,1.8rem);font-weight:700;background:linear-gradient(135deg,#3B82F6,#60A5FA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.header .sub{color:var(--muted);font-size:.85rem}
+.update-time{color:#64748B;font-size:.78rem;margin-top:4px}
+.section-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:24px 0 12px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:8px}
+.kpi-card{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.kpi-label{font-size:.8rem;font-weight:600;margin-bottom:8px}
+.kpi-total{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums;margin-bottom:10px}
+.kpi-total span{font-size:.9rem;font-weight:400;color:var(--muted)}
+.kpi-row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;margin-bottom:4px}
+.kpi-row .pct{color:var(--muted);font-size:.72rem}
+.progress-bar{height:5px;background:#1E3A5F;border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.progress-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.34,1.56,.64,1)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.detail-item{text-align:center}
+.detail-item .val{font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums}
+.detail-item .lbl{font-size:.68rem;color:var(--muted);margin-top:2px}
+.chart-wrap{background:var(--card);border-radius:12px;padding:20px;margin-bottom:8px;border:1px solid var(--border)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:.78rem}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+svg.line-chart{width:100%;height:auto}
+.table-wrap{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border);margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead tr{background:#1a2744}
+th{padding:10px 12px;text-align:right;font-size:.72rem;font-weight:600;color:var(--muted);white-space:nowrap}
+th:first-child{text-align:left}
+tbody tr{border-top:1px solid var(--border)}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td{padding:9px 12px;text-align:right;font-variant-numeric:tabular-nums}
+td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
+.rate{font-size:.7rem;color:var(--muted)}
+.tooltip{position:fixed;background:#1E293B;border:1px solid #334155;border-radius:8px;padding:10px 14px;font-size:.78rem;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;min-width:160px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>受眾回訪分析 Dashboard</h1>
+  <p class="sub">四群用戶回訪追蹤（快照基準：2026-03-22｜已/未回訪：2026-03-25 開獎日後是否開啟 App）</p>
+  <p class="update-time">資料更新時間：2026-03-29 09:00 (Asia/Taipei)</p>
+</div>
+<div class="section-title">各群總覽</div>
+<div class="grid4" id="kpiGrid"></div>
+<div class="section-title">每日回訪人數趨勢（3/1 起）</div>
+<div class="chart-wrap">
+  <div class="chart-legend" id="chartLegend"></div>
+  <svg class="line-chart" id="lineChart" viewBox="0 0 800 320"></svg>
+</div>
+<div class="section-title">每日回訪人數明細</div>
+<div class="table-wrap">
+  <table><thead><tr>
+    <th>日期</th>
+    <th>iOS 活躍<br><span class="rate">回訪人數</span></th>
+    <th>iOS 未活躍<br><span class="rate">回訪人數</span></th>
+    <th>Android 活躍<br><span class="rate">回訪人數</span></th>
+    <th>Android 未活躍<br><span class="rate">回訪人數</span></th>
+    <th>合計</th>
+  </tr></thead><tbody id="dailyBody"></tbody></table>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<script>
+const groups=[{"group_name": "ios_active_30d", "label": "iOS 近30天活躍", "color": "#007AFF", "total": 1839092, "returned": 1284325, "not_returned": 554767, "is_919": 104905, "policy_never": 1471, "policy_expired": 58991, "policy_valid": 1778630, "carrier_valid": 1836792, "carrier_invalid": 2300, "has_invoice_30d": 1677934}, {"group_name": "ios_inactive_30d", "label": "iOS >30天未活躍", "color": "#5AC8FA", "total": 819895, "returned": 236705, "not_returned": 583190, "is_919": 159895, "policy_never": 8251, "policy_expired": 284354, "policy_valid": 527290, "carrier_valid": 801219, "carrier_invalid": 18676, "has_invoice_30d": 405579}, {"group_name": "android_active_30d", "label": "Android 近30天活躍", "color": "#34C759", "total": 495248, "returned": 338829, "not_returned": 156419, "is_919": 27421, "policy_never": 670, "policy_expired": 14971, "policy_valid": 479607, "carrier_valid": 493912, "carrier_invalid": 1336, "has_invoice_30d": 433781}, {"group_name": "android_inactive_30d", "label": "Android >30天未活躍", "color": "#30D158", "total": 234269, "returned": 38530, "not_returned": 195739, "is_919": 47795, "policy_never": 4975, "policy_expired": 113962, "policy_valid": 115332, "carrier_valid": 217398, "carrier_invalid": 16871, "has_invoice_30d": 72444}];
+const trend=[{"date": "2026-03-01", "ios_active_30d": 301393, "ios_inactive_30d": 0, "android_active_30d": 114752, "android_inactive_30d": 0}, {"date": "2026-03-02", "ios_active_30d": 293697, "ios_inactive_30d": 0, "android_active_30d": 116461, "android_inactive_30d": 0}, {"date": "2026-03-03", "ios_active_30d": 273321, "ios_inactive_30d": 0, "android_active_30d": 110669, "android_inactive_30d": 0}, {"date": "2026-03-04", "ios_active_30d": 277771, "ios_inactive_30d": 0, "android_active_30d": 110392, "android_inactive_30d": 0}, {"date": "2026-03-05", "ios_active_30d": 285636, "ios_inactive_30d": 0, "android_active_30d": 111808, "android_inactive_30d": 0}, {"date": "2026-03-06", "ios_active_30d": 271896, "ios_inactive_30d": 0, "android_active_30d": 109494, "android_inactive_30d": 0}, {"date": "2026-03-07", "ios_active_30d": 273094, "ios_inactive_30d": 0, "android_active_30d": 109409, "android_inactive_30d": 0}, {"date": "2026-03-08", "ios_active_30d": 282731, "ios_inactive_30d": 0, "android_active_30d": 111371, "android_inactive_30d": 0}, {"date": "2026-03-09", "ios_active_30d": 272626, "ios_inactive_30d": 0, "android_active_30d": 112004, "android_inactive_30d": 0}, {"date": "2026-03-10", "ios_active_30d": 259670, "ios_inactive_30d": 0, "android_active_30d": 104579, "android_inactive_30d": 0}, {"date": "2026-03-11", "ios_active_30d": 267321, "ios_inactive_30d": 0, "android_active_30d": 106582, "android_inactive_30d": 0}, {"date": "2026-03-12", "ios_active_30d": 263330, "ios_inactive_30d": 0, "android_active_30d": 105099, "android_inactive_30d": 0}, {"date": "2026-03-13", "ios_active_30d": 265435, "ios_inactive_30d": 0, "android_active_30d": 105019, "android_inactive_30d": 0}, {"date": "2026-03-14", "ios_active_30d": 277162, "ios_inactive_30d": 0, "android_active_30d": 108959, "android_inactive_30d": 0}, {"date": "2026-03-15", "ios_active_30d": 288089, "ios_inactive_30d": 0, "android_active_30d": 110675, "android_inactive_30d": 0}, {"date": "2026-03-16", "ios_active_30d": 272987, "ios_inactive_30d": 0, "android_active_30d": 109882, "android_inactive_30d": 0}, {"date": "2026-03-17", "ios_active_30d": 272189, "ios_inactive_30d": 0, "android_active_30d": 111073, "android_inactive_30d": 0}, {"date": "2026-03-18", "ios_active_30d": 272683, "ios_inactive_30d": 0, "android_active_30d": 107770, "android_inactive_30d": 0}, {"date": "2026-03-19", "ios_active_30d": 283811, "ios_inactive_30d": 0, "android_active_30d": 114988, "android_inactive_30d": 0}, {"date": "2026-03-20", "ios_active_30d": 273807, "ios_inactive_30d": 0, "android_active_30d": 110043, "android_inactive_30d": 0}, {"date": "2026-03-21", "ios_active_30d": 287549, "ios_inactive_30d": 0, "android_active_30d": 114815, "android_inactive_30d": 0}, {"date": "2026-03-22", "ios_active_30d": 296212, "ios_inactive_30d": 0, "android_active_30d": 114034, "android_inactive_30d": 0}, {"date": "2026-03-23", "ios_active_30d": 298414, "ios_inactive_30d": 20378, "android_active_30d": 127160, "android_inactive_30d": 5131}, {"date": "2026-03-24", "ios_active_30d": 291450, "ios_inactive_30d": 17672, "android_active_30d": 118312, "android_inactive_30d": 4032}, {"date": "2026-03-25", "ios_active_30d": 1014373, "ios_inactive_30d": 175246, "android_active_30d": 259293, "android_inactive_30d": 25634}, {"date": "2026-03-26", "ios_active_30d": 489895, "ios_inactive_30d": 66974, "android_active_30d": 160467, "android_inactive_30d": 12494}, {"date": "2026-03-27", "ios_active_30d": 347731, "ios_inactive_30d": 36335, "android_active_30d": 130513, "android_inactive_30d": 7979}];
+const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e4).toFixed(1)+'萬':n.toLocaleString();
+const fmtN=n=>Number(n).toLocaleString();
+const pct=(a,b)=>b>0?((a/b)*100).toFixed(1)+'%':'—';
+const kpiGrid=document.getElementById('kpiGrid');
+groups.forEach(g=>{
+  const retPct=g.total>0?(g.returned/g.total*100):0;
+  const card=document.createElement('div');card.className='kpi-card';
+  card.innerHTML=`<div class="kpi-label" style="color:${g.color}">${g.label}</div>
+    <div class="kpi-total">${fmt(g.total)}<span> 人</span></div>
+    <div class="kpi-row"><span>✅ 已回訪</span><span class="num">${fmtN(g.returned)}</span><span class="pct">(${pct(g.returned,g.total)})</span></div>
+    <div class="kpi-row"><span>⬜ 未回訪</span><span class="num">${fmtN(g.not_returned)}</span><span class="pct">(${pct(g.not_returned,g.total)})</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%;background:${g.color}" data-w="${retPct.toFixed(2)}"></div></div>
+    <div style="font-size:.72rem;color:var(--muted);text-align:right;margin-bottom:8px">回訪率 <strong style="color:#fff">${retPct.toFixed(1)}%</strong></div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="val" style="color:#F59E0B">${fmtN(g.is_919)}</div><div class="lbl">919載具</div></div>
+      <div class="detail-item"><div class="val" style="color:#34D399">${fmtN(g.policy_valid)}</div><div class="lbl">合規未到期</div></div>
+      <div class="detail-item"><div class="val" style="color:#F87171">${fmtN(g.policy_expired)}</div><div class="lbl">合規已到期</div></div>
+      <div class="detail-item"><div class="val" style="color:#818CF8">${fmtN(g.has_invoice_30d)}</div><div class="lbl">近30天有發票</div></div>
+    </div>`;
+  kpiGrid.appendChild(card);
+});
+setTimeout(()=>document.querySelectorAll('.progress-fill').forEach(el=>el.style.width=el.dataset.w+'%'),150);
+const legend=document.getElementById('chartLegend');
+groups.forEach(g=>legend.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${g.color}"></div>${g.label}</div>`);
+function buildChart(){
+  const svg=document.getElementById('lineChart');
+  const W=800,H=320,padL=70,padR=40,padT=20,padB=50,cW=W-padL-padR,cH=H-padT-padB;
+  const keys=['ios_active_30d','ios_inactive_30d','android_active_30d','android_inactive_30d'];
+  const allVals=trend.flatMap(d=>keys.map(k=>d[k]||0));
+  const maxV=Math.max(...allVals,1),xStep=cW/Math.max(trend.length-1,1);
+  const yScale=v=>padT+cH-(v/maxV)*cH,xScale=i=>padL+i*xStep;
+  let s='';
+  for(let i=0;i<=4;i++){const v=maxV/4*i,y=yScale(v);s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/><text x="${padL-6}" y="${y+4}" fill="#64748B" font-size="11" text-anchor="end">${v>=1e4?(v/1e4).toFixed(0)+'萬':v.toFixed(0)}</text>`;}
+  trend.forEach((d,i)=>{const x=xScale(i),lbl=d.date.slice(5).replace('-','/');s+=`<text x="${x}" y="${H-padB+16}" fill="#64748B" font-size="9" text-anchor="end" transform="rotate(-45,${x},${H-padB+16})">${lbl}</text><line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="#334155" stroke-width="0.5"/>`;} );
+  groups.forEach(g=>{
+    const pts=trend.map((d,i)=>`${xScale(i)},${yScale(d[g.group_name]||0)}`).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    trend.forEach((d,i)=>s+=`<circle cx="${xScale(i)}" cy="${yScale(d[g.group_name]||0)}" r="4" fill="${g.color}" stroke="#1E293B" stroke-width="2" style="cursor:pointer" data-date="${d.date}" data-group="${g.group_name}" data-val="${d[g.group_name]||0}"/>`);
+  });
+  svg.innerHTML=s;
+  const tooltip=document.getElementById('tooltip');
+  svg.querySelectorAll('circle').forEach(dot=>{
+    dot.addEventListener('mousemove',e=>{const grp=groups.find(g=>g.group_name===dot.dataset.group);tooltip.innerHTML=`<div style="color:${grp?.color}">${grp?.label}</div><div>${dot.dataset.date}</div><div style="font-size:1rem;font-weight:700">${Number(dot.dataset.val).toLocaleString()} 人</div>`;tooltip.style.opacity='1';const tw=tooltip.offsetWidth||180,th=tooltip.offsetHeight||80,vw=window.innerWidth,vh=window.innerHeight,tx=e.clientX+12+tw>vw?e.clientX-tw-12:e.clientX+12,ty=e.clientY-40<0?e.clientY+12:e.clientY+40+th>vh?e.clientY-th-8:e.clientY-40;tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';});
+    dot.addEventListener('mouseleave',()=>tooltip.style.opacity='0');
+  });
+}
+buildChart();
+const tbody=document.getElementById('dailyBody');
+const totals={ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_inactive_30d:0};
+[...trend].reverse().forEach(d=>{
+  const tot=(d.ios_active_30d||0)+(d.ios_inactive_30d||0)+(d.android_active_30d||0)+(d.android_inactive_30d||0);
+  ['ios_active_30d','ios_inactive_30d','android_active_30d','android_inactive_30d'].forEach(k=>totals[k]+=(d[k]||0));
+  const row=document.createElement('tr');
+  row.innerHTML=`<td>${d.date}</td><td>${(d.ios_active_30d||0).toLocaleString()}</td><td>${(d.ios_inactive_30d||0).toLocaleString()}</td><td>${(d.android_active_30d||0).toLocaleString()}</td><td>${(d.android_inactive_30d||0).toLocaleString()}</td><td style="font-weight:700">${tot.toLocaleString()}</td>`;
+  tbody.appendChild(row);
+});
+
+</script>
+</body>
+</html>
