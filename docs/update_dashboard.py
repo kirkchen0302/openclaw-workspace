@@ -12,8 +12,9 @@ from google.auth.transport.requests import Request
 from google.cloud import bigquery
 
 WORKSPACE = os.path.expanduser("~/.openclaw/workspace")
-SNAPSHOT_DATE = "2026-03-22"
-TREND_START   = "2026-03-01"
+SNAPSHOT_DATE  = "2026-03-22"
+TREND_START    = "2026-03-01"
+RETURN_START   = "2026-03-25"  # 開獎日，已回訪/未回訪的基準日
 REPORT_PATH = f"{WORKSPACE}/docs/audience_dashboard.html"
 BQ_PROJECT = "production-379804"
 
@@ -94,7 +95,7 @@ returned AS (
   FROM `{BQ_PROJECT}.base_marts.base__link__member_session` ls
   JOIN `{BQ_PROJECT}.base_marts.base__sat__session_session_start_activity` sa
     ON ls.session_hk = sa.session_hk
-  WHERE sa.created_date >= '{TREND_START}'
+  WHERE sa.created_date >= '{RETURN_START}'
 ),
 is_919 AS (
   SELECT DISTINCT lmc.member_hk
@@ -227,12 +228,12 @@ td:first-child{text-align:left;color:var(--muted);font-size:.75rem}
 <body>
 <div class="header">
   <h1>受眾回訪分析 Dashboard</h1>
-  <p class="sub">追蹤四群用戶自 {TREND_START} 起的每日回訪（快照基準：{SNAPSHOT_DATE}）</p>
+  <p class="sub">四群用戶回訪追蹤（快照基準：{SNAPSHOT_DATE}｜已/未回訪：{RETURN_START} 開獎日後是否開啟 App）</p>
   <p class="update-time">資料更新時間：{update_time}</p>
 </div>
 <div class="section-title">各群總覽</div>
 <div class="grid4" id="kpiGrid"></div>
-<div class="section-title">每日回訪人數趨勢（3/15 起）</div>
+<div class="section-title">每日回訪人數趨勢（3/1 起）</div>
 <div class="chart-wrap">
   <div class="chart-legend" id="chartLegend"></div>
   <svg class="line-chart" id="lineChart" viewBox="0 0 800 320"></svg>
@@ -256,62 +257,59 @@ const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+\'M\':n>=1e4?(n/1e4).toFixed(1)+\'萬\':n
 const fmtN=n=>Number(n).toLocaleString();
 const pct=(a,b)=>b>0?((a/b)*100).toFixed(1)+\'%\':\'—\';
 const kpiGrid=document.getElementById(\'kpiGrid\');
-groups.forEach(g=>{{
+groups.forEach(g=>{
   const retPct=g.total>0?(g.returned/g.total*100):0;
   const card=document.createElement(\'div\');card.className=\'kpi-card\';
-  card.innerHTML=`<div class="kpi-label" style="color:${{g.color}}">${{g.label}}</div>
-    <div class="kpi-total">${{fmt(g.total)}}<span> 人</span></div>
-    <div class="kpi-row"><span>✅ 已回訪</span><span class="num">${{fmtN(g.returned)}}</span><span class="pct">(${{pct(g.returned,g.total)}})</span></div>
-    <div class="kpi-row"><span>⬜ 未回訪</span><span class="num">${{fmtN(g.not_returned)}}</span><span class="pct">(${{pct(g.not_returned,g.total)}})</span></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:0%;background:${{g.color}}" data-w="${{retPct.toFixed(2)}}"></div></div>
-    <div style="font-size:.72rem;color:var(--muted);text-align:right;margin-bottom:8px">回訪率 <strong style="color:#fff">${{retPct.toFixed(1)}}%</strong></div>
+  card.innerHTML=`<div class="kpi-label" style="color:${g.color}">${g.label}</div>
+    <div class="kpi-total">${fmt(g.total)}<span> 人</span></div>
+    <div class="kpi-row"><span>✅ 已回訪</span><span class="num">${fmtN(g.returned)}</span><span class="pct">(${pct(g.returned,g.total)})</span></div>
+    <div class="kpi-row"><span>⬜ 未回訪</span><span class="num">${fmtN(g.not_returned)}</span><span class="pct">(${pct(g.not_returned,g.total)})</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%;background:${g.color}" data-w="${retPct.toFixed(2)}"></div></div>
+    <div style="font-size:.72rem;color:var(--muted);text-align:right;margin-bottom:8px">回訪率 <strong style="color:#fff">${retPct.toFixed(1)}%</strong></div>
     <div class="detail-grid">
-      <div class="detail-item"><div class="val" style="color:#F59E0B">${{fmtN(g.is_919)}}</div><div class="lbl">919載具</div></div>
-      <div class="detail-item"><div class="val" style="color:#34D399">${{fmtN(g.policy_valid)}}</div><div class="lbl">合規未到期</div></div>
-      <div class="detail-item"><div class="val" style="color:#F87171">${{fmtN(g.policy_expired)}}</div><div class="lbl">合規已到期</div></div>
-      <div class="detail-item"><div class="val" style="color:#818CF8">${{fmtN(g.has_invoice_30d)}}</div><div class="lbl">近30天有發票</div></div>
+      <div class="detail-item"><div class="val" style="color:#F59E0B">${fmtN(g.is_919)}</div><div class="lbl">919載具</div></div>
+      <div class="detail-item"><div class="val" style="color:#34D399">${fmtN(g.policy_valid)}</div><div class="lbl">合規未到期</div></div>
+      <div class="detail-item"><div class="val" style="color:#F87171">${fmtN(g.policy_expired)}</div><div class="lbl">合規已到期</div></div>
+      <div class="detail-item"><div class="val" style="color:#818CF8">${fmtN(g.has_invoice_30d)}</div><div class="lbl">近30天有發票</div></div>
     </div>`;
   kpiGrid.appendChild(card);
-}});
+});
 setTimeout(()=>document.querySelectorAll(\'.progress-fill\').forEach(el=>el.style.width=el.dataset.w+\'%\'),150);
 const legend=document.getElementById(\'chartLegend\');
-groups.forEach(g=>legend.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${{g.color}}"></div>${{g.label}}</div>`);
-function buildChart(){{
+groups.forEach(g=>legend.innerHTML+=`<div class="legend-item"><div class="legend-dot" style="background:${g.color}"></div>${g.label}</div>`);
+function buildChart(){
   const svg=document.getElementById(\'lineChart\');
-  const W=800,H=320,padL=70,padR=20,padT=20,padB=50,cW=W-padL-padR,cH=H-padT-padB;
+  const W=800,H=320,padL=70,padR=40,padT=20,padB=50,cW=W-padL-padR,cH=H-padT-padB;
   const keys=[\'ios_active_30d\',\'ios_inactive_30d\',\'android_active_30d\',\'android_inactive_30d\'];
   const allVals=trend.flatMap(d=>keys.map(k=>d[k]||0));
   const maxV=Math.max(...allVals,1),xStep=cW/Math.max(trend.length-1,1);
   const yScale=v=>padT+cH-(v/maxV)*cH,xScale=i=>padL+i*xStep;
   let s=\'\';
-  for(let i=0;i<=4;i++){{const v=maxV/4*i,y=yScale(v);s+=`<line x1="${{padL}}" y1="${{y}}" x2="${{W-padR}}" y2="${{y}}" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/><text x="${{padL-6}}" y="${{y+4}}" fill="#64748B" font-size="11" text-anchor="end">${{v>=1e4?(v/1e4).toFixed(0)+\'萬\':v.toFixed(0)}}</text>`;}}
-  trend.forEach((d,i)=>{{const x=xScale(i),lbl=d.date.slice(5).replace(\'-\',\'/\');s+=`<text x="${{x}}" y="${{H-padB+20}}" fill="#64748B" font-size="11" text-anchor="middle">${{lbl}}</text><line x1="${{x}}" y1="${{padT}}" x2="${{x}}" y2="${{H-padB}}" stroke="#334155" stroke-width="0.5"/>`;}} );
-  groups.forEach(g=>{{
-    const pts=trend.map((d,i)=>`${{xScale(i)}},${{yScale(d[g.group_name]||0)}}`).join(\' \');
-    s+=`<polyline points="${{pts}}" fill="none" stroke="${{g.color}}" stroke-width="2.5" stroke-linejoin="round"/>`;
-    trend.forEach((d,i)=>s+=`<circle cx="${{xScale(i)}}" cy="${{yScale(d[g.group_name]||0)}}" r="4" fill="${{g.color}}" stroke="#1E293B" stroke-width="2" style="cursor:pointer" data-date="${{d.date}}" data-group="${{g.group_name}}" data-val="${{d[g.group_name]||0}}"/>`);
-  }});
+  for(let i=0;i<=4;i++){const v=maxV/4*i,y=yScale(v);s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/><text x="${padL-6}" y="${y+4}" fill="#64748B" font-size="11" text-anchor="end">${v>=1e4?(v/1e4).toFixed(0)+\'萬\':v.toFixed(0)}</text>`;}
+  trend.forEach((d,i)=>{const x=xScale(i),lbl=d.date.slice(5).replace(\'-\',\'/\');s+=`<text x="${x}" y="${H-padB+16}" fill="#64748B" font-size="9" text-anchor="end" transform="rotate(-45,${x},${H-padB+16})">${lbl}</text><line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="#334155" stroke-width="0.5"/>`;} );
+  groups.forEach(g=>{
+    const pts=trend.map((d,i)=>`${xScale(i)},${yScale(d[g.group_name]||0)}`).join(\' \');
+    s+=`<polyline points="${pts}" fill="none" stroke="${g.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    trend.forEach((d,i)=>s+=`<circle cx="${xScale(i)}" cy="${yScale(d[g.group_name]||0)}" r="4" fill="${g.color}" stroke="#1E293B" stroke-width="2" style="cursor:pointer" data-date="${d.date}" data-group="${g.group_name}" data-val="${d[g.group_name]||0}"/>`);
+  });
   svg.innerHTML=s;
   const tooltip=document.getElementById(\'tooltip\');
-  svg.querySelectorAll(\'circle\').forEach(dot=>{{
-    dot.addEventListener(\'mousemove\',e=>{{const grp=groups.find(g=>g.group_name===dot.dataset.group);tooltip.innerHTML=`<div style="color:${{grp?.color}}">${{grp?.label}}</div><div>${{dot.dataset.date}}</div><div style="font-size:1rem;font-weight:700">${{Number(dot.dataset.val).toLocaleString()}} 人</div>`;tooltip.style.opacity=\'1\';tooltip.style.left=(e.clientX+12)+\'px\';tooltip.style.top=(e.clientY-40)+\'px\';}});
+  svg.querySelectorAll(\'circle\').forEach(dot=>{
+    dot.addEventListener(\'mousemove\',e=>{const grp=groups.find(g=>g.group_name===dot.dataset.group);tooltip.innerHTML=`<div style="color:${grp?.color}">${grp?.label}</div><div>${dot.dataset.date}</div><div style="font-size:1rem;font-weight:700">${Number(dot.dataset.val).toLocaleString()} 人</div>`;tooltip.style.opacity=\'1\';const tw=tooltip.offsetWidth||180,th=tooltip.offsetHeight||80,vw=window.innerWidth,vh=window.innerHeight,tx=e.clientX+12+tw>vw?e.clientX-tw-12:e.clientX+12,ty=e.clientY-40<0?e.clientY+12:e.clientY+40+th>vh?e.clientY-th-8:e.clientY-40;tooltip.style.left=tx+\'px\';tooltip.style.top=ty+\'px\';});
     dot.addEventListener(\'mouseleave\',()=>tooltip.style.opacity=\'0\');
-  }});
-}}
+  });
+}
 buildChart();
 const tbody=document.getElementById(\'dailyBody\');
-const totals={{ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_inactive_30d:0}};
-[...trend].reverse().forEach(d=>{{
+const totals={ios_active_30d:0,ios_inactive_30d:0,android_active_30d:0,android_inactive_30d:0};
+[...trend].reverse().forEach(d=>{
   const tot=(d.ios_active_30d||0)+(d.ios_inactive_30d||0)+(d.android_active_30d||0)+(d.android_inactive_30d||0);
   [\'ios_active_30d\',\'ios_inactive_30d\',\'android_active_30d\',\'android_inactive_30d\'].forEach(k=>totals[k]+=(d[k]||0));
   const row=document.createElement(\'tr\');
-  row.innerHTML=`<td>${{d.date}}</td><td>${{(d.ios_active_30d||0).toLocaleString()}}</td><td>${{(d.ios_inactive_30d||0).toLocaleString()}}</td><td>${{(d.android_active_30d||0).toLocaleString()}}</td><td>${{(d.android_inactive_30d||0).toLocaleString()}}</td><td style="font-weight:700">${{tot.toLocaleString()}}</td>`;
+  row.innerHTML=`<td>${d.date}</td><td>${(d.ios_active_30d||0).toLocaleString()}</td><td>${(d.ios_inactive_30d||0).toLocaleString()}</td><td>${(d.android_active_30d||0).toLocaleString()}</td><td>${(d.android_inactive_30d||0).toLocaleString()}</td><td style="font-weight:700">${tot.toLocaleString()}</td>`;
   tbody.appendChild(row);
-}});
-const totRow=document.createElement(\'tr\');totRow.style.background=\'#1a2744\';totRow.style.fontWeight=\'700\';
-const totAll=Object.values(totals).reduce((s,v)=>s+v,0);
-totRow.innerHTML=`<td style="color:var(--text)">累計合計</td><td>${{totals.ios_active_30d.toLocaleString()}}</td><td>${{totals.ios_inactive_30d.toLocaleString()}}</td><td>${{totals.android_active_30d.toLocaleString()}}</td><td>${{totals.android_inactive_30d.toLocaleString()}}</td><td style="color:#60A5FA">${{totAll.toLocaleString()}}</td>`;
-tbody.appendChild(totRow);
+});
+
 </script>
 </body>
 </html>'''
@@ -337,6 +335,9 @@ def build_html(groups_data, trend_data, update_time):
     html = HTML_TEMPLATE.replace('{groups_json}', json.dumps(groups_js, ensure_ascii=False))
     html = html.replace('{trend_json}', json.dumps(trend_js, ensure_ascii=False))
     html = html.replace('{update_time}', update_time)
+    html = html.replace('{TREND_START}', TREND_START)
+    html = html.replace('{SNAPSHOT_DATE}', SNAPSHOT_DATE)
+    html = html.replace('{RETURN_START}', RETURN_START)
     return html
 
 def main():

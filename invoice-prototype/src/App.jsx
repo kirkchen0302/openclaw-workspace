@@ -1381,6 +1381,45 @@ function LoginPage({ onLogin }) {
   );
 }
 
+// ─── URL Router（query param 分流） ──────────────────────────────────────────
+// ?type=product              → 發票存摺 App（預設）
+// ?type=dashboard&cate=hyvs-mavs → HYVS vs MAVs Dashboard
+// ?type=dashboard&cate=audience  → 受眾回訪分析 Dashboard（GitHub Pages）
+function QueryRouter({ children }) {
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get("type");
+  const cate = params.get("cate");
+
+  if (type === "dashboard") {
+    if (cate === "hyvs-mavs") {
+      window.location.replace("/hyvs-mavs-dashboard.html");
+      return null;
+    }
+    if (cate === "audience") {
+      window.location.replace("/audience-dashboard.html");
+      return null;
+    }
+    // 未知 cate：顯示索引頁
+    return (
+      <div style={{ fontFamily: "system-ui", padding: 32, background: "#0F172A", minHeight: "100vh", color: "#E2E8F0" }}>
+        <h2 style={{ marginBottom: 16 }}>📊 Dashboard 索引</h2>
+        <ul style={{ lineHeight: 2.2 }}>
+          <li><a href="?type=dashboard&cate=audience" style={{ color: "#60A5FA" }}>受眾回訪分析</a></li>
+          <li><a href="?type=dashboard&cate=hyvs-mavs" style={{ color: "#60A5FA" }}>HYVS vs MAVs 分析</a></li>
+        </ul>
+      </div>
+    );
+  }
+
+  const version = params.get("v");
+  if (version === "20260401v1") {
+    return <InvoiceAppV2 />;
+  }
+
+  // type=product 或無 type → 顯示 React App
+  return children;
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 const TABS = [
   { key:"invoices",      icon:"🧾", label:"發票" },
@@ -1390,7 +1429,7 @@ const TABS = [
   { key:"bills",         icon:"⚡", label:"帳單" },
 ];
 
-export default function App() {
+function InvoiceApp() {
   const [tab, setTab] = useState("home");
   const [user, setUser] = useState(null); // { phone, data }
   const [loading, setLoading] = useState(false);
@@ -1471,5 +1510,467 @@ export default function App() {
         <button onClick={handleLogout} style={{ position:"fixed", bottom:70, left:"calc(50% - 187px + 12px)", width:36, height:36, borderRadius:18, background:"#fff", border:"1px solid #E0E0E0", cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", zIndex:99, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>🚪</button>
       </div>
     </>
+  );
+}
+
+// ─── V2 Prototype (20260401v1) ──────────────────────────────────────────────
+
+const AI_ANSWERS_V2 = {
+  "我的訂閱值得嗎？": { text: "你目前有 2 個訂閱：UberEats+（月費 $178，本月省 $98，虧損 $80）、foodpanda Pro（月費 $149，本月省 $225，划算 +$76）。建議暫停 UberEats+，每月可多省 $178。" },
+  "這個月哪裡花最多？": { text: "外食 $2,312（佔 31%）、購物 $1,890（佔 25%）、訂閱 $936（佔 12%）。訂閱支出比同類用戶高 23%，有優化空間。" },
+  "UberEats 有更省的替代嗎？": { text: "根據你的外送頻率（平均每月 8 次），建議考慮：1. foodpanda 月訂單 $329，比 UberEats 便宜約 15%；2. 不訂閱改用折扣碼，月省約 $40。" },
+  "幫我分析帳單": { text: "本月固定支出：台電 $1,240（↑$260）、電信費 $599、Apple iCloud $90。台電本月異常偏高，比上月多 $260，建議確認是否有大型電器持續使用。" },
+};
+
+const TABS_V2 = [
+  { key: "invoices",      icon: "🧾", label: "發票" },
+  { key: "rewards",       icon: "🎯", label: "任務" },
+  { key: "scan",          icon: null,  label: "掃描" },
+  { key: "subscriptions", icon: "📱", label: "訂閱" },
+  { key: "list",          icon: "📝", label: "清單" },
+];
+
+const QUICK_QUESTIONS_V2 = [
+  "我的訂閱值得嗎？",
+  "這個月哪裡花最多？",
+  "UberEats 有更省的替代嗎？",
+  "幫我分析帳單",
+];
+
+function ListPageV2() {
+  const [bought, setBought] = useState({});
+  const items = [
+    { id: 1, title: "買電風扇", note: "夏天快到了", ai: "Honeywell 靜音扇，Yahoo 現售 $1,290，比上月便宜 $200" },
+    { id: 2, title: "訂串流影音平台", note: "考慮中", ai: "Disney+ 月費 $270 vs Netflix $390，依你的觀看習慣建議 Disney+" },
+    { id: 3, title: "換手機殼", note: "", ai: "蝦皮有同款 $89，比實體店便宜 60%" },
+  ];
+
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>我的清單</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
+      </div>
+      <div style={{ padding: "10px 16px" }}>
+        {items.map(item => (
+          <div key={item.id} style={{ background: "#fff", borderRadius: 13, padding: "12px 14px", marginBottom: 8, border: "1px solid #EBEBEB" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", textDecoration: bought[item.id] ? "line-through" : "none", opacity: bought[item.id] ? 0.5 : 1 }}>
+                  {item.title}{item.note ? ` — ${item.note}` : ""}
+                </div>
+              </div>
+              <button onClick={() => setBought(b => ({ ...b, [item.id]: !b[item.id] }))}
+                style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #E0E0E0", background: bought[item.id] ? "#EAF3DE" : "#fff", color: bought[item.id] ? "#3B6D11" : "#636366", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {bought[item.id] ? "✅ 已買到" : "已買到！"}
+              </button>
+            </div>
+            <div style={{ background: "#F8F8F8", borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#636366", lineHeight: 1.5 }}>
+              🤖 AI 建議：{item.ai}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: "0 16px" }}>
+        <input placeholder="加入清單..." style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #E0E0E0", fontSize: 13, outline: "none", boxSizing: "border-box" }} readOnly />
+        <div style={{ fontSize: 11, color: "#8E8E93", textAlign: "center", marginTop: 8 }}>AI 會根據你的消費紀錄給出購買建議</div>
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionsPageV2({ deliverySubs = [], flatSubs = [], invoices = [] }) {
+  const [expSub, setExpSub] = useState(deliverySubs[0]?.id || "ubereats");
+
+  const subs = deliverySubs.length > 0 ? deliverySubs : SUBSCRIPTIONS;
+
+  return (
+    <div>
+      <div style={S.header}>
+        <span style={S.headerTitle}>訂閱診斷</span>
+        <div style={{ display: "flex", gap: 6 }}><button style={S.iconBtn}>🔔</button></div>
+      </div>
+      <div style={{ padding: "10px 16px" }}>
+        <div style={{ fontSize: 13, color: "#8E8E93", marginBottom: 8, lineHeight: 1.6 }}>
+          AI 根據你的發票分析每個訂閱是否划算。
+        </div>
+        {subs.map(sub => {
+          const isUber = sub.id === "ubereats";
+          const expanded = expSub === sub.id;
+          const statusColor = isUber ? "#A32D2D" : "#3B6D11";
+          const statusBg = isUber ? "#FCEBEB" : "#EAF3DE";
+          const label = isUber ? "❌ 不划算 −$80" : "✅ 划算 +$76";
+          const latest = sub.months[sub.months.length - 1];
+
+          return (
+            <div key={sub.id} style={{ background: "#fff", borderRadius: 13, marginBottom: 8, overflow: "hidden", border: isUber ? "1.5px solid #F09595" : "1px solid #EBEBEB" }}>
+              <div onClick={() => setExpSub(expanded ? null : sub.id)} style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: "#F2F2F7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{sub.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: "#1C1C1E" }}>{sub.name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 7px", borderRadius: 6, background: statusBg, color: statusColor }}>{label}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8E8E93" }}>月費 ${sub.fee} · {sub.renewDay}日續訂</div>
+                </div>
+                <span style={{ color: "#C7C7CC", fontSize: 13 }}>{expanded ? "▲" : "▼"}</span>
+              </div>
+              {expanded && (
+                <div style={{ padding: "0 14px 14px", borderTop: "1px solid #F5F5F5" }}>
+                  <div style={{ marginTop: 12, marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: "#8E8E93", marginBottom: 8 }}>近幾個月消費明細</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {sub.months.map((m, i) => {
+                        const r = m.feeWaived - sub.fee;
+                        return (
+                          <div key={i} style={{ flex: 1, background: "#F8F8F8", borderRadius: 8, padding: "8px", textAlign: "center" }}>
+                            <div style={{ fontSize: 11, color: "#8E8E93", marginBottom: 4 }}>{m.m}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#1C1C1E" }}>月費 ${sub.fee}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: r >= 0 ? "#3B6D11" : "#A32D2D", marginTop: 2 }}>省運費 {r >= 0 ? "+" : ""}{r}</div>
+                            <div style={{ fontSize: 11, color: "#8E8E93" }}>{m.orders}次外送</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {isUber && (
+                    <div style={{ background: "#FCEBEB", borderRadius: 9, padding: "9px 11px", marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, color: "#A32D2D", lineHeight: 1.6 }}>
+                        ⚠️ {sub.roiTip}
+                      </div>
+                    </div>
+                  )}
+                  {isUber && (
+                    <div style={{ background: "#FFF3CD", borderRadius: 9, padding: "9px 11px" }}>
+                      <div style={{ fontSize: 13, color: "#854F0B", lineHeight: 1.6 }}>
+                        💡 建議：考慮暫停，每月可省 $178
+                      </div>
+                    </div>
+                  )}
+                  {!isUber && (
+                    <div style={{ background: "#EAF3DE", borderRadius: 9, padding: "9px 11px" }}>
+                      <div style={{ fontSize: 13, color: "#3B6D11", lineHeight: 1.6 }}>
+                        ✅ {sub.roiTip}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AIPanelV2() {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [displayText, setDisplayText] = useState("");
+  const endRef = useRef(null);
+
+  const sendQ = (q) => {
+    const question = q || input.trim();
+    if (!question) return;
+    setMessages(p => [...p, { role: "user", text: question }]);
+    setInput(""); setTyping(true); setDisplayText("");
+    const ans = AI_ANSWERS_V2[question] || { text: "根據你的發票資料分析中...😊 目前 AI 正在學習你的消費習慣，即將提供個人化建議。" };
+    const text = typeof ans === "string" ? ans : ans.text || "";
+    let i = 0;
+    const iv = setInterval(() => {
+      i++; setDisplayText(text.slice(0, i));
+      if (i >= text.length) { clearInterval(iv); setTyping(false); setMessages(p => [...p, { role: "ai", text }]); setDisplayText(""); }
+    }, 18);
+  };
+
+  return (
+    <div style={{ position: "fixed", bottom: 60, left: "50%", transform: "translateX(-50%)", width: 375, zIndex: 98 }}>
+      {!open ? (
+        <div style={{ padding: "6px 16px" }}>
+          <button onClick={() => setOpen(true)} style={{ width: "100%", padding: "10px 14px", borderRadius: 22, border: "1px solid #E0E0E0", background: "#fff", fontSize: 13, color: "#8E8E93", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>💬</span><span>問 AI 管家...</span>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: "#378ADD", fontWeight: 600 }}>省錢找我</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: "#fff", borderRadius: "18px 18px 0 0", boxShadow: "0 -4px 24px rgba(0,0,0,0.10)", padding: "12px 14px 14px", maxHeight: 380, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>🤖 AI 管家</span>
+              <span style={{ fontSize: 11, background: "#E6F1FB", color: "#185FA5", padding: "3px 7px", borderRadius: 5, fontWeight: 600 }}>省錢顧問</span>
+            </div>
+            <button onClick={() => { setOpen(false); setMessages([]); }} style={{ border: "none", background: "none", fontSize: 20, cursor: "pointer", color: "#8E8E93" }}>×</button>
+          </div>
+          <div style={{ overflowY: "auto", flex: 1, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign: "center", padding: "10px 0" }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>💡</div>
+                <div style={{ fontSize: 13, color: "#8E8E93", lineHeight: 1.6 }}>問我發票相關的省錢問題！</div>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%", padding: "8px 12px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.role === "user" ? "#378ADD" : "#F2F2F7", color: m.role === "user" ? "#fff" : "#1C1C1E", fontSize: 13, lineHeight: 1.5 }}>{m.text}</div>
+            ))}
+            {typing && displayText && (
+              <div style={{ alignSelf: "flex-start", maxWidth: "85%", padding: "8px 12px", borderRadius: "16px 16px 16px 4px", background: "#F2F2F7", fontSize: 13, lineHeight: 1.5 }}>
+                {displayText}<span>|</span>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+          {!typing && (
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+              {QUICK_QUESTIONS_V2.map(q => <button key={q} onClick={() => sendQ(q)} style={{ padding: "5px 8px", borderRadius: 11, border: "1px solid #378ADD", background: "#E6F1FB", color: "#185FA5", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>{q}</button>)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendQ()}
+              placeholder="輸入問題..." style={{ flex: 1, padding: "8px 12px", borderRadius: 18, border: "1px solid #E0E0E0", fontSize: 13, outline: "none" }} />
+            <button onClick={() => sendQ()} style={{ width: 36, height: 36, borderRadius: 18, background: "#378ADD", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>➤</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HomePageV2({ setTab, user, invoiceCount, totalAmount, monthlyTrend, detectedBillCount, autoTasks }) {
+  const [idx, setIdx] = useState(0);
+
+  const data = user?.data;
+  const deliverySub = data?.deliverySubs?.[0];
+  const topTask = data?.autoTasks?.[0];
+  const totalFmt = totalAmount ? `$${totalAmount.toLocaleString()}` : "";
+
+  const INSIGHTS = [
+    ...(deliverySub ? [{ text: `${deliverySub.name} ${deliverySub.roiLabel}，${deliverySub.roiStatus === "danger" ? "評估是否調整使用頻率 😬" : "繼續保持划算 ✅"}`, action: "查看訂閱分析", tab: "subscriptions" }] : []),
+    ...(topTask ? [{ text: `${topTask.shop} 消費達標任務等你！完成可得 $${topTask.reward} 獎勵 🎯`, action: "加入任務", tab: "rewards" }] : []),
+    ...(totalFmt ? [{ text: `近6個月累積消費 ${totalFmt}，AI 幫你找出省錢機會 💡`, action: "查看發票分析", tab: "invoices" }] : []),
+    { text: "發票存摺幫你掌握每一筆消費，讓數據說話 📊", action: "查看我的發票", tab: "invoices" },
+  ].filter(Boolean);
+
+  const prev = () => setIdx(i => (i - 1 + INSIGHTS.length) % INSIGHTS.length);
+  const next = () => setIdx(i => (i + 1) % INSIGHTS.length);
+
+  return (
+    <div>
+      <div style={{ background: "#fff", padding: "12px 16px 12px", borderBottom: "1px solid #F0F0F0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Logo />
+            <span style={{ fontSize: 11, color: "#8E8E93", fontWeight: 400 }}>v2 · 2026.04</span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}><button style={S.iconBtn}>🐥</button><button style={S.iconBtn}>⚙️</button></div>
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 14, color: "#1D9E75", fontWeight: 500 }}>Hello！{user?.phone || ""}</div>
+          <div style={{ fontSize: 13, color: "#8E8E93" }}>你的發票是最好的理財顧問 — AI 幫你掌握一切</div>
+        </div>
+        <div style={{ display: "flex", background: "#F2F2F7", borderRadius: 10, padding: "8px 0" }}>
+          {[
+            { label: "發票數", value: `${invoiceCount || 0}張` },
+            { label: "帳單項目", value: `${detectedBillCount || 0}筆`, red: detectedBillCount > 0 },
+            { label: "任務獎勵", value: `$${(autoTasks || []).reduce((s, t) => s + t.reward, 0) || 0}`, blue: true }
+          ].map((s, i) => (
+            <div key={i} style={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid #E8E8E8" : "none" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: s.red ? "#A32D2D" : s.blue ? "#185FA5" : "#1C1C1E" }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: "#8E8E93" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 正在漏的錢 */}
+      <div style={{ margin: "10px 16px 0", borderRadius: 14, background: "#1C1C1E", padding: "16px" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 8 }}>🔍 AI 幫你找到的漏財</div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>訂閱浪費</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#F09595" }}>$328/月</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>2 個低效訂閱</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>可節省</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#5DCAA5" }}>$156/月</div>
+          </div>
+        </div>
+        <button onClick={() => setTab("subscriptions")} style={{ width: "100%", padding: "8px", borderRadius: 9, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>立即診斷</button>
+      </div>
+
+      {/* 帳單提醒小卡 */}
+      <div style={{ ...S.card, marginTop: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>📋 帳單提醒</div>
+            <div style={{ fontSize: 13, color: "#636366" }}>台電費用週期將到，預估 $1,240</div>
+          </div>
+          <button style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #E0E0E0", background: "#fff", color: "#378ADD", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>查看詳情</button>
+        </div>
+      </div>
+
+      {/* 快速入口 2x2 */}
+      <div style={{ margin: "10px 16px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <button onClick={() => setTab("subscriptions")} style={{ background: "#fff", border: "1.5px solid #FAC775", borderRadius: 13, padding: "12px", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ fontSize: 16, marginBottom: 3 }}>📱</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>訂閱診斷</div>
+          <div style={{ fontSize: 11, color: "#854F0B", marginTop: 1 }}>{(data?.deliverySubs || []).length + (data?.flatSubs || []).length} 個訂閱追蹤中</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: (data?.deliverySubs || []).some(s => s.roiStatus === "danger") ? "#A32D2D" : "#3B6D11", marginTop: 4 }}>
+            {(data?.deliverySubs || []).some(s => s.roiStatus === "danger") ? "有訂閱效益偏低" : "訂閱狀態良好"}
+          </div>
+        </button>
+        <button onClick={() => setTab("list")} style={{ background: "#fff", border: "1px solid #B5D4F4", borderRadius: 13, padding: "12px", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ fontSize: 16, marginBottom: 3 }}>📝</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>我的清單</div>
+          <div style={{ fontSize: 11, color: "#378ADD", marginTop: 1 }}>3 個待辦項目</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#185FA5", marginTop: 4 }}>AI 購買建議</div>
+        </button>
+        <button onClick={() => setTab("rewards")} style={{ background: "#fff", border: "1px solid #B5D4F4", borderRadius: 13, padding: "12px", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ fontSize: 16, marginBottom: 3 }}>🎯</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>AI 任務</div>
+          <div style={{ fontSize: 11, color: "#378ADD", marginTop: 1 }}>{(autoTasks || []).length} 個任務等你</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#185FA5", marginTop: 4 }}>最高 ${Math.max(...(autoTasks || [{ reward: 0 }]).map(t => t.reward))} 獎勵</div>
+        </button>
+        <button onClick={() => setTab("invoices")} style={{ background: "#fff", border: "1px solid #EBEBEB", borderRadius: 13, padding: "12px", cursor: "pointer", textAlign: "left" }}>
+          <div style={{ fontSize: 16, marginBottom: 3 }}>🧾</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1C1C1E" }}>我的發票</div>
+          <div style={{ fontSize: 11, color: "#8E8E93", marginTop: 1 }}>{invoiceCount || 0} 張已收錄</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#8E8E93", marginTop: 4 }}>近6個月紀錄</div>
+        </button>
+      </div>
+
+      {/* AI 洞察 */}
+      <div style={{ padding: "10px 16px 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>🤖 AI 洞察</span>
+          <span style={{ fontSize: 12, color: "#8E8E93" }}>{idx + 1} / {INSIGHTS.length}</span>
+        </div>
+        <div style={{ borderRadius: 13, background: "#1C1C1E", padding: 14, userSelect: "none", minHeight: 88 }}>
+          <p style={{ color: "#fff", fontSize: 13, lineHeight: 1.6, margin: "0 0 10px" }}>{INSIGHTS[idx].text}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setTab(INSIGHTS[idx].tab)} style={{ padding: "5px 11px", borderRadius: 7, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>⚡ {INSIGHTS[idx].action}</button>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={prev} style={{ width: 28, height: 28, borderRadius: 99, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+              <button onClick={next} style={{ width: 28, height: 28, borderRadius: 99, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 消費分析 */}
+      <div style={{ ...S.card, marginTop: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>消費分析</span>
+          <button style={{ border: "none", background: "none", color: "#378ADD", fontSize: 13, cursor: "pointer" }}>詳細 →</button>
+        </div>
+        {monthlyTrend && monthlyTrend.length > 0 && (() => {
+          const maxAmt = Math.max(...monthlyTrend.map(t => t.amount), 1);
+          const latest = monthlyTrend[monthlyTrend.length - 1];
+          return (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", gap: 5, alignItems: "flex-end", height: 52, marginBottom: 6 }}>
+                {monthlyTrend.map((t, i) => (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                    <div style={{ width: "100%", background: i === monthlyTrend.length - 1 ? "#378ADD" : "#E0E8F0", borderRadius: "3px 3px 0 0", height: `${(t.amount / maxAmt) * 44}px`, minHeight: 2, transition: "height .6s ease" }} />
+                    <div style={{ fontSize: 9, color: "#AEAEB2" }}>{t.month}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: "#6C6C70" }}>{latest.month} 消費 <strong style={{ color: "#1C1C1E" }}>${latest.amount.toLocaleString()}</strong>・共 {invoiceCount} 張發票</div>
+            </div>
+          );
+        })()}
+        <DonutChart pieData={user?.data?.pieData} />
+      </div>
+    </div>
+  );
+}
+
+function InvoiceAppV2() {
+  const [tab, setTab] = useState("home");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const liveInvoices = user?.data?.invoices || INVOICES;
+  const livePieData = user?.data?.pieData || PIE_DATA;
+  const liveTotalAmt = user?.data?.totalAmount || 75737;
+  const liveInvCount = user?.data?.invoiceCount || 63;
+  const liveDeliverySubs = Array.isArray(user?.data?.deliverySubs) ? user.data.deliverySubs : [];
+  const liveFlatSubs = Array.isArray(user?.data?.flatSubs) ? user.data.flatSubs : [];
+  const liveAutoTasks = user?.data?.autoTasks ?? AUTO_TASKS;
+  const liveMonthlyTrend = user?.data?.monthlyTrend || null;
+
+  const liveDetectedBillCount = useMemo(() => {
+    if (!liveInvoices || liveInvoices.length === 0) return 0;
+    const BILL_KEYWORDS = [["台電", "電力"], ["自來水"], ["大哥大", "遠傳", "中華電信"], ["人壽", "保險", "國泰", "新光"]];
+    return BILL_KEYWORDS.filter(kws => liveInvoices.some(inv => kws.some(k => inv.shop.includes(k)))).length;
+  }, [liveInvoices]);
+
+  function handleLogin(phone, data) {
+    setUser({ phone, data });
+    setTab("home");
+  }
+
+  function handleLogout() {
+    setUser(null);
+    setTab("home");
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  const pages = {
+    home: <HomePageV2 setTab={setTab} user={user} invoiceCount={liveInvCount} totalAmount={liveTotalAmt} monthlyTrend={liveMonthlyTrend} detectedBillCount={liveDetectedBillCount} autoTasks={liveAutoTasks} />,
+    invoices: <InvoicesPage invoices={liveInvoices} totalAmount={liveTotalAmt} invoiceCount={liveInvCount} userData={user?.data} />,
+    rewards: <RewardsPage autoTasks={liveAutoTasks} user={user} />,
+    scan: <ScanPage />,
+    subscriptions: <SubscriptionsPageV2 deliverySubs={liveDeliverySubs} flatSubs={liveFlatSubs} invoices={liveInvoices} />,
+    list: <ListPageV2 />,
+  };
+
+  return (
+    <>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
+      <div style={S.root}>
+        <div style={S.screen}>{pages[tab] || <HomePageV2 setTab={setTab} />}</div>
+
+        {tab === "invoices" && <AIPanelV2 />}
+
+        <div style={S.tabBar}>
+          {TABS_V2.map(t => {
+            if (t.key === "scan") return (
+              <button key={t.key} style={S.tabScan} onClick={() => setTab(t.key)}>
+                <div style={S.scanBubble}>📷</div>
+                <span style={{ fontSize: 9, marginTop: 2, color: tab === t.key ? "#378ADD" : "#8E8E93", fontWeight: tab === t.key ? 700 : 400 }}>{t.label}</span>
+              </button>
+            );
+            const active = tab === t.key;
+            return (
+              <button key={t.key} style={S.tabItem} onClick={() => setTab(t.key)}>
+                <span style={{ fontSize: 19 }}>{t.icon}</span>
+                <span style={{ fontSize: 9, color: active ? "#378ADD" : "#8E8E93", fontWeight: active ? 700 : 400 }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {tab !== "home" && (
+          <button onClick={() => setTab("home")} style={{ position: "fixed", bottom: 70, right: "calc(50% - 187px + 12px)", width: 36, height: 36, borderRadius: 18, background: "#fff", border: "1px solid #E0E0E0", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>🏠</button>
+        )}
+
+        <button onClick={handleLogout} style={{ position: "fixed", bottom: 70, left: "calc(50% - 187px + 12px)", width: 36, height: 36, borderRadius: 18, background: "#fff", border: "1px solid #E0E0E0", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>🚪</button>
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryRouter>
+      <InvoiceApp />
+    </QueryRouter>
   );
 }
