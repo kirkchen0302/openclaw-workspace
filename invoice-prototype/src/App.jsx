@@ -1539,11 +1539,58 @@ const QUICK_QUESTIONS_V2 = [
 
 function ListPageV2() {
   const [bought, setBought] = useState({});
-  const items = [
+  const [items, setItems] = useState([
     { id: 1, title: "買電風扇", note: "夏天快到了", ai: "Honeywell 靜音扇，Yahoo 現售 $1,290，比上月便宜 $200" },
     { id: 2, title: "訂串流影音平台", note: "考慮中", ai: "Disney+ 月費 $270 vs Netflix $390，依你的觀看習慣建議 Disney+" },
     { id: 3, title: "換手機殼", note: "", ai: "蝦皮有同款 $89，比實體店便宜 60%" },
-  ];
+  ]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResult, setSearchResult] = useState(null);
+  const nextIdRef = useRef(4);
+  const inputRef = useRef(null);
+
+  const doSearch = () => {
+    const q = searchText.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchResult(null);
+    setTimeout(() => {
+      const base = q.length * 37 + 580;
+      const p2 = base + 50;
+      const p3 = base + 80;
+      const low = base - 30;
+      const high = base + 60;
+      setSearchResult({
+        name: q,
+        base, p2, p3, low, high,
+      });
+      setSearching(false);
+    }, 1500);
+  };
+
+  const addToList = () => {
+    if (!searchResult) return;
+    const { name, base, p2 } = searchResult;
+    const newItem = {
+      id: nextIdRef.current++,
+      title: name,
+      note: "",
+      ai: `蝦皮 $${base} 最低，momo $${p2}`,
+    };
+    setItems(prev => [...prev, newItem]);
+    setSearchOpen(false);
+    setSearchText("");
+    setSearchResult(null);
+  };
+
+  const cancelSearch = () => {
+    setSearchOpen(false);
+    setSearchText("");
+    setSearchResult(null);
+    setSearching(false);
+  };
 
   return (
     <div>
@@ -1561,7 +1608,7 @@ function ListPageV2() {
                 </div>
               </div>
               <button onClick={() => setBought(b => ({ ...b, [item.id]: !b[item.id] }))}
-                style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #E0E0E0", background: bought[item.id] ? "#EAF3DE" : "#fff", color: bought[item.id] ? "#3B6D11" : "#636366", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                style={{ padding: "5px 10px", borderRadius: 8, border: bought[item.id] ? "1px solid #3B6D11" : "1px solid #E0E0E0", background: bought[item.id] ? "#EAF3DE" : "#fff", color: bought[item.id] ? "#3B6D11" : "#636366", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
                 {bought[item.id] ? "✅ 已買到" : "已買到！"}
               </button>
             </div>
@@ -1572,8 +1619,76 @@ function ListPageV2() {
         ))}
       </div>
       <div style={{ padding: "0 16px" }}>
-        <input placeholder="加入清單..." style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #E0E0E0", fontSize: 13, outline: "none", boxSizing: "border-box" }} readOnly />
-        <div style={{ fontSize: 11, color: "#8E8E93", textAlign: "center", marginTop: 8 }}>AI 會根據你的消費紀錄給出購買建議</div>
+        {!searchOpen ? (
+          <>
+            <div onClick={() => { setSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #E0E0E0", fontSize: 13, color: "#8E8E93", boxSizing: "border-box", cursor: "pointer", background: "#fff" }}>
+              加入清單...
+            </div>
+            <div style={{ fontSize: 11, color: "#8E8E93", textAlign: "center", marginTop: 8 }}>AI 會根據你的消費紀錄給出購買建議</div>
+          </>
+        ) : (
+          <div style={{ background: "#fff", borderRadius: 13, border: "1px solid #EBEBEB", padding: "14px", marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <input ref={inputRef} value={searchText} onChange={e => setSearchText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") doSearch(); }}
+                placeholder="輸入商品名稱..."
+                style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "1px solid #E0E0E0", fontSize: 13, outline: "none" }}
+                disabled={searching}
+              />
+              <button onClick={doSearch} disabled={searching || !searchText.trim()}
+                style={{ padding: "9px 14px", borderRadius: 10, border: "none", background: "#378ADD", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: (searching || !searchText.trim()) ? 0.5 : 1 }}>
+                搜尋比價
+              </button>
+            </div>
+
+            {searching && (
+              <div style={{ textAlign: "center", padding: "20px 0", color: "#636366", fontSize: 13 }}>
+                <div style={{ fontSize: 22, marginBottom: 8, animation: "spin 1s linear infinite" }}>🔍</div>
+                AI 比價中...
+              </div>
+            )}
+
+            {searchResult && !searching && (
+              <div style={{ background: "#F8F8FA", borderRadius: 10, padding: "12px 14px" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1C1C1E", marginBottom: 10 }}>
+                  商品：{searchResult.name}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1C1C1E", marginBottom: 6 }}>推薦購買：</div>
+                <div style={{ fontSize: 13, color: "#1C1C1E", lineHeight: 1.8 }}>
+                  <div>🥇 蝦皮購物 <b>${searchResult.base}</b>（最便宜）· ⭐ 4.8 · 近期購買 2,341 人</div>
+                  <div>🥈 momo 購物 <b>${searchResult.p2}</b>（+$50）· ⭐ 4.9 · 官方正品</div>
+                  <div>🥉 Yahoo 購物 <b>${searchResult.p3}</b>（+$80）· ⭐ 4.7</div>
+                </div>
+                <div style={{ fontSize: 12, color: "#636366", marginTop: 10, lineHeight: 1.6 }}>
+                  近期用戶購買價格：${searchResult.low} ~ ${searchResult.high}（最近 30 天）
+                </div>
+                <div style={{ fontSize: 12, color: "#636366", marginTop: 4, lineHeight: 1.6 }}>
+                  🤖 AI 建議：蝦皮最便宜，momo 最有保障（官方正品），建議依預算選擇。
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button onClick={addToList}
+                    style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "none", background: "#378ADD", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    加入清單
+                  </button>
+                  <button onClick={cancelSearch}
+                    style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid #E0E0E0", background: "#fff", color: "#636366", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    取消
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!searching && !searchResult && (
+              <div style={{ textAlign: "right" }}>
+                <button onClick={cancelSearch}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #E0E0E0", background: "#fff", color: "#636366", fontSize: 12, cursor: "pointer" }}>
+                  取消
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
