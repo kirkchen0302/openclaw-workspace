@@ -3,9 +3,9 @@
 受眾回訪分析 Dashboard 每日更新腳本
 快照基準：2026-03-22（固定時間點定義四群）
 趨勢起始：2026-03-01
-每天跑一次，更新資料並推到 GitHub Pages
+每天跑一次，更新資料並同步到網站來源檔
 """
-import json, subprocess, sys, os
+import json, subprocess, sys, os, shutil
 from datetime import datetime
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -16,6 +16,7 @@ SNAPSHOT_DATE  = "2026-03-22"
 TREND_START    = "2026-03-01"
 RETURN_START   = "2026-03-25"  # 開獎日，已回訪/未回訪的基準日
 REPORT_PATH = f"{WORKSPACE}/docs/audience_dashboard.html"
+PUBLIC_REPORT_PATH = f"{WORKSPACE}/invoice-prototype/public/audience-dashboard.html"
 BQ_PROJECT = "production-379804"
 
 LABELS = {
@@ -362,9 +363,12 @@ def main():
         f.write(html)
     print(f"✅ HTML 更新: {REPORT_PATH}")
 
+    shutil.copyfile(REPORT_PATH, PUBLIC_REPORT_PATH)
+    print(f"✅ 已同步到網站來源: {PUBLIC_REPORT_PATH}")
+
     print("推送到 GitHub...")
     os.chdir(WORKSPACE)
-    subprocess.run(["git", "add", "docs/audience_dashboard.html"], check=True)
+    subprocess.run(["git", "add", "docs/audience_dashboard.html", "invoice-prototype/public/audience-dashboard.html"], check=True)
     subprocess.run(["git", "commit", "-m", f"chore: 每日更新 audience dashboard ({update_time[:10]})"], check=True)
     subprocess.run(["git", "push"], check=True)
     print(f"✅ 完成！{update_time}")
