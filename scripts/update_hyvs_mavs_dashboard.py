@@ -21,6 +21,7 @@ WORKSPACE = Path('/Users/kirk/.openclaw/workspace')
 DOCS_DIR = WORKSPACE / 'docs' / 'emma-analysis'
 HTML_PATH = DOCS_DIR / 'hyvs_mavs_dashboard.html'
 PUBLIC_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'public' / 'hyvs-mavs-dashboard.html'
+DIST_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'dist' / 'hyvs-mavs-dashboard.html'
 SQL_PATH = DOCS_DIR / 'daily_metrics_6m.sql'
 CSV_PATH = DOCS_DIR / 'daily_metrics_6m.csv'
 IOS_CSV_PATH = DOCS_DIR / 'ios_first_downloads.csv'
@@ -28,6 +29,9 @@ IOS_CSV_ALT_PATH = DOCS_DIR / '發票存摺：統一發票雲端對獎＋電子�
 ANDROID_MD_PATH = DOCS_DIR / 'android_downloads.md'
 STOCK_919_PATH = DOCS_DIR / 'daily_919_stock.csv'
 POLICY_COHORT_PATH = DOCS_DIR / 'policy_reminder_cohort.csv'
+REG_COHORT_PATH = DOCS_DIR / 'daily_reg_cohort.csv'
+RECOVERY_919_PATH = DOCS_DIR / 'daily_919_recovery.csv'
+BREAKPOINT_PATH = DOCS_DIR / 'member_breakpoint_by_month.csv'
 ADC_PATH = WORKSPACE / '.gcp' / 'adc.json'
 BQ_PROJECT = 'production-379804'
 HYVS_TARGET = 5_000_000
@@ -35,6 +39,9 @@ MAVS_BASELINE = 2_216_711
 MAVS_TARGET = 3_016_711
 ANDROID_TARGET = 400_000
 IOS_TARGET = 600_000
+START_919 = date(2025, 7, 1)
+START_REG = date(2025, 7, 1)
+START_POLICY = date(2025, 7, 1)
 
 
 @dataclass
@@ -81,7 +88,33 @@ def get_bq_client() -> bigquery.Client:
     return bigquery.Client(credentials=creds, project=BQ_PROJECT)
 
 
-def refresh_daily_metrics_csv() -> list[dict[str, str]]:
+def read_csv_dicts(path: Path) -> list[dict[str, str]]:
+    with path.open() as f:
+        return list(csv.DictReader(f))
+
+
+def write_csv_dicts(path: Path, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        raise RuntimeError(f'no rows for {path.name}')
+    fieldnames = list(rows[0].keys())
+    with path.open('w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: '' if v is None else v for k, v in row.items()})
+
+
+def query_rows(client: bigquery.Client, sql: str) -> list[dict[str, object]]:
+    rows = list(client.query(sql).result())
+    if not rows:
+        return []
+    out: list[dict[str, object]] = []
+    for row in rows:
+        out.append({k: row[k] for k in row.keys()})
+    return out
+
+
+def refresh_daily_metrics_csv(client: bigquery.Client) -> list[dict[str, str]]:
     end_date = date.today()
     start_date = add_months(month_start(end_date), -6)
     sql = SQL_PATH.read_text()
@@ -89,22 +122,11 @@ def refresh_daily_metrics_csv() -> list[dict[str, str]]:
     sql = re.sub(r"DECLARE report_end DATE DEFAULT '\d{4}-\d{2}-\d{2}';", f"DECLARE report_end DATE DEFAULT '{end_date.isoformat()}';", sql)
     SQL_PATH.write_text(sql)
 
-    client = get_bq_client()
-    rows = list(client.query(sql).result())
+    rows = query_rows(client, sql)
     if not rows:
         raise RuntimeError('BigQuery returned no rows')
-    fieldnames = [f.name for f in rows[0].keys()]
-    with CSV_PATH.open('w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: '' if row[k] is None else str(row[k]) for k in fieldnames})
+    write_csv_dicts(CSV_PATH, rows)
     return read_csv_dicts(CSV_PATH)
-
-
-def read_csv_dicts(path: Path) -> list[dict[str, str]]:
-    with path.open() as f:
-        return list(csv.DictReader(f))
 
 
 def parse_metrics(rows: list[dict[str, str]]) -> list[dict]:
@@ -246,7 +268,6 @@ def replace_once(text: str, pattern: str, repl: str, flags: int = re.S) -> str:
     return new_text
 
 
-
 def parse_existing_trend_data(html: str) -> dict[str, dict[str, int | None]]:
     m = re.search(r"window\._trendChartData = \[(.*?)\n\s*\];", html, re.S)
     if not m:
@@ -270,6 +291,290 @@ def apply_metric_safeguards(metrics: list[dict], existing_trend: dict[str, dict[
             r['mavs_total'] = old['mavs']
         fixed.append(r)
     return fixed
+
+
+def sql_breakpoints() -> str:
+    return f"""
+WITH members AS (
+  SELECT member_hk, CAST(created_at AS DATE) AS reg_date
+  FROM `production-379804.intermediate.sat__member`
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY member_hk ORDER BY effective_from DESC) = 1
+),
+carrier_any AS (
+  SELECT DISTINCT member_hk
+  FROM `production-379804.base_marts.base__link__member_carrier`
+),
+carrier_ok AS (
+  SELECT DISTINCT mc.member_hk
+  FROM `production-379804.intermediate.sat__carrier` c
+  JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
+  WHERE c.is_active = TRUE
+),
+policy_ok AS (
+  SELECT DISTINCT member_hk
+  FROM `production-379804.intermediate.ma_sat__member_policy_statement`
+  WHERE CAST(effective_from AS DATE) <= CURRENT_DATE('Asia/Taipei')
+    AND DATE_ADD(CAST(effective_from AS DATE), INTERVAL 180 DAY) > CURRENT_DATE('Asia/Taipei')
+),
+active_30d AS (
+  SELECT DISTINCT CAST(user_id AS INT64) AS member_id
+  FROM `invoice-bfd85.analytics_382839978.events_intraday_*`
+  WHERE event_name = 'session_start' AND user_id IS NOT NULL AND user_id != ''
+),
+active_members AS (
+  SELECT DISTINCT h.member_hk
+  FROM active_30d a
+  JOIN `production-379804.base_marts.base__hub__member` h ON h.member_id = a.member_id
+),
+hyvs AS (
+  SELECT DISTINCT mi.member_hk
+  FROM `production-379804.intermediate.sat__invoice` i
+  JOIN `production-379804.base_marts.base__link__member_invoice` mi USING(invoice_hk)
+  JOIN carrier_ok c ON c.member_hk = mi.member_hk
+  JOIN policy_ok p ON p.member_hk = mi.member_hk
+  WHERE CAST(i.issued_at AS DATE) >= DATE_SUB(CURRENT_DATE('Asia/Taipei'), INTERVAL 180 DAY)
+    AND i.carrier_type IS NOT NULL AND i.carrier_type != ''
+)
+SELECT FORMAT_DATE('%Y-%m', reg_date) AS reg_month,
+  COUNT(*) AS total,
+  COUNTIF(m.member_hk IN (SELECT member_hk FROM active_members)) AS active_30d,
+  COUNTIF(m.member_hk IN (SELECT member_hk FROM carrier_ok)) AS carrier_ok,
+  COUNTIF(m.member_hk IN (SELECT member_hk FROM carrier_any) AND m.member_hk NOT IN (SELECT member_hk FROM carrier_ok)) AS n919,
+  COUNTIF(m.member_hk NOT IN (SELECT member_hk FROM carrier_any)) AS no_carrier,
+  COUNTIF(m.member_hk IN (SELECT member_hk FROM policy_ok)) AS policy_ok,
+  COUNTIF(m.member_hk IN (SELECT member_hk FROM hyvs)) AS hyvs
+FROM members m
+GROUP BY reg_month
+ORDER BY reg_month
+"""
+
+
+def sql_daily_reg() -> str:
+    return f"""
+DECLARE start_date DATE DEFAULT '{START_REG.isoformat()}';
+WITH regs AS (
+  SELECT member_hk, CAST(created_at AS DATE) AS reg_date
+  FROM `production-379804.intermediate.sat__member`
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY member_hk ORDER BY effective_from DESC) = 1
+),
+cohort AS (
+  SELECT * FROM regs WHERE reg_date >= start_date
+),
+carrier_events AS (
+  SELECT mc.member_hk, MIN(CAST(c.effective_from AS DATE)) AS carrier_date
+  FROM `production-379804.intermediate.sat__carrier` c
+  JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
+  WHERE c.is_active = TRUE
+  GROUP BY mc.member_hk
+),
+policy_events AS (
+  SELECT member_hk, MIN(CAST(effective_from AS DATE)) AS policy_date
+  FROM `production-379804.intermediate.ma_sat__member_policy_statement`
+  GROUP BY member_hk
+),
+invoice_daily AS (
+  SELECT mi.member_hk, CAST(i.issued_at AS DATE) AS invoice_date
+  FROM `production-379804.intermediate.sat__invoice` i
+  JOIN `production-379804.base_marts.base__link__member_invoice` mi USING(invoice_hk)
+  WHERE i.carrier_type IS NOT NULL AND i.carrier_type != ''
+),
+inv_rollup AS (
+  SELECT c.reg_date AS date,
+    COUNT(*) AS total,
+    COUNTIF(ce.carrier_date <= c.reg_date) AS carrier_d0,
+    COUNTIF(ce.carrier_date <= DATE_ADD(c.reg_date, INTERVAL 7 DAY)) AS carrier_d7,
+    COUNTIF(pe.policy_date <= c.reg_date) AS policy_d0,
+    COUNT(DISTINCT CASE WHEN i.invoice_date BETWEEN c.reg_date AND DATE_ADD(c.reg_date, INTERVAL 7 DAY) THEN c.member_hk END) AS inv_d7,
+    COUNT(DISTINCT CASE WHEN i.invoice_date BETWEEN c.reg_date AND DATE_ADD(c.reg_date, INTERVAL 30 DAY) THEN c.member_hk END) AS inv_d30
+  FROM cohort c
+  LEFT JOIN carrier_events ce USING(member_hk)
+  LEFT JOIN policy_events pe USING(member_hk)
+  LEFT JOIN invoice_daily i USING(member_hk)
+  GROUP BY date
+)
+SELECT * FROM inv_rollup ORDER BY date
+"""
+
+
+def sql_919_stock() -> str:
+    return f"""
+DECLARE start_date DATE DEFAULT '{START_919.isoformat()}';
+WITH dates AS (SELECT d AS date FROM UNNEST(GENERATE_DATE_ARRAY(start_date, CURRENT_DATE('Asia/Taipei'))) d),
+carrier_days AS (
+  SELECT d.date, COUNT(DISTINCT mc.member_hk) AS total
+  FROM dates d
+  JOIN `production-379804.intermediate.sat__carrier` c
+    ON CAST(c.effective_from AS DATE) <= d.date
+  JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
+  WHERE c.is_active = FALSE
+  GROUP BY d.date
+)
+SELECT date, total FROM carrier_days ORDER BY date
+"""
+
+
+def sql_919_recovery() -> str:
+    return f"""
+DECLARE start_date DATE DEFAULT '{START_919.isoformat()}';
+WITH inactive AS (
+  SELECT mc.member_hk, CAST(c.effective_from AS DATE) AS inactive_date
+  FROM `production-379804.intermediate.sat__carrier` c
+  JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
+  WHERE c.is_active = FALSE AND CAST(c.effective_from AS DATE) >= start_date
+),
+active AS (
+  SELECT mc.member_hk, CAST(c.effective_from AS DATE) AS active_date
+  FROM `production-379804.intermediate.sat__carrier` c
+  JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
+  WHERE c.is_active = TRUE
+),
+paired AS (
+  SELECT i.member_hk, i.inactive_date,
+    MIN(a.active_date) AS recovered_date
+  FROM inactive i
+  LEFT JOIN active a ON a.member_hk = i.member_hk AND a.active_date > i.inactive_date
+  GROUP BY i.member_hk, i.inactive_date
+)
+SELECT inactive_date AS date,
+  COUNT(*) AS total,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 1 DAY)) AS d1,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 3 DAY)) AS d3,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 7 DAY)) AS d7,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 14 DAY)) AS d14,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 30 DAY)) AS d30,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 60 DAY)) AS d60,
+  COUNTIF(recovered_date <= DATE_ADD(inactive_date, INTERVAL 90 DAY)) AS d90,
+  COUNTIF(recovered_date IS NULL) AS never
+FROM paired
+GROUP BY date
+ORDER BY date
+"""
+
+
+def sql_policy_cohort() -> str:
+    return f"""
+DECLARE start_date DATE DEFAULT '{START_POLICY.isoformat()}';
+WITH policy AS (
+  SELECT member_hk, CAST(effective_from AS DATE) AS accepted_date
+  FROM `production-379804.intermediate.ma_sat__member_policy_statement`
+),
+base AS (
+  SELECT member_hk, accepted_date, DATE_ADD(accepted_date, INTERVAL 110 DAY) AS d0_date
+  FROM policy
+  WHERE DATE_ADD(accepted_date, INTERVAL 110 DAY) >= start_date
+),
+next_accept AS (
+  SELECT b.member_hk, b.d0_date, b.accepted_date,
+    MIN(p.accepted_date) AS renew_date
+  FROM base b
+  LEFT JOIN policy p ON p.member_hk = b.member_hk AND p.accepted_date > b.accepted_date
+  GROUP BY b.member_hk, b.d0_date, b.accepted_date
+)
+SELECT d0_date,
+  COUNT(*) AS total,
+  COUNTIF(renew_date < d0_date) AS before_reminder,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 0 DAY)) AS d0,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 3 DAY)) AS d3,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 7 DAY)) AS d7,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 14 DAY)) AS d14,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 30 DAY)) AS d30,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 50 DAY)) AS d50,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 70 DAY)) AS d70,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 77 DAY)) AS exp7,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 84 DAY)) AS exp14,
+  COUNTIF(renew_date <= DATE_ADD(d0_date, INTERVAL 100 DAY)) AS exp30,
+  COUNTIF(renew_date IS NULL) AS never_renewed
+FROM next_accept
+GROUP BY d0_date
+ORDER BY d0_date
+"""
+
+
+def refresh_live_supporting_csvs(client: bigquery.Client) -> None:
+    queries = [
+        (BREAKPOINT_PATH, sql_breakpoints()),
+        (REG_COHORT_PATH, sql_daily_reg()),
+        (STOCK_919_PATH, sql_919_stock()),
+        (RECOVERY_919_PATH, sql_919_recovery()),
+        (POLICY_COHORT_PATH, sql_policy_cohort()),
+    ]
+    for path, sql in queries:
+        rows = query_rows(client, sql)
+        if rows:
+            cooked = []
+            for row in rows:
+                cooked.append({k: (v.isoformat() if isinstance(v, date) else v) for k, v in row.items()})
+            write_csv_dicts(path, cooked)
+
+
+def render_breakpoint_js(rows: list[dict[str, str]]) -> str:
+    lines = []
+    for r in rows:
+        lines.append("      {month:'%s',total:%s,active:%s,carrierOk:%s,n919:%s,noCarrier:%s,policy:%s,hyvs:%s}," % (
+            r['reg_month'], r['total'], r['active_30d'], r['carrier_ok'], r['n919'], r['no_carrier'], r['policy_ok'], r['hyvs']))
+    return 'const breakpointData = [\n' + '\n'.join(lines) + '\n    ];'
+
+
+def pct_str(n: int, total: int) -> str:
+    return f'{(n / total * 100 if total else 0):.1f}%'
+
+
+def render_daily_reg_js(rows: list[dict[str, str]]) -> str:
+    lines = []
+    for r in rows:
+        total = int(r['total'])
+        lines.append("      ['%s','%s','%s','%s','%s','%s','%s']," % (
+            r['date'], fmt_int(total), pct_str(int(r['carrier_d0']), total), pct_str(int(r['carrier_d7']), total), pct_str(int(r['policy_d0']), total), pct_str(int(r['inv_d7']), total), pct_str(int(r['inv_d30']), total)))
+    return 'const dailyRegData=[\n' + '\n'.join(lines) + '\n    ];'
+
+
+def render_stock_js(rows: list[dict[str, str]]) -> str:
+    lines = [f'{{date:"{r["date"]}",stock:{r["total"]}}},' for r in rows]
+    return 'const stock919Data = [\n' + '\n'.join('      ' + x for x in lines) + '\n  ];'
+
+
+def render_daily_919_js(rows: list[dict[str, str]]) -> str:
+    lines = [f"{{date:'{r['date']}',count:{r['total']}}}," for r in rows]
+    return 'const daily919Data = [\n' + '\n'.join('      ' + x for x in lines) + '\n  ];'
+
+
+def render_policy_daily_js(metrics: list[dict]) -> str:
+    lines = []
+    for r in metrics:
+        expired = max(r['undeleted_e'] - r['policy_valid'], 0)
+        lines.append(f"{{date:'{r['date'].isoformat()}',active:{r['policy_valid']},expired:{expired}}},")
+    return 'const dailyPolicyData = [\n' + '\n'.join('      ' + x for x in lines) + '\n  ];'
+
+
+def render_recovery_js(rows: list[dict[str, str]]) -> tuple[str, str]:
+    daily_lines = []
+    monthly = defaultdict(lambda: {'total': 0, 'd1': 0, 'd3': 0, 'd7': 0, 'd14': 0, 'd30': 0, 'd60': 0, 'd90': 0, 'never': 0})
+    for r in rows:
+        total = int(r['total'])
+        vals = {k: int(r[k]) for k in ['d1', 'd3', 'd7', 'd14', 'd30', 'd60', 'd90', 'never']}
+        daily_lines.append("      ['%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','—']," % (
+            r['date'], fmt_int(total), pct_str(vals['d1'], total), pct_str(vals['d3'], total), pct_str(vals['d7'], total), pct_str(vals['d14'], total), pct_str(vals['d30'], total), pct_str(vals['d60'], total), pct_str(vals['d90'], total), pct_str(vals['never'], total)))
+        m = r['date'][:7]
+        monthly[m]['total'] += total
+        for k, v in vals.items():
+            monthly[m][k] += v
+    monthly_lines = []
+    for m in sorted(monthly):
+        total = monthly[m]['total']
+        d = monthly[m]
+        monthly_lines.append("      ['%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','—']," % (
+            m, fmt_int(total), pct_str(d['d1'], total), pct_str(d['d3'], total), pct_str(d['d7'], total), pct_str(d['d14'], total), pct_str(d['d30'], total), pct_str(d['d60'], total), pct_str(d['d90'], total), pct_str(d['never'], total)))
+    return 'const recoveryData=[\n' + '\n'.join(monthly_lines) + '\n    ];', 'const dailyRecoveryData=[\n' + '\n'.join(daily_lines) + '\n    ];'
+
+
+def render_policy_cohort_js(rows: list[dict[str, str]]) -> str:
+    lines = []
+    for r in rows:
+        total = int(r['total'])
+        lines.append("      ['%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s']," % (
+            r['d0_date'], fmt_int(total), pct_str(int(r['before_reminder']), total), pct_str(int(r['d0']), total), pct_str(int(r['d3']), total), pct_str(int(r['d7']), total), pct_str(int(r['d14']), total), pct_str(int(r['d30']), total), pct_str(int(r['d50']), total), pct_str(int(r['d70']), total), pct_str(int(r['exp7']), total), pct_str(int(r['exp14']), total), pct_str(int(r['exp30']), total), pct_str(int(r['never_renewed']), total)))
+    return 'const dailyPolicyCohort=[\n' + '\n'.join(lines) + '\n    ];'
+
 
 def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], daily_downloads: list[dict], meta: SourceMeta) -> str:
     last = metrics[-1]
@@ -297,11 +602,11 @@ def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], d
     ios_pct_text = f'{pct(ios_ytd, IOS_TARGET):.1f}%'
     html = replace_once(html, r'(🤖 Android 新下載</div>\s*<div class="card-subtitle">年度目標 400,000（YTD 至 )\d+/\d+(）)', rf'\g<1>{download_date_label}\g<2>')
     html = replace_once(html, r'(<div class="big-num" style="background:var\(--grad-android\);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">)[\d,]+(</div>\s*<div style="font-size:.88rem;color:var\(--text-dim\)">/ 400,000</div>\s*<div style="font-size:.88rem;color:var\(--accent-green\);font-weight:700">)[\d.]+%(</div>)', rf'\g<1>{fmt_int(android_ytd)}\g<2>{android_pct_text}\g<3>')
-    html = replace_once(html, r'(<div class="progress-label"><span>年度進度</span><span>)[\d.]+%(</span></div>\s*<div class="progress-bar"><div class="fill android" id="dl-android" style="width:)[\d.]+%("></div></div>)', rf'\g<1>{android_pct_text}\g<2>{android_pct_text}\g<3>')
+    html = replace_once(html, r'(<div class="progress-label"><span>年度進度</span><span>)[\d.]+%(</span></div>\s*<div class="progress-bar"><div class="fill android" id="dl-android" style="width:)[\d.]+%(\"></div></div>)', rf'\g<1>{android_pct_text}\g<2>{android_pct_text}\g<3>')
     html = replace_once(html, r'(<div class="q-label">Q1 實際</div>\s*<div class="q-num" style="color:#34d399">)[\d,]+(</div>\s*<div class="q-sub">And )[\d.]+K / iOS [\d.]+K(</div>)', rf'\g<1>{fmt_int(android_ytd)}\g<2>{android_ytd/1000:.1f}K / iOS {ios_ytd/1000:.1f}K\g<3>')
     html = replace_once(html, r'(🍎 iOS 新下載</div>\s*<div class="card-subtitle">年度目標 600,000（YTD 至 )\d+/\d+(）)', rf'\g<1>{download_date_label}\g<2>')
     html = replace_once(html, r'(<div class="big-num" style="background:var\(--grad-ios\);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">)[\d,]+(</div>\s*<div style="font-size:.88rem;color:var\(--text-dim\)">/ 600,000</div>\s*<div style="font-size:.88rem;color:var\(--accent-blue\);font-weight:700">)[\d.]+%(</div>)', rf'\g<1>{fmt_int(ios_ytd)}\g<2>{ios_pct_text}\g<3>')
-    html = replace_once(html, r'(<div class="progress-label"><span>年度進度</span><span>)[\d.]+%(</span></div>\s*<div class="progress-bar"><div class="fill ios" id="dl-ios" style="width:)[\d.]+%("></div></div>)', rf'\g<1>{ios_pct_text}\g<2>{ios_pct_text}\g<3>')
+    html = replace_once(html, r'(<div class="progress-label"><span>年度進度</span><span>)[\d.]+%(</span></div>\s*<div class="progress-bar"><div class="fill ios" id="dl-ios" style="width:)[\d.]+%(\"></div></div>)', rf'\g<1>{ios_pct_text}\g<2>{ios_pct_text}\g<3>')
     html = replace_once(html, r'(<div class="q-label">Q1 實際</div>\s*<div class="q-num" style="color:#60a5fa">)[\d,]+(</div>\s*<div class="q-sub">And )[\d.]+K / iOS [\d.]+K(</div>)', rf'\g<1>{fmt_int(ios_ytd)}\g<2>{android_ytd/1000:.1f}K / iOS {ios_ytd/1000:.1f}K\g<3>')
 
     trend_records = [{'date': r['date'], 'hyvs': None if r['hyvs_total'] == 0 else r['hyvs_total'], 'mavs': None if r['mavs_total'] == 0 else r['mavs_total']} for r in metrics]
@@ -309,7 +614,17 @@ def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], d
     html = replace_once(html, r'const downloadData = \[.*?\n\s*\];', 'const downloadData = [\n' + js_array(monthly_downloads, ['month', 'ios', 'android', 'register']) + '\n    ];')
     html = replace_once(html, r'const dailyDownloadData = \[.*?\n\s*\];', 'const dailyDownloadData = [\n' + js_array(daily_downloads, ['date', 'ios', 'android']) + '\n    ];')
 
-    init_js = f'''window.addEventListener('DOMContentLoaded', () => {{\n  setTimeout(() => {{\n    // HYVS\n    const hyvsP = pct({last['hyvs_total']},5000000);\n    document.getElementById('hyvs-fill').style.width = hyvsP+'%';\n    document.getElementById('hyvs-pct').textContent = hyvsP+'%';\n\n    // MAVS\n    const mavsP = pct({last_mavs_nonzero['mavs_total']},3016711);\n    document.getElementById('mavs-fill').style.width = mavsP+'%';\n    document.getElementById('mavs-pct').textContent = mavsP+'%';\n    document.getElementById('mavs-baseline').style.left = pct(2216711,3016711)+'%';\n\n    // Downloads\n    document.getElementById('dl-android').style.width = pct({android_ytd},400000)+'%';\n    document.getElementById('dl-ios').style.width = pct({ios_ytd},600000)+'%';\n\n    // HYVS Q2 (not started yet, 0%)\n    document.getElementById('hyvs-q2').style.width = '0%';\n  }}, 200);'''
+    html = replace_once(html, r'const breakpointData = \[.*?\n\s*\];', render_breakpoint_js(read_csv_dicts(BREAKPOINT_PATH)))
+    html = replace_once(html, r'const dailyRegData=\[.*?\n\s*\];', render_daily_reg_js(read_csv_dicts(REG_COHORT_PATH)))
+    rec_monthly, rec_daily = render_recovery_js(read_csv_dicts(RECOVERY_919_PATH))
+    html = replace_once(html, r'const recoveryData=\[.*?\n\s*\];', rec_monthly)
+    html = replace_once(html, r'const dailyRecoveryData=\[.*?\n\s*\];', rec_daily)
+    html = replace_once(html, r'const dailyPolicyCohort=\[.*?\n\s*\];', render_policy_cohort_js(read_csv_dicts(POLICY_COHORT_PATH)))
+    html = replace_once(html, r'const daily919Data = \[.*?\n\s*\];', render_daily_919_js(read_csv_dicts(RECOVERY_919_PATH)))
+    html = replace_once(html, r'const stock919Data = \[.*?\n\s*\];', render_stock_js(read_csv_dicts(STOCK_919_PATH)))
+    html = replace_once(html, r'const dailyPolicyData = \[.*?\n\s*\];', render_policy_daily_js(metrics))
+
+    init_js = f'''window.addEventListener('DOMContentLoaded', () => {{\n  setTimeout(() => {{\n    const hyvsP = pct({last['hyvs_total']},5000000);\n    document.getElementById('hyvs-fill').style.width = hyvsP+'%';\n    document.getElementById('hyvs-pct').textContent = hyvsP+'%';\n    const mavsP = pct({last_mavs_nonzero['mavs_total']},3016711);\n    document.getElementById('mavs-fill').style.width = mavsP+'%';\n    document.getElementById('mavs-pct').textContent = mavsP+'%';\n    document.getElementById('mavs-baseline').style.left = pct(2216711,3016711)+'%';\n    document.getElementById('dl-android').style.width = pct({android_ytd},400000)+'%';\n    document.getElementById('dl-ios').style.width = pct({ios_ytd},600000)+'%';\n    const q2 = document.getElementById('hyvs-q2'); if(q2) q2.style.width = '0%';\n  }}, 200);'''
     html = replace_once(html, r"window\.addEventListener\('DOMContentLoaded', \(\) => \{\s*setTimeout\(\(\) => \{.*?document\.getElementById\('hyvs-q2'\)\.style\.width = '0%';\s*\}, 200\);", init_js)
     return html
 
@@ -321,11 +636,13 @@ def main() -> None:
 
     source_html = HTML_PATH.read_text()
     existing_trend = parse_existing_trend_data(source_html)
+    client = get_bq_client()
 
     if args.skip_bq:
         metrics_rows = read_csv_dicts(CSV_PATH)
     else:
-        metrics_rows = refresh_daily_metrics_csv()
+        metrics_rows = refresh_daily_metrics_csv(client)
+        refresh_live_supporting_csvs(client)
     metrics = apply_metric_safeguards(parse_metrics(metrics_rows), existing_trend)
 
     ios_daily = parse_ios_downloads(IOS_CSV_PATH if IOS_CSV_PATH.exists() else IOS_CSV_ALT_PATH)
@@ -341,8 +658,10 @@ def main() -> None:
     html = update_html(source_html, metrics, monthly_downloads, daily_downloads, meta)
     HTML_PATH.write_text(html)
     shutil.copyfile(HTML_PATH, PUBLIC_HTML_PATH)
+    DIST_HTML_PATH.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(HTML_PATH, DIST_HTML_PATH)
 
-    mode = 'existing CSV' if args.skip_bq else 'BigQuery + CSV'
+    mode = 'existing CSV' if args.skip_bq else 'BigQuery + refreshed live CSVs'
     print(f'Updated dashboard from {mode}')
     print(f'Metrics through {meta.metrics_last}')
     print(f'iOS downloads through {meta.ios_last}')
