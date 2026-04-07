@@ -625,7 +625,7 @@ def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], d
     html = replace_once(html, r'const dailyPolicyData = \[.*?\n\s*\];', render_policy_daily_js(metrics))
 
     init_js = f'''window.addEventListener('DOMContentLoaded', () => {{\n  setTimeout(() => {{\n    const hyvsP = pct({last['hyvs_total']},5000000);\n    document.getElementById('hyvs-fill').style.width = hyvsP+'%';\n    document.getElementById('hyvs-pct').textContent = hyvsP+'%';\n    const mavsP = pct({last_mavs_nonzero['mavs_total']},3016711);\n    document.getElementById('mavs-fill').style.width = mavsP+'%';\n    document.getElementById('mavs-pct').textContent = mavsP+'%';\n    document.getElementById('mavs-baseline').style.left = pct(2216711,3016711)+'%';\n    document.getElementById('dl-android').style.width = pct({android_ytd},400000)+'%';\n    document.getElementById('dl-ios').style.width = pct({ios_ytd},600000)+'%';\n    const q2 = document.getElementById('hyvs-q2'); if(q2) q2.style.width = '0%';\n  }}, 200);'''
-    html = replace_once(html, r"window\.addEventListener\('DOMContentLoaded', \(\) => \{\s*setTimeout\(\(\) => \{.*?document\.getElementById\('hyvs-q2'\)\.style\.width = '0%';\s*\}, 200\);", init_js)
+    html = replace_once(html, r"window\.addEventListener\('DOMContentLoaded', \(\) => \{\s*setTimeout\(\(\) => \{.*?const q2 = document\.getElementById\('hyvs-q2'\); if\(q2\) q2\.style\.width = '0%';\s*\}, 200\);", init_js)
     return html
 
 
