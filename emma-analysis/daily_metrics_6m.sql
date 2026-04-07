@@ -1,8 +1,8 @@
 -- 每日會員斷點分析（6個月：2025-09-01 ~ 2026-02-28）
 -- 使用 intermediate 層 + 分區過濾
 
-DECLARE report_start DATE DEFAULT '2025-09-01';
-DECLARE report_end DATE DEFAULT '2026-02-28';
+DECLARE report_start DATE DEFAULT '2025-10-01';
+DECLARE report_end DATE DEFAULT '2026-04-07';
 
 WITH
 date_spine AS (
