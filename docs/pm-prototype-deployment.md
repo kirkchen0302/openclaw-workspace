@@ -16,6 +16,7 @@
 | 頁面 | URL |
 |------|-----|
 | 發票存摺 AI Agent Prototype | https://pm-prototype-a75ce.web.app/prototype/ai_agent |
+| AI 管家 Prototype 0408_v1 | https://pm-prototype-a75ce.web.app/prototype/ai_agent/0408_v1 |
 | HYVS vs MAVs Dashboard | https://pm-prototype-a75ce.web.app/dashboard/hyvs-mavs |
 | 受眾回訪分析 Dashboard | https://pm-prototype-a75ce.web.app/dashboard/audience |
 
@@ -52,7 +53,7 @@
 **觸發條件：**
 - Push to `main`，且 `invoice-prototype/**` 或 workflow 檔案有變動
 
-**Environment：** `INVOICE_BFD85`
+**Environment：** `PM_PROTOTYPE_A75CE`
 
 **Required Secrets（需在 GitHub Environment 設定）：**
 | Secret 名稱 | 用途 |

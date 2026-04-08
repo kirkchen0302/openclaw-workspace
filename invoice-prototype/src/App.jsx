@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { fetchUserData } from "./firebase";
+import AiButler0408v1 from "./prototypes/aiButler0408v1";
 
 // ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
@@ -1389,6 +1390,11 @@ function QueryRouter({ children }) {
   const params = new URLSearchParams(window.location.search);
   const type = params.get("type");
   const cate = params.get("cate");
+  const path = window.location.pathname.replace(/\/$/, "");
+
+  if (path === "/prototype/ai_agent/0408_v1") {
+    return <AiButler0408v1 />;
+  }
 
   if (type === "dashboard") {
     if (cate === "hyvs-mavs") {

@@ -15,7 +15,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: INVOICE_BFD85
+    environment: PM_PROTOTYPE_A75CE
 
     steps:
       - name: Checkout
@@ -50,9 +50,11 @@ jobs:
           mkdir -p invoice-prototype/dist/dashboard/hyvs-mavs
           mkdir -p invoice-prototype/dist/dashboard/audience
           mkdir -p invoice-prototype/dist/prototype/ai_agent
+          mkdir -p invoice-prototype/dist/prototype/ai_agent/0408_v1
           cp invoice-prototype/dist/hyvs-mavs-dashboard.html invoice-prototype/dist/dashboard/hyvs-mavs/index.html
           cp invoice-prototype/dist/audience-dashboard.html invoice-prototype/dist/dashboard/audience/index.html
           cp invoice-prototype/dist/index.html invoice-prototype/dist/prototype/ai_agent/index.html
+          cp invoice-prototype/dist/index.html invoice-prototype/dist/prototype/ai_agent/0408_v1/index.html
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
