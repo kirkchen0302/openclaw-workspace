@@ -319,14 +319,14 @@ policy_ok AS (
     AND DATE_ADD(CAST(effective_from AS DATE), INTERVAL 180 DAY) > DATE '{as_of_date.isoformat()}'
 ),
 active_30d AS (
-  SELECT DISTINCT CAST(user_id AS INT64) AS member_id
-  FROM `invoice-bfd85.analytics_382839978.events_intraday_*`
-  WHERE event_name = 'session_start' AND user_id IS NOT NULL AND user_id != ''
+  SELECT DISTINCT ms.member_hk
+  FROM `production-379804.base_marts.base__sat__session_session_start_activity` sa
+  JOIN `production-379804.base_marts.base__link__member_session` ms USING(session_hk)
+  WHERE sa.created_date BETWEEN DATE_SUB(DATE '{as_of_date.isoformat()}', INTERVAL 30 DAY) AND DATE '{as_of_date.isoformat()}'
 ),
 active_members AS (
-  SELECT DISTINCT h.member_hk
-  FROM active_30d a
-  JOIN `production-379804.base_marts.base__hub__member` h ON h.member_id = a.member_id
+  SELECT DISTINCT member_hk
+  FROM active_30d
 ),
 hyvs AS (
   SELECT DISTINCT mi.member_hk
