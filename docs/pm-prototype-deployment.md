@@ -90,8 +90,8 @@
 
 ### 4. GitHub Environment Secret 讀不到
 - **問題：** CI build 時 `__FIREBASE_API_KEY__` 沒被替換
-- **原因：** Secret 只設在 repo level，但 workflow 指定了 `environment: INVOICE_BFD85`，environment-scoped secret 讀不到 repo-level secret
-- **解法：** 把 `PM_PROTOTYPE_FIREBASE_API_KEY` 加到 `INVOICE_BFD85` environment 的 secrets 裡
+- **原因：** Secret 只設在 repo level，但 workflow 指定了 `environment: PM_PROTOTYPE_A75CE`，environment-scoped secret 讀不到 repo-level secret
+- **解法：** 把 `PM_PROTOTYPE_FIREBASE_API_KEY` 加到 `PM_PROTOTYPE_A75CE` environment 的 secrets 裡
 
 ### 5. authDomain 專案不符
 - **問題：** 初期把 `invoice-bfd85` 的 API key 用在 `pm-prototype-a75ce` 的 authDomain，導致 key 和 domain 不在同一個 GCP 專案
