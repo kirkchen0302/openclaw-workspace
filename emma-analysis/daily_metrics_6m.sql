@@ -2,7 +2,7 @@
 -- 使用 intermediate 層 + 分區過濾
 
 DECLARE report_start DATE DEFAULT '2025-10-01';
-DECLARE report_end DATE DEFAULT '2026-04-07';
+DECLARE report_end DATE DEFAULT '2026-04-05';
 
 WITH
 date_spine AS (
@@ -120,22 +120,20 @@ invoice_30d AS (
   GROUP BY ds.report_date
 ),
 
--- ============ 活躍（Firebase session_start，近30日）============
+-- ============ 活躍（production session_start，近30日）============
 sessions AS (
   SELECT DISTINCT
-    CAST(user_id AS INT64) AS member_id,
-    PARSE_DATE('%Y%m%d', REPLACE(_TABLE_SUFFIX, 'intraday_', '')) AS session_date
-  FROM `invoice-bfd85.analytics_382839978.events_intraday_*`
-  WHERE REPLACE(_TABLE_SUFFIX, 'intraday_', '') 
-    BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(report_start, INTERVAL 30 DAY))
-        AND FORMAT_DATE('%Y%m%d', report_end)
-    AND event_name = 'session_start'
-    AND user_id IS NOT NULL AND user_id != ''
+    ms.member_hk,
+    sa.created_date AS session_date
+  FROM `production-379804.base_marts.base__sat__session_session_start_activity` sa
+  JOIN `production-379804.base_marts.base__link__member_session` ms
+    ON sa.session_hk = ms.session_hk
+  WHERE sa.created_date BETWEEN DATE_SUB(report_start, INTERVAL 30 DAY) AND report_end
 ),
 active_daily AS (
   SELECT
     ds.report_date,
-    COUNT(DISTINCT s.member_id) AS active_30d
+    COUNT(DISTINCT s.member_hk) AS active_30d
   FROM date_spine ds
   JOIN sessions s ON s.session_date BETWEEN DATE_SUB(ds.report_date, INTERVAL 30 DAY) AND ds.report_date
   GROUP BY ds.report_date
@@ -146,16 +144,15 @@ active_daily AS (
 mavs_member_daily AS (
   SELECT DISTINCT
     ds.report_date,
-    h.member_hk,
+    s.member_hk,
     ml2.register_date
   FROM date_spine ds
   JOIN sessions s ON s.session_date BETWEEN DATE_SUB(ds.report_date, INTERVAL 30 DAY) AND ds.report_date
-  JOIN `production-379804.base_marts.base__hub__member` h ON h.member_id = s.member_id
-  JOIN carrier_valid cv ON cv.member_hk = h.member_hk
-  JOIN policy_src p ON p.member_hk = h.member_hk
+  JOIN carrier_valid cv ON cv.member_hk = s.member_hk
+  JOIN policy_src p ON p.member_hk = s.member_hk
     AND p.accepted_date <= ds.report_date
     AND DATE_ADD(p.accepted_date, INTERVAL 180 DAY) > ds.report_date
-  LEFT JOIN ml ml2 ON ml2.member_hk = h.member_hk
+  LEFT JOIN ml ml2 ON ml2.member_hk = s.member_hk
 ),
 mavs_agg AS (
   SELECT
