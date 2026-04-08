@@ -31,11 +31,11 @@
       },
       {
         "source": "/dashboard/audience",
-        "destination": "/dashboard/audience/index.html"
+        "destination": "/audience-dashboard.html"
       },
       {
         "source": "/prototype/ai_agent",
-        "destination": "/prototype/ai_agent/index.html"
+        "destination": "/index.html"
       },
       {
         "source": "**",
