@@ -38,3 +38,7 @@
   - Policy cohort through 7/26
   - iOS downloads through 3/18
   - Android monthly downloads through 3/20
+
+- 2026-04-08: finished T-3 cutoff wiring in `scripts/update_hyvs_mavs_dashboard.py` so run date D drives BigQuery-backed dashboard sections with effective cutoff D-3 (`--run-date` + `DATA_LAG_DAYS`).
+- Reran updater with `--run-date 2026-04-08`; regenerated dashboard artifacts now show BigQuery-backed cutoffs through 4/5 (HYVS/MAVS/919) and policy cohort through 7/24.
+- Synced official Firebase route artifacts at `invoice-prototype/public/dashboard/hyvs-mavs/index.html` and `invoice-prototype/dist/dashboard/hyvs-mavs/index.html` for deployment.
