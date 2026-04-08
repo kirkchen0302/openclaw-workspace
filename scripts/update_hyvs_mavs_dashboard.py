@@ -599,8 +599,9 @@ def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], d
     ios_ytd = sum(r['ios'] for r in monthly_downloads if r['month'].startswith(str(last_date.year)))
     download_last = max([d['date'] for d in daily_downloads], default=None)
 
-    badge = f'📅 MAVS 至 {fmt_short_date(last_mavs_nonzero["date"])} ｜ HYVS 至 {fmt_short_date(last_date)} ｜ 919 至 {fmt_short_date(meta.stock_919_last)} ｜ Policy 至 {fmt_short_date(meta.policy_last)}'
-    footer = f'MAVS 至 {fmt_short_date(last_mavs_nonzero["date"])} ｜ HYVS 至 {fmt_short_date(last_date)} ｜ 919 至 {fmt_short_date(meta.stock_919_last)} ｜ Policy 至 {fmt_short_date(meta.policy_last)} ｜ BigQuery 原始資料 ｜ Android: Play Console（月資料按日分配）｜ iOS: App Store Connect CSV'
+    policy_display_date = last_date
+    badge = f'📅 MAVS 至 {fmt_short_date(last_mavs_nonzero["date"])} ｜ HYVS 至 {fmt_short_date(last_date)} ｜ 919 至 {fmt_short_date(meta.stock_919_last)} ｜ Policy 至 {fmt_short_date(policy_display_date)}'
+    footer = f'MAVS 至 {fmt_short_date(last_mavs_nonzero["date"])} ｜ HYVS 至 {fmt_short_date(last_date)} ｜ 919 至 {fmt_short_date(meta.stock_919_last)} ｜ Policy 至 {fmt_short_date(policy_display_date)} ｜ BigQuery 原始資料 ｜ Android: Play Console（月資料按日分配）｜ iOS: App Store Connect CSV'
     html = replace_once(html, r'<span class="badge-date">.*?</span>', f'<span class="badge-date">{badge}</span>')
     html = replace_once(html, r'<footer>\s*<div class="container">.*?</div>\s*</footer>', f'<footer>\n  <div class="container">\n    {footer}\n  </div>\n</footer>')
 
