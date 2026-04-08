@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "__PM_PROTOTYPE_API_KEY__",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   databaseURL: "https://pm-prototype-a75ce-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "pm-prototype-a75ce",
 };
