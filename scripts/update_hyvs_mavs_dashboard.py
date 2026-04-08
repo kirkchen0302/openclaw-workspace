@@ -9,7 +9,7 @@ import re
 import shutil
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Iterable
 
@@ -21,7 +21,9 @@ WORKSPACE = Path('/Users/kirk/.openclaw/workspace')
 DOCS_DIR = WORKSPACE / 'docs' / 'emma-analysis'
 HTML_PATH = DOCS_DIR / 'hyvs_mavs_dashboard.html'
 PUBLIC_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'public' / 'hyvs-mavs-dashboard.html'
+PUBLIC_ROUTE_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'public' / 'dashboard' / 'hyvs-mavs' / 'index.html'
 DIST_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'dist' / 'hyvs-mavs-dashboard.html'
+DIST_ROUTE_HTML_PATH = WORKSPACE / 'invoice-prototype' / 'dist' / 'dashboard' / 'hyvs-mavs' / 'index.html'
 SQL_PATH = DOCS_DIR / 'daily_metrics_6m.sql'
 CSV_PATH = DOCS_DIR / 'daily_metrics_6m.csv'
 IOS_CSV_PATH = DOCS_DIR / 'ios_first_downloads.csv'
@@ -42,6 +44,7 @@ IOS_TARGET = 600_000
 START_919 = date(2025, 7, 1)
 START_REG = date(2025, 7, 1)
 START_POLICY = date(2025, 7, 1)
+DATA_LAG_DAYS = 3
 
 
 @dataclass
@@ -114,8 +117,7 @@ def query_rows(client: bigquery.Client, sql: str) -> list[dict[str, object]]:
     return out
 
 
-def refresh_daily_metrics_csv(client: bigquery.Client) -> list[dict[str, str]]:
-    end_date = date.today()
+def refresh_daily_metrics_csv(client: bigquery.Client, end_date: date) -> list[dict[str, str]]:
     start_date = add_months(month_start(end_date), -6)
     sql = SQL_PATH.read_text()
     sql = re.sub(r"DECLARE report_start DATE DEFAULT '\d{4}-\d{2}-\d{2}';", f"DECLARE report_start DATE DEFAULT '{start_date.isoformat()}';", sql)
@@ -293,7 +295,7 @@ def apply_metric_safeguards(metrics: list[dict], existing_trend: dict[str, dict[
     return fixed
 
 
-def sql_breakpoints() -> str:
+def sql_breakpoints(as_of_date: date) -> str:
     return f"""
 WITH members AS (
   SELECT member_hk, CAST(created_at AS DATE) AS reg_date
@@ -313,8 +315,8 @@ carrier_ok AS (
 policy_ok AS (
   SELECT DISTINCT member_hk
   FROM `production-379804.intermediate.ma_sat__member_policy_statement`
-  WHERE CAST(effective_from AS DATE) <= CURRENT_DATE('Asia/Taipei')
-    AND DATE_ADD(CAST(effective_from AS DATE), INTERVAL 180 DAY) > CURRENT_DATE('Asia/Taipei')
+  WHERE CAST(effective_from AS DATE) <= DATE '{as_of_date.isoformat()}'
+    AND DATE_ADD(CAST(effective_from AS DATE), INTERVAL 180 DAY) > DATE '{as_of_date.isoformat()}'
 ),
 active_30d AS (
   SELECT DISTINCT CAST(user_id AS INT64) AS member_id
@@ -332,7 +334,8 @@ hyvs AS (
   JOIN `production-379804.base_marts.base__link__member_invoice` mi USING(invoice_hk)
   JOIN carrier_ok c ON c.member_hk = mi.member_hk
   JOIN policy_ok p ON p.member_hk = mi.member_hk
-  WHERE CAST(i.issued_at AS DATE) >= DATE_SUB(CURRENT_DATE('Asia/Taipei'), INTERVAL 180 DAY)
+  WHERE CAST(i.issued_at AS DATE) >= DATE_SUB(DATE '{as_of_date.isoformat()}', INTERVAL 180 DAY)
+    AND CAST(i.issued_at AS DATE) <= DATE '{as_of_date.isoformat()}'
     AND i.carrier_type IS NOT NULL AND i.carrier_type != ''
 )
 SELECT FORMAT_DATE('%Y-%m', reg_date) AS reg_month,
@@ -349,27 +352,31 @@ ORDER BY reg_month
 """
 
 
-def sql_daily_reg() -> str:
+def sql_daily_reg(as_of_date: date) -> str:
     return f"""
 DECLARE start_date DATE DEFAULT '{START_REG.isoformat()}';
+DECLARE as_of_date DATE DEFAULT '{as_of_date.isoformat()}';
 WITH regs AS (
   SELECT member_hk, CAST(created_at AS DATE) AS reg_date
   FROM `production-379804.intermediate.sat__member`
+  WHERE CAST(created_at AS DATE) <= as_of_date
   QUALIFY ROW_NUMBER() OVER (PARTITION BY member_hk ORDER BY effective_from DESC) = 1
 ),
 cohort AS (
-  SELECT * FROM regs WHERE reg_date >= start_date
+  SELECT * FROM regs WHERE reg_date >= start_date AND reg_date <= as_of_date
 ),
 carrier_events AS (
   SELECT mc.member_hk, MIN(CAST(c.effective_from AS DATE)) AS carrier_date
   FROM `production-379804.intermediate.sat__carrier` c
   JOIN `production-379804.base_marts.base__link__member_carrier` mc USING(carrier_hk)
   WHERE c.is_active = TRUE
+    AND CAST(c.effective_from AS DATE) <= as_of_date
   GROUP BY mc.member_hk
 ),
 policy_events AS (
   SELECT member_hk, MIN(CAST(effective_from AS DATE)) AS policy_date
   FROM `production-379804.intermediate.ma_sat__member_policy_statement`
+  WHERE CAST(effective_from AS DATE) <= as_of_date
   GROUP BY member_hk
 ),
 invoice_daily AS (
@@ -377,6 +384,7 @@ invoice_daily AS (
   FROM `production-379804.intermediate.sat__invoice` i
   JOIN `production-379804.base_marts.base__link__member_invoice` mi USING(invoice_hk)
   WHERE i.carrier_type IS NOT NULL AND i.carrier_type != ''
+    AND CAST(i.issued_at AS DATE) <= as_of_date
 ),
 inv_rollup AS (
   SELECT c.reg_date AS date,
@@ -396,10 +404,11 @@ SELECT * FROM inv_rollup ORDER BY date
 """
 
 
-def sql_919_stock() -> str:
+def sql_919_stock(end_date: date) -> str:
     return f"""
 DECLARE start_date DATE DEFAULT '{START_919.isoformat()}';
-WITH dates AS (SELECT d AS date FROM UNNEST(GENERATE_DATE_ARRAY(start_date, CURRENT_DATE('Asia/Taipei'))) d),
+DECLARE end_date DATE DEFAULT '{end_date.isoformat()}';
+WITH dates AS (SELECT d AS date FROM UNNEST(GENERATE_DATE_ARRAY(start_date, end_date)) d),
 carrier_days AS (
   SELECT d.date, COUNT(DISTINCT mc.member_hk) AS total
   FROM dates d
@@ -413,9 +422,10 @@ SELECT date, total FROM carrier_days ORDER BY date
 """
 
 
-def sql_919_recovery() -> str:
+def sql_919_recovery(end_date: date) -> str:
     return f"""
 DECLARE start_date DATE DEFAULT '{START_919.isoformat()}';
+DECLARE end_date DATE DEFAULT '{end_date.isoformat()}';
 WITH inactive AS (
   SELECT mc.member_hk, CAST(c.effective_from AS DATE) AS inactive_date
   FROM `production-379804.intermediate.sat__carrier` c
@@ -451,12 +461,14 @@ ORDER BY date
 """
 
 
-def sql_policy_cohort() -> str:
+def sql_policy_cohort(as_of_date: date) -> str:
     return f"""
 DECLARE start_date DATE DEFAULT '{START_POLICY.isoformat()}';
+DECLARE as_of_date DATE DEFAULT '{as_of_date.isoformat()}';
 WITH policy AS (
   SELECT member_hk, CAST(effective_from AS DATE) AS accepted_date
   FROM `production-379804.intermediate.ma_sat__member_policy_statement`
+  WHERE CAST(effective_from AS DATE) <= as_of_date
 ),
 base AS (
   SELECT member_hk, accepted_date, DATE_ADD(accepted_date, INTERVAL 110 DAY) AS d0_date
@@ -490,13 +502,13 @@ ORDER BY d0_date
 """
 
 
-def refresh_live_supporting_csvs(client: bigquery.Client) -> None:
+def refresh_live_supporting_csvs(client: bigquery.Client, as_of_date: date) -> None:
     queries = [
-        (BREAKPOINT_PATH, sql_breakpoints()),
-        (REG_COHORT_PATH, sql_daily_reg()),
-        (STOCK_919_PATH, sql_919_stock()),
-        (RECOVERY_919_PATH, sql_919_recovery()),
-        (POLICY_COHORT_PATH, sql_policy_cohort()),
+        (BREAKPOINT_PATH, sql_breakpoints(as_of_date)),
+        (REG_COHORT_PATH, sql_daily_reg(as_of_date)),
+        (STOCK_919_PATH, sql_919_stock(as_of_date)),
+        (RECOVERY_919_PATH, sql_919_recovery(as_of_date)),
+        (POLICY_COHORT_PATH, sql_policy_cohort(as_of_date)),
     ]
     for path, sql in queries:
         rows = query_rows(client, sql)
@@ -632,7 +644,10 @@ def update_html(html: str, metrics: list[dict], monthly_downloads: list[dict], d
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--skip-bq', action='store_true', help='Use existing daily_metrics_6m.csv instead of rerunning BigQuery')
+    parser.add_argument('--run-date', type=date.fromisoformat, default=date.today(), help='Dashboard run date (YYYY-MM-DD); BigQuery-backed data uses run_date - DATA_LAG_DAYS')
     args = parser.parse_args()
+
+    effective_cutoff = args.run_date - timedelta(days=DATA_LAG_DAYS)
 
     source_html = HTML_PATH.read_text()
     existing_trend = parse_existing_trend_data(source_html)
@@ -641,8 +656,8 @@ def main() -> None:
     if args.skip_bq:
         metrics_rows = read_csv_dicts(CSV_PATH)
     else:
-        metrics_rows = refresh_daily_metrics_csv(client)
-        refresh_live_supporting_csvs(client)
+        metrics_rows = refresh_daily_metrics_csv(client, effective_cutoff)
+        refresh_live_supporting_csvs(client, effective_cutoff)
     metrics = apply_metric_safeguards(parse_metrics(metrics_rows), existing_trend)
 
     ios_daily = parse_ios_downloads(IOS_CSV_PATH if IOS_CSV_PATH.exists() else IOS_CSV_ALT_PATH)
@@ -658,11 +673,16 @@ def main() -> None:
     html = update_html(source_html, metrics, monthly_downloads, daily_downloads, meta)
     HTML_PATH.write_text(html)
     shutil.copyfile(HTML_PATH, PUBLIC_HTML_PATH)
+    PUBLIC_ROUTE_HTML_PATH.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(HTML_PATH, PUBLIC_ROUTE_HTML_PATH)
     DIST_HTML_PATH.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(HTML_PATH, DIST_HTML_PATH)
+    DIST_ROUTE_HTML_PATH.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(HTML_PATH, DIST_ROUTE_HTML_PATH)
 
     mode = 'existing CSV' if args.skip_bq else 'BigQuery + refreshed live CSVs'
     print(f'Updated dashboard from {mode}')
+    print(f'Run date {args.run_date}; BigQuery-backed effective cutoff {effective_cutoff}')
     print(f'Metrics through {meta.metrics_last}')
     print(f'iOS downloads through {meta.ios_last}')
     print(f'Android monthly downloads through {meta.android_last}')
