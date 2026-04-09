@@ -333,6 +333,11 @@ def build_html(groups_data, trend_data, update_time):
     return html
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--skip-git', action='store_true', help='Only update files; do not git commit/push')
+    args = parser.parse_args()
+
     print("📡 連接 BigQuery...")
     bq = get_bq()
     update_time = datetime.now().strftime('%Y-%m-%d %H:%M (Asia/Taipei)')
@@ -353,6 +358,10 @@ def main():
     with open(REPORT_PATH, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f"✅ HTML 更新: {REPORT_PATH}")
+
+    if args.skip_git:
+        print(f"✅ 完成（skip git）！{update_time}")
+        return
 
     print("推送到 GitHub...")
     os.chdir(WORKSPACE)
