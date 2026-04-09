@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { fetchUserData } from "./firebase";
 import AiButler0408v1, { AiButler0408v1Embedded } from "./prototypes/aiButler0408v1";
+import InvoicePrototypeV3 from "./prototypes/invoicePrototypeV3";
 
 // ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
@@ -2089,9 +2090,13 @@ export default function App() {
   const path = window.location.pathname.replace(/\/$/, "");
   const isAiButlerV1 = path === "/prototype/ai_agent/0408_v1";
 
+  if (isAiButlerV1) {
+    return <InvoicePrototypeV3 />;
+  }
+
   return (
     <QueryRouter>
-      {isAiButlerV1 ? <InvoiceAppV2 initialTab="ai" /> : <InvoiceApp />}
+      <InvoiceApp />
     </QueryRouter>
   );
 }
