@@ -53,7 +53,9 @@
 **觸發條件：**
 - Push to `main`，且 `invoice-prototype/**` 或 workflow 檔案有變動
 
-**Environment：** `PM_PROTOTYPE_A75CE`
+**Environment：** `INVOICE-BFD85`
+
+> 備註：這裡的 Environment 名稱目前沿用舊名稱，只是 GitHub Environment 的標籤，實際部署的 Firebase 專案仍是 `pm-prototype-a75ce`。曾因為 workflow 改成 `PM_PROTOTYPE_A75CE`，但 secrets 仍放在 `INVOICE-BFD85`，導致 GitHub Actions 在 deploy step 讀不到 secrets 而失敗。除非同步搬移 secrets，否則不要只改 workflow 中的 environment 名稱。
 
 **Required Secrets（需在 GitHub Environment 設定）：**
 | Secret 名稱 | 用途 |
