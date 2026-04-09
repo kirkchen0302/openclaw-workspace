@@ -18,7 +18,7 @@ These secrets were expected in the workflow environment:
 - `PM_PROTOTYPE_FIREBASE_API_KEY`
 - `FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE`
 
-They existed under `INVOICE-BFD85`, not `PM_PROTOTYPE_A75CE`.
+They existed under `INVOICE_BFD85`, not `PM_PROTOTYPE_A75CE`.
 
 ## Fix applied
 Reverted workflow environment back to:
