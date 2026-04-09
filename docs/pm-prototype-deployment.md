@@ -55,7 +55,9 @@
 
 **Environment：** `INVOICE-BFD85`
 
-> 備註：這裡的 Environment 名稱目前沿用舊名稱，只是 GitHub Environment 的標籤，實際部署的 Firebase 專案仍是 `pm-prototype-a75ce`。曾因為 workflow 改成 `PM_PROTOTYPE_A75CE`，但 secrets 仍放在 `INVOICE-BFD85`，導致 GitHub Actions 在 deploy step 讀不到 secrets 而失敗。除非同步搬移 secrets，否則不要只改 workflow 中的 environment 名稱。
+> 備註：這裡的 Environment 名稱沿用舊名稱，只是 GitHub Environment 的標籤，實際部署的 Firebase 專案仍是 `pm-prototype-a75ce`。不要因為名稱看起來不一致就修改 workflow 的 `environment:`；除非你同步搬移 secrets，否則 GitHub Actions 會在 deploy step 讀不到 credentials。
+
+> 另一個必要護欄：dashboard 原始 HTML 內保留 `__FIREBASE_API_KEY__` 佔位符沒有問題，但 **build 後的 dist 檔案** 必須先完成替換，若仍殘留 placeholder，deploy 必須直接 fail，否則線上登入會出現 `auth/api-key-not-valid`。
 
 **Required Secrets（需在 GitHub Environment 設定）：**
 | Secret 名稱 | 用途 |
