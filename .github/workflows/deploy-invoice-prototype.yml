@@ -15,7 +15,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: PM_PROTOTYPE_A75CE
+    environment: INVOICE-BFD85
 
     steps:
       - name: Checkout
