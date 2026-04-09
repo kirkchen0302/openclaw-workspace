@@ -288,7 +288,11 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
             a: (() => {
               const avg = Math.round(top.total / top.visits);
               const yearlySave = avg * 2 * 52;
-              return "每年省 $" + fmt(yearlySave) + "：\n\n" + REF.filter((r) => yearlySave >= r.price * 0.5).map((r) => r.icon + " " + r.name + " " + (yearlySave / r.price).toFixed(1) + " 個").join("\n") + "\n\n你自己決定。";
+              const comps = REF.map((r) => {
+                const count = yearlySave / r.price;
+                return r.icon + " " + r.name + "（$" + fmt(r.price) + "）—— " + (count >= 1 ? count.toFixed(1) + " 個" : "差 $" + fmt(Math.round(r.price - yearlySave)));
+              }).join("\n");
+              return "每年省 $" + fmt(yearlySave) + " 可以換成：\n\n" + comps + "\n\n不管金額大小，省下來的都是你自己的。你自己決定怎麼用。";
             })(),
           },
         ],
@@ -297,15 +301,13 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
   };
 
   // ── Hook 3：你的錢真正流向哪裡？ ──────────────────────────────────────
-  const topByVisit = brands[0];
-  const topBySpend = brandsByTotal[0];
-  const ratio = topBySpend.total > 0 && topByVisit.total > 0 ? (topBySpend.total / topByVisit.total).toFixed(1) : "?";
-
-  // Frequency vs spending rank comparison
-  const freqVsSpend = brands.slice(0, 6).map((b) => {
-    const spendRank = brandsByTotal.findIndex((x) => x.brand === b.brand) + 1;
-    return { ...b, freqRank: brands.indexOf(b) + 1, spendRank, avg: Math.round(b.total / b.visits) };
-  });
+  // Find "hidden high spenders" — mid-low frequency but high total (surprising accumulation)
+  const avgVisits = invoiceCount / brands.length;
+  const hiddenSpenders = brandsByTotal.filter((b) => b.visits <= avgVisits * 1.5 && b.visits >= 3 && b.total > totalAmount * 0.02)
+    .sort((a, b) => b.total - a.total).slice(0, 4);
+  const topHidden = hiddenSpenders[0] || brandsByTotal[0];
+  const topHighFreq = brands[0];
+  const hiddenRatio = topHighFreq.total > 0 ? (topHidden.total / topHighFreq.total).toFixed(1) : "?";
 
   // 80/20
   const top5Spend = brandsByTotal.slice(0, 5);
@@ -319,19 +321,22 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
   const marketBrands = brands.filter((b) => b.cat === "超市");
   const marketAmount = marketBrands.reduce((a, b) => a + b.total, 0);
 
+  // Build ranks: top spenders with their frequency context
+  const spendRanks = brandsByTotal.slice(0, 6).map((b, i) => {
+    const freqRank = brands.findIndex((x) => x.brand === b.brand) + 1;
+    const avg = Math.round(b.total / b.visits);
+    const isSurprise = freqRank > i + 2; // ranks much lower in frequency than spending
+    return { rank: (i + 1) + "", name: b.brand, freq: "$" + fmt(b.total) + "（" + b.visits + " 次）", note: "均$" + avg + (isSurprise ? " ⚠️ 去的少但花的多" : ""), isSurprise };
+  });
+
   const hook3 = {
     id: "truth",
     q: "你的錢真正流向哪裡？",
-    big: ratio + " 倍",
-    bigSub: "「" + topBySpend.brand + "」" + topBySpend.visits + " 次花 $" + fmt(topBySpend.total) + "，是「" + topByVisit.brand + "」" + topByVisit.visits + " 次（$" + fmt(topByVisit.total) + "）的 " + ratio + " 倍",
-    body: "你以為花最多的是去最多次的地方？現實剛好相反：",
-    ranks: freqVsSpend.map((b) => ({
-      rank: "#" + b.freqRank,
-      name: b.brand,
-      freq: b.visits + "次 $" + fmt(b.total),
-      note: "均$" + b.avg + (b.freqRank !== b.spendRank ? "（花費排 #" + b.spendRank + "）" : ""),
-    })),
-    tip: "頻率是假象，單價才是真相。" + topByVisit.brand + " 去 " + topByVisit.visits + " 次只花 $" + fmt(topByVisit.total) + "，但 " + topBySpend.brand + " 去 " + topBySpend.visits + " 次花了 $" + fmt(topBySpend.total) + "。",
+    big: "$" + fmt(topHidden.total),
+    bigSub: "「" + topHidden.brand + "」只去 " + topHidden.visits + " 次，但累積花了這麼多——你可能沒意識到",
+    body: "有些通路你不常去，但每次去都花很多，累積起來比你想的驚人：",
+    ranks: spendRanks,
+    tip: topHidden.brand + " 只去了 " + topHidden.visits + " 次，但花了 $" + fmt(topHidden.total) + "（均 $" + Math.round(topHidden.total / topHidden.visits) + "/次）。而你去最多的 " + topHighFreq.brand + "（" + topHighFreq.visits + " 次）只花 $" + fmt(topHighFreq.total) + "。低頻高消費的通路才是預算的隱形殺手。",
     followups: [
       {
         q: "哪些是「隱形吃錢怪」？",
@@ -644,13 +649,15 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   function tapFollowup(fq) {
     stop();
     setMsgs((p) => [...p, { role: "user", text: fq.q }]);
-    setFollowups([]);
+    // Remove this followup from the list, keep siblings
+    const remainingFu = followups.filter((f) => f.q !== fq.q);
+    setFollowups(remainingFu);
     setDeepFollowups([]);
-    // Type the answer, then show deep followups if any
     setTimeout(() => {
       typeText(fq.a, () => {
         if (fq.followups && fq.followups.length > 0) {
           setDeepFollowups(fq.followups);
+          // remainingFu stays visible alongside deep followups
         } else {
           maybeUnlockNext();
         }
@@ -661,10 +668,12 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   function tapDeepFollowup(dfq) {
     stop();
     setMsgs((p) => [...p, { role: "user", text: dfq.q }]);
-    setDeepFollowups([]);
-    setFollowups([]);
+    // Remove this deep followup, keep siblings
+    const remainingDeep = deepFollowups.filter((d) => d.q !== dfq.q);
+    setDeepFollowups(remainingDeep);
     setTimeout(() => {
       typeText(dfq.a, () => {
+        // Unlock next hook but keep remaining questions visible
         maybeUnlockNext();
       });
     }, 400);
@@ -754,13 +763,13 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
                 {deepFollowups.map((dfq, i) => (<button key={"d" + i} onClick={() => tapDeepFollowup(dfq)} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #5B4A9E", background: "rgba(91,127,255,0.05)", color: "#B4A0FF", fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: 6 }}>{dfq.q}</button>))}
               </div>
             )}
-            {followups.length > 0 && deepFollowups.length === 0 && (
+            {followups.length > 0 && (
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>追問更多：</div>
+                <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>{deepFollowups.length > 0 ? "或回到其他追問：" : "追問更多："}</div>
                 {followups.map((fq, i) => (<button key={"f" + i} onClick={() => tapFollowup(fq)} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #3A3A3C", background: "#1C1C1E", color: "#E5E5EA", fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: 6 }}>{fq.q}</button>))}
               </div>
             )}
-            {available.length > 0 && phase === "hooks" && deepFollowups.length === 0 && (
+            {available.length > 0 && phase === "hooks" && (
               <div style={{ marginBottom: 6 }}>
                 {followups.length > 0 && <div style={{ fontSize: 11, color: "#636366", marginBottom: 6, marginTop: 2 }}>或探索其他觀察：</div>}
                 <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
