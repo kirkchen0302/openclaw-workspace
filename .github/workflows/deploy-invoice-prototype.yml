@@ -40,6 +40,20 @@ jobs:
         run: npm ci
         working-directory: invoice-prototype
 
+      - name: Debug secret presence
+        run: |
+          echo "environment=INVOICE_BFD85"
+          if [ -n "${{ secrets.PM_PROTOTYPE_FIREBASE_API_KEY }}" ]; then
+            echo "PM_PROTOTYPE_FIREBASE_API_KEY=present"
+          else
+            echo "PM_PROTOTYPE_FIREBASE_API_KEY=missing"
+          fi
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE }}" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE=present"
+          else
+            echo "FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE=missing"
+          fi
+
       - name: Prepare deploy assets
         run: bash scripts/prepare_invoice_prototype_deploy.sh
         env:
