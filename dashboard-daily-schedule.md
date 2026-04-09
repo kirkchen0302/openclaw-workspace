@@ -15,7 +15,7 @@
 - Log: `~/Users/kirk/.openclaw/workspace/logs/daily-dashboard-update.log`
 
 ## 預設時間
-- 每天 **09:10** 執行
+- 每天 **09:00** 執行
 
 ## 手動測試
 ```bash
