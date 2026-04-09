@@ -3,6 +3,8 @@ import { resolveShop } from "./shopMapping";
 
 const fmt = (n) => n.toLocaleString();
 
+const AI_PROXY_URL = "https://invoice-claude-proxy.kirk-chen-669.workers.dev";
+
 // ── 從發票資料動態計算洞察 ──────────────────────────────────────────────
 function computeStats(invoices) {
   // Brand aggregation
@@ -402,14 +404,50 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     setTimeout(() => typeText(fq.a), 400);
   }
 
-  function sendFree() {
+  // Build context summary for AI from real data
+  function buildContext() {
+    const top5 = stats.brands.slice(0, 5);
+    const topCats = stats.cats.slice(0, 5);
+    const lines = [
+      "發票總數：" + (invoiceCount || 0) + " 張",
+      "總消費：$" + fmt(totalAmount || 0),
+      "",
+      "前5大通路（按次數）：",
+      ...top5.map((b) => "- " + b.brand + "：" + b.visits + " 次，$" + fmt(b.total) + "（" + b.cat + "）"),
+      "",
+      "消費類別分佈：",
+      ...topCats.map((c) => "- " + c.cat + "：$" + fmt(c.total) + "（" + c.visits + " 次，佔 " + (totalAmount > 0 ? Math.round((c.total / totalAmount) * 100) : 0) + "%）"),
+    ];
+    if (monthlyTrend && monthlyTrend.length > 0) {
+      lines.push("", "每月消費趨勢：");
+      monthlyTrend.forEach((m) => lines.push("- " + m.month + "：$" + fmt(m.amount)));
+    }
+    return lines.join("\n");
+  }
+
+  async function sendFree() {
     const q = input.trim();
     if (!q) return;
     stop();
     setMsgs((p) => [...p, { role: "user", text: q }]);
     setInput("");
     setFollowups([]);
-    setTimeout(() => typeText(DEFAULT_REPLY), 400);
+    setTyping(true);
+    try {
+      const res = await fetch(AI_PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q, context: buildContext() }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        typeText(data.reply);
+      } else {
+        typeText("抱歉，AI 暫時無法回答，請稍後再試。");
+      }
+    } catch {
+      typeText("連線失敗，請稍後再試。");
+    }
   }
 
   const available = HOOKS.filter((h) => !usedIds.includes(h.id));
