@@ -332,8 +332,8 @@ function Login({ onLogin }) {
             <div style={{ fontSize: 13, color: "#7B7268", marginTop: 2 }}>0408_v1 · 用真實發票資料試用</div>
           </div>
         </div>
-        <div style={{ fontSize: 14, color: "#5F564D", lineHeight: 1.7, marginBottom: 16 }}>
-          輸入內部測試用戶的手機號碼，直接帶入 Realtime Database 中的真實發票資料。
+        <div style={{ fontSize: 14, color: "#5F564D", lineHeight: 1.8, marginBottom: 16, wordBreak: "break-word", overflowWrap: "anywhere" }}>
+          輸入內部測試用戶的手機號碼，直接帶入 Firebase Realtime Database 的真實發票資料。
         </div>
         <input
           type="tel"
@@ -348,7 +348,7 @@ function Login({ onLogin }) {
         <button onClick={submit} disabled={loading} style={{ ...styles.primaryBtn, opacity: loading ? 0.7 : 1 }}>
           {loading ? "讀取中..." : "進入這版 prototype"}
         </button>
-        <div style={{ marginTop: 12, fontSize: 12, color: "#8A8279", lineHeight: 1.6 }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: "#8A8279", lineHeight: 1.7, wordBreak: "break-word", overflowWrap: "anywhere" }}>
           這版會優先用真實數據生成洞察；若資料欄位不完整，才會退回示意內容。
         </div>
       </div>
