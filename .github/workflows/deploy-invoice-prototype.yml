@@ -1,8 +1,8 @@
 name: Deploy invoice-prototype to Firebase Hosting
 
 # IMPORTANT:
-# - Keep workflow environment fixed at `INVOICE-BFD85`
-# - `INVOICE-BFD85` is only the GitHub Environment label used for secrets storage
+# - Keep workflow environment fixed at `INVOICE_BFD85`
+# - `INVOICE_BFD85` is only the GitHub Environment label used for secrets storage
 # - Actual Firebase deploy target is `pm-prototype-a75ce`
 # - Do not rename the workflow environment unless secrets are migrated at the same time
 # - Dashboard HTML must never be deployed with `__FIREBASE_API_KEY__` still present

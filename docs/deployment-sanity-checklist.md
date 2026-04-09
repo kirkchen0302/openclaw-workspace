@@ -3,7 +3,7 @@
 Use this before changing `invoice-prototype` deployment flow.
 
 ## GitHub Environment
-- Workflow environment for `invoice-prototype` must stay: `INVOICE-BFD85`
+- Workflow environment for `invoice-prototype` must stay: `INVOICE_BFD85`
 - This is only the GitHub Environment label for secrets storage
 - It is **not** the Firebase project name
 - Actual Firebase deploy target remains: `pm-prototype-a75ce`
