@@ -629,10 +629,13 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   const [typing, setTyping] = useState(false);
   const [dispText, setDispText] = useState("");
   const [usedIds, setUsedIds] = useState([]);
-  const [followups, setFollowups] = useState([]);
-  const [deepFollowups, setDeepFollowups] = useState([]);
-  const [unlockedHooks, setUnlockedHooks] = useState([0]); // index-based
-  const [bridgeSent, setBridgeSent] = useState({}); // hookIdx → true
+  // Single state for all available questions to avoid stale closures
+  const [qState, setQState] = useState({
+    followups: [],     // level 2
+    deepFollowups: [], // level 3
+    unlocked: [0],     // unlocked hook indices
+    bridgeSent: {},    // hookIdx → true
+  });
   const scrollRef = useRef(null);
   const typingRef = useRef(false);
   const ivRef = useRef(null);
@@ -677,8 +680,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     setTimeout(() => {
       setTyping(false);
       setMsgs((p) => [...p, { role: "ai", hook }]);
-      setFollowups(hook.followups || []);
-      setDeepFollowups([]);
+      setQState((prev) => ({ ...prev, followups: hook.followups || [], deepFollowups: [] }));
     }, 800);
   }
 
@@ -686,25 +688,26 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     stop();
     setMsgs((p) => [...p, { role: "user", text: hook.q }]);
     setUsedIds((p) => [...p, hook.id]);
-    setFollowups([]);
-    setDeepFollowups([]);
+    setQState((prev) => ({ ...prev, followups: [], deepFollowups: [] }));
     setTimeout(() => showInsight(hook), 400);
   }
 
   function tapFollowup(fq) {
     stop();
     setMsgs((p) => [...p, { role: "user", text: fq.q }]);
-    // Remove this followup from the list, keep siblings
-    const remainingFu = followups.filter((f) => f.q !== fq.q);
-    setFollowups(remainingFu);
-    setDeepFollowups([]);
+    // Remove clicked followup, keep siblings — use functional update
+    setQState((prev) => ({
+      ...prev,
+      followups: prev.followups.filter((f) => f.q !== fq.q),
+      deepFollowups: [],
+    }));
     setTimeout(() => {
       typeText(fq.a, () => {
         if (fq.followups && fq.followups.length > 0) {
-          setDeepFollowups(fq.followups);
-          // remainingFu stays visible alongside deep followups
+          // Add deep followups, keep remaining followups intact
+          setQState((prev) => ({ ...prev, deepFollowups: fq.followups }));
         } else {
-          maybeUnlockNext();
+          doUnlockNext();
         }
       });
     }, 400);
@@ -713,40 +716,45 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   function tapDeepFollowup(dfq) {
     stop();
     setMsgs((p) => [...p, { role: "user", text: dfq.q }]);
-    // Remove this deep followup, keep siblings
-    const remainingDeep = deepFollowups.filter((d) => d.q !== dfq.q);
-    setDeepFollowups(remainingDeep);
+    // Remove clicked deep followup, keep siblings + keep followups
+    setQState((prev) => ({
+      ...prev,
+      deepFollowups: prev.deepFollowups.filter((d) => d.q !== dfq.q),
+    }));
     setTimeout(() => {
       typeText(dfq.a, () => {
-        // Unlock next hook but keep remaining questions visible
-        maybeUnlockNext();
+        doUnlockNext();
       });
     }, 400);
   }
 
-  function maybeUnlockNext() {
-    // Find the index of the last used hook
-    const lastUsedIdx = HOOKS.reduce((max, h, i) => usedIds.includes(h.id) ? i : max, -1);
-    // Also check current — usedIds might not be updated yet in this render
-    const currentMax = Math.max(lastUsedIdx, ...usedIds.map((id) => HOOKS.findIndex((h) => h.id === id)));
-    const nextIdx = currentMax + 1;
+  function doUnlockNext() {
+    setQState((prev) => {
+      const lastUsedIdx = HOOKS.reduce((max, h, i) => usedIds.includes(h.id) ? i : max, -1);
+      const currentMax = Math.max(lastUsedIdx, ...usedIds.map((id) => HOOKS.findIndex((h) => h.id === id)));
+      const nextIdx = currentMax + 1;
 
-    if (nextIdx < HOOKS.length && !unlockedHooks.includes(nextIdx) && !bridgeSent[currentMax]) {
-      setBridgeSent((p) => ({ ...p, [currentMax]: true }));
-      // Send bridge message after a short delay
-      setTimeout(() => {
-        const bridgeText = BRIDGES[currentMax] || "";
-        if (bridgeText) {
-          setMsgs((p) => [...p, { role: "bridge", text: bridgeText }]);
-        }
-        setUnlockedHooks((p) => [...p, nextIdx]);
-      }, 800);
-    } else if (nextIdx >= HOOKS.length && !bridgeSent["final"]) {
-      setBridgeSent((p) => ({ ...p, final: true }));
-      setTimeout(() => {
-        setMsgs((p) => [...p, { role: "ai", text: SUMMARY }]);
-      }, 800);
-    }
+      if (nextIdx < HOOKS.length && !prev.unlocked.includes(nextIdx) && !prev.bridgeSent[currentMax]) {
+        // Send bridge + unlock next hook
+        setTimeout(() => {
+          const bridgeText = BRIDGES[currentMax] || "";
+          if (bridgeText) {
+            setMsgs((p) => [...p, { role: "bridge", text: bridgeText }]);
+          }
+        }, 800);
+        return {
+          ...prev,
+          unlocked: [...prev.unlocked, nextIdx],
+          bridgeSent: { ...prev.bridgeSent, [currentMax]: true },
+        };
+      } else if (nextIdx >= HOOKS.length && !prev.bridgeSent["final"]) {
+        setTimeout(() => {
+          setMsgs((p) => [...p, { role: "ai", text: SUMMARY }]);
+        }, 800);
+        return { ...prev, bridgeSent: { ...prev.bridgeSent, final: true } };
+      }
+      return prev;
+    });
   }
 
   function buildContext() {
@@ -763,8 +771,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     stop();
     setMsgs((p) => [...p, { role: "user", text: q }]);
     setInput("");
-    setFollowups([]);
-    setDeepFollowups([]);
+    setQState((prev) => ({ ...prev, followups: [], deepFollowups: [] }));
     setTyping(true);
     try {
       const res = await fetch(AI_PROXY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q, context: buildContext() }) });
@@ -773,6 +780,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     } catch { typeText("連線失敗，請稍後再試。"); }
   }
 
+  const { followups, deepFollowups, unlocked: unlockedHooks } = qState;
   const available = HOOKS.filter((h, i) => unlockedHooks.includes(i) && !usedIds.includes(h.id));
 
   return (
