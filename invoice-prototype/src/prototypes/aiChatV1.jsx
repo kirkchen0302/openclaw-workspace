@@ -5,12 +5,62 @@ const fmt = (n) => n.toLocaleString();
 
 const AI_PROXY_URL = "https://invoice-claude-proxy.kirk-chen-669.workers.dev";
 
-const REF = [
-  { name: "iPhone 16 Pro", price: 44900, icon: "📱" },
-  { name: "東京來回機票", price: 8000, icon: "✈️" },
-  { name: "Nintendo Switch", price: 9780, icon: "🎮" },
-  { name: "AirPods Pro", price: 7990, icon: "🎧" },
-];
+// Personalized savings comparisons based on user's actual spending
+function buildComparisons(amount, stats) {
+  const comps = [];
+  const { brands, cats, months, totalAmount, totalDays } = stats;
+
+  // 1. Top brand equivalence: "= 免費去 X 次 {brand}"
+  const top3 = brands.slice(0, 3);
+  top3.forEach((b) => {
+    const avg = Math.round(b.total / b.visits);
+    if (avg > 0) {
+      const times = Math.round(amount / avg);
+      if (times >= 2) {
+        comps.push({ icon: catIcon(b.cat), text: "免費去 " + times + " 次「" + b.brand + "」（均 $" + avg + "/次）", impact: times });
+      }
+    }
+  });
+
+  // 2. Category months: "= X 個月的 {category} 消費"
+  cats.filter((c) => c.cat !== "其他" && c.total > 0).slice(0, 3).forEach((c) => {
+    const monthly = Math.round(c.total / Math.max(months.length, 1));
+    if (monthly > 0) {
+      const mo = (amount / monthly).toFixed(1);
+      if (parseFloat(mo) >= 1) {
+        comps.push({ icon: catIcon(c.cat), text: mo + " 個月的「" + c.cat + "」消費（$" + fmt(monthly) + "/月）", impact: parseFloat(mo) });
+      }
+    }
+  });
+
+  // 3. Daily average: "= X 天的平均消費"
+  const dailyAvg = Math.round(totalAmount / totalDays);
+  if (dailyAvg > 0) {
+    const days = Math.round(amount / dailyAvg);
+    comps.push({ icon: "📅", text: days + " 天的日均消費（$" + fmt(dailyAvg) + "/天）", impact: days });
+  }
+
+  // 4. One aspirational: travel based on amount
+  if (amount >= 3000) {
+    const trips = (amount / 8000).toFixed(1);
+    comps.push({ icon: "✈️", text: (parseFloat(trips) >= 1 ? trips + " 趟東京來回" : "攢 " + Math.round((1 - amount / 8000) * 100) + "% 就能飛東京"), impact: parseFloat(trips) });
+  }
+
+  // Pick top 4 most impactful, deduplicate by type
+  const seen = new Set();
+  return comps.filter((c) => {
+    const key = c.text.slice(0, 10);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).sort((a, b) => b.impact - a.impact).slice(0, 4);
+}
+
+function fmtComparisons(amount, stats) {
+  const comps = buildComparisons(amount, stats);
+  if (!comps.length) return "每年省 $" + fmt(amount) + "，積少成多。";
+  return comps.map((c) => c.icon + " " + c.text).join("\n");
+}
 
 // ── 計算統計 ─────────────────────────────────────────────────────────────
 function computeStats(invoices) {
@@ -163,7 +213,7 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
               const avg = Math.round(top.total / top.visits);
               const yearly = avg * 2 * 52;
               const trips = (yearly / 8000).toFixed(1);
-              return "你每週去「" + top.brand + "」約 " + (top.visits / (totalDays / 7)).toFixed(1) + " 次，每次 $" + avg + "。\n\n每週少 2 次：\n📉 每月省 $" + fmt(Math.round(avg * 2 * 4.3)) + "\n📉 一年省 $" + fmt(yearly) + "\n✈️ 省下的錢可以飛東京 " + trips + " 趟\n\n重點不是「你應該少去」，而是讓你知道差距有多大。";
+              return "你每週去「" + top.brand + "」約 " + (top.visits / (totalDays / 7)).toFixed(1) + " 次，每次 $" + avg + "。\n\n每週少 2 次：\n📉 每月省 $" + fmt(Math.round(avg * 2 * 4.3)) + "\n📉 一年省 $" + fmt(yearly) + "\n\n換算你的消費：\n" + fmtComparisons(yearly, s) + "\n\n重點不是「你應該少去」，而是讓你知道差距有多大。";
             })(),
           },
           {
@@ -237,15 +287,14 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
       {
         q: "一年的花費換算成什麼？",
         a: (() => {
-          const comps = REF.map((r) => r.icon + " " + r.name + "（$" + fmt(r.price) + "）—— " + (yearProjection / r.price).toFixed(1) + " 個").join("\n");
-          return "一年預估 $" + fmt(yearProjection) + "，換算成：\n\n" + comps + "\n\n這些都是官方售價，可以自己查證。";
+          return "一年預估 $" + fmt(yearProjection) + "，用你自己的消費習慣來換算：\n\n" + fmtComparisons(yearProjection, s) + "\n\n這些都是從你的真實消費計算出來的。";
         })(),
         followups: [
           {
             q: "如果能省下 10%，可以做什麼？",
             a: (() => {
               const saved = Math.round(yearProjection * 0.1);
-              return "省下 10% = $" + fmt(saved) + "/年。\n\n✈️ 飛東京 " + (saved / 8000).toFixed(1) + " 趟\n📱 AirPods Pro " + (saved / 7990).toFixed(1) + " 副\n🎮 Switch " + (saved / 9780).toFixed(1) + " 台\n\n10% 不需要大幅改變生活，只要在幾個高頻消費上稍微調整。";
+              return "省下 10% = $" + fmt(saved) + "/年。換算你的消費：\n\n" + fmtComparisons(saved, s) + "\n\n10% 不需要大幅改變生活，只要在幾個高頻消費上稍微調整。";
             })(),
           },
           {
@@ -269,7 +318,7 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
           const avg = Math.round(top.total / top.visits);
           const monthlySave = Math.round(avg * 2 * 4.3);
           const yearlySave = avg * 2 * 52;
-          return "你目前每週去「" + top.brand + "」約 " + (top.visits / (totalDays / 7)).toFixed(1) + " 次，每次 $" + avg + "。\n\n每週少 2 次：\n📉 每月省 $" + fmt(monthlySave) + "\n📉 一年省 $" + fmt(yearlySave) + "\n\n重點不是「你應該少去」，而是讓你知道差距有多大，你自己決定。";
+          return "你目前每週去「" + top.brand + "」約 " + (top.visits / (totalDays / 7)).toFixed(1) + " 次，每次 $" + avg + "。\n\n每週少 2 次：\n📉 每月省 $" + fmt(monthlySave) + "\n📉 一年省 $" + fmt(yearlySave) + "\n\n這筆省下來的錢：\n" + fmtComparisons(yearlySave, s) + "\n\n你自己決定。";
         })(),
         followups: [
           {
@@ -288,11 +337,7 @@ function buildHooks(invoices, invoiceCount, totalAmount, monthlyTrend) {
             a: (() => {
               const avg = Math.round(top.total / top.visits);
               const yearlySave = avg * 2 * 52;
-              const comps = REF.map((r) => {
-                const count = yearlySave / r.price;
-                return r.icon + " " + r.name + "（$" + fmt(r.price) + "）—— " + (count >= 1 ? count.toFixed(1) + " 個" : "差 $" + fmt(Math.round(r.price - yearlySave)));
-              }).join("\n");
-              return "每年省 $" + fmt(yearlySave) + " 可以換成：\n\n" + comps + "\n\n不管金額大小，省下來的都是你自己的。你自己決定怎麼用。";
+              return "每年省 $" + fmt(yearlySave) + "，用你的消費習慣來看：\n\n" + fmtComparisons(yearlySave, s) + "\n\n不管金額大小，省下來的都是你自己的。你自己決定怎麼用。";
             })(),
           },
         ],
