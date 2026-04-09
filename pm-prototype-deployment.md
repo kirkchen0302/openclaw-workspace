@@ -53,9 +53,9 @@
 **觸發條件：**
 - Push to `main`，且 `invoice-prototype/**` 或 workflow 檔案有變動
 
-**Environment：** `INVOICE_BFD85`
+**Secrets Source：** Repository-level GitHub Actions secrets
 
-> 備註：這裡的 Environment 名稱沿用舊名稱，只是 GitHub Environment 的標籤，實際部署的 Firebase 專案仍是 `pm-prototype-a75ce`。不要因為名稱看起來不一致就修改 workflow 的 `environment:`；名稱必須與 GitHub Environments 中實際存在、且存放 secrets 的 environment **完全一致**，這次實際正確值是 `INVOICE_BFD85`。
+> 備註：`invoice-prototype` deploy workflow 已改為直接讀取 repository-level Actions secrets，不再依賴 GitHub Environment scope。這次調整是因為 workflow job 持續讀不到 environment-scoped secrets，導致 `PM_PROTOTYPE_FIREBASE_API_KEY` 與 `FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE` 在 Actions 中顯示為 missing。
 
 > 另一個必要護欄：dashboard 原始 HTML 內保留 `__FIREBASE_API_KEY__` 佔位符沒有問題，但 **build 後的 dist 檔案** 必須先完成替換，若仍殘留 placeholder，deploy 必須直接 fail，否則線上登入會出現 `auth/api-key-not-valid`。
 
