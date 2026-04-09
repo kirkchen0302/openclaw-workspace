@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { fetchUserData } from "./firebase";
-import AiButler0408v1 from "./prototypes/aiButler0408v1";
+import AiButler0408v1, { AiButler0408v1Embedded } from "./prototypes/aiButler0408v1";
 
 // ─── 訂閱資料 ─────────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
@@ -1390,11 +1390,6 @@ function QueryRouter({ children }) {
   const params = new URLSearchParams(window.location.search);
   const type = params.get("type");
   const cate = params.get("cate");
-  const path = window.location.pathname.replace(/\/$/, "");
-
-  if (path === "/prototype/ai_agent/0408_v1") {
-    return <AiButler0408v1 />;
-  }
 
   if (type === "dashboard") {
     if (cate === "hyvs-mavs") {
@@ -1534,6 +1529,7 @@ const TABS_V2 = [
   { key: "scan",          icon: null,  label: "掃描" },
   { key: "subscriptions", icon: "📱", label: "訂閱" },
   { key: "list",          icon: "📝", label: "清單" },
+  { key: "ai",            icon: "🤖", label: "AI管家" },
 ];
 
 const QUICK_QUESTIONS_V2 = [
@@ -2009,8 +2005,8 @@ function HomePageV2({ setTab, user, invoiceCount, totalAmount, monthlyTrend, det
   );
 }
 
-function InvoiceAppV2() {
-  const [tab, setTab] = useState("home");
+function InvoiceAppV2({ initialTab = "home" } = {}) {
+  const [tab, setTab] = useState(initialTab);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -2031,12 +2027,12 @@ function InvoiceAppV2() {
 
   function handleLogin(phone, data) {
     setUser({ phone, data });
-    setTab("home");
+    setTab(initialTab);
   }
 
   function handleLogout() {
     setUser(null);
-    setTab("home");
+    setTab(initialTab);
   }
 
   if (!user) {
@@ -2050,6 +2046,7 @@ function InvoiceAppV2() {
     scan: <ScanPage />,
     subscriptions: <SubscriptionsPageV2 deliverySubs={liveDeliverySubs} flatSubs={liveFlatSubs} invoices={liveInvoices} />,
     list: <ListPageV2 />,
+    ai: <AiButler0408v1Embedded phone={user?.phone} userData={user?.data} onReset={handleLogout} />,
   };
 
   return (
@@ -2089,9 +2086,12 @@ function InvoiceAppV2() {
 }
 
 export default function App() {
+  const path = window.location.pathname.replace(/\/$/, "");
+  const isAiButlerV1 = path === "/prototype/ai_agent/0408_v1";
+
   return (
     <QueryRouter>
-      <InvoiceApp />
+      {isAiButlerV1 ? <InvoiceAppV2 initialTab="ai" /> : <InvoiceApp />}
     </QueryRouter>
   );
 }

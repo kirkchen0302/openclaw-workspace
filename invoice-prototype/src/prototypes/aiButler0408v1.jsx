@@ -516,6 +516,10 @@ function ButlerApp({ phone, userData, onReset }) {
   );
 }
 
+export function AiButler0408v1Embedded({ phone, userData, onReset }) {
+  return <ButlerApp phone={phone} userData={userData} onReset={onReset} />;
+}
+
 export default function AiButler0408v1() {
   const [user, setUser] = useState(null);
 
