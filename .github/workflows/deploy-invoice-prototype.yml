@@ -5,7 +5,7 @@ name: Deploy invoice-prototype to Firebase Hosting
 # - This workflow now reads repository-level Actions secrets directly to avoid GitHub Environment scope issues
 # - Required repository secrets: `PM_PROTOTYPE_FIREBASE_API_KEY`, `FIREBASE_SERVICE_ACCOUNT_PM_PROTOTYPE`
 # - Dashboard HTML must never be deployed with `__FIREBASE_API_KEY__` still present
-# - If secrets are updated, commit any tiny change here (preferred over rerunning an old failed run) to retrigger this workflow..
+# - If secrets are updated, commit any tiny change here (preferred over rerunning an old failed run) to retrigger this workflow...
 
 on:
   push:
