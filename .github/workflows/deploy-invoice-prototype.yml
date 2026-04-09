@@ -65,5 +65,3 @@ jobs:
           channelId: live
           projectId: pm-prototype-a75ce
           entryPoint: invoice-prototype
-a75ce
-          entryPoint: invoice-prototype
