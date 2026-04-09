@@ -1,5 +1,5 @@
-// Total entries: 784
 // Auto-generated from 通路對照表.csv
+// Total entries: 784
 const SHOP_MAP = {
   "10359060": { brand: "未知通路", cat: "其他" },
   "10385996": { brand: "未知通路", cat: "其他" },
