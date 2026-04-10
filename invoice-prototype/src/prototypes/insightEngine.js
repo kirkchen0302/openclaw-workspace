@@ -99,45 +99,44 @@ function fmtComparisons(amount, stats) {
 
   // ── Layer 2: 體驗型替代（體驗 > 物質）─────────────────────────────
   // 研究顯示體驗型消費的幸福感遠大於物質消費
+  // 2026 真實價格：廉航東京來回 $5,000、傳統航空 $14,000、國內兩天一夜 $5,000/人、聚餐人均 $600
   const experiences = [];
-  // 旅行（最高幸福感）
-  if (amount >= 15000) {
-    const days = Math.round(amount / 3000); // ~$3000/day for a decent trip day
-    experiences.push("✈️ 一趟 " + Math.min(days, 7) + " 天的日本自由行");
-  } else if (amount >= 8000) {
-    experiences.push("✈️ 一趟東京 3 天快閃小旅行");
-  } else if (amount >= 4000) {
-    experiences.push("🏖️ 一趟國內 2 天 1 夜小旅行");
+  if (amount >= 20000) {
+    experiences.push("✈️ 一趟東京 5 天自由行（傳統航空來回 $14,000 + 住宿餐飲）");
+  } else if (amount >= 10000) {
+    experiences.push("✈️ 一趟東京 3 天快閃（廉航來回 $5,000 + 住宿）");
+  } else if (amount >= 5000) {
+    experiences.push("🏖️ 一趟國內兩天一夜小旅行（住宿 + 交通 + 吃喝）");
   }
-  // 社交聚餐（高頻體驗）
-  const mealBudget = 500; // avg nice dinner per person
-  const meals = Math.round(amount / mealBudget);
+  // 社交聚餐 — 人均 $600 的好餐廳
+  const meals = Math.round(amount / 600);
   if (meals >= 2) {
-    experiences.push("🍽️ 跟朋友聚餐 " + meals + " 次（每次 $" + mealBudget + " 的好餐廳）");
+    experiences.push("🍽️ 跟朋友吃 " + meals + " 次好餐廳（人均 $600）");
   }
-  // 自我投資
+  // 健身 — World Gym 月費 $988 取中間值
   if (amount >= 3000) {
-    experiences.push("📚 " + Math.round(amount / 1500) + " 堂線上課程或工作坊");
+    experiences.push("💪 " + Math.round(amount / 988) + " 個月的健身房會員");
   }
-  // 健身/wellness
-  if (amount >= 5000) {
-    experiences.push("💪 " + Math.round(amount / 1200) + " 個月的健身房會員");
-  }
-  // Pick best 1-2 experiences
   lines.push(...experiences.slice(0, 2));
 
   // ── Layer 3: 日均損失框架 ─────────────────────────────────────────
   // 「每天 $X 正在從你的口袋溜走」— Loss Aversion 是得到的 2 倍痛
+  // 2026 真實價格：路易莎拿鐵 $100、星巴克拿鐵 $155、路易莎美式 $55
   const daily = Math.round(amount / 365);
   if (daily > 0) {
-    // Find a daily reference the user can relate to
-    const coffeePrice = brands.find((b) => b.cat === "咖啡");
-    const convPrice = brands.find((b) => b.cat === "超商");
-    const dailyRef = coffeePrice ? "一杯" + coffeePrice.brand
-      : convPrice ? "一次" + convPrice.brand
-      : "一杯咖啡";
+    // Use real coffee prices as daily anchors
+    let dailyRef = "";
+    if (daily >= 155) {
+      dailyRef = "一杯星巴克拿鐵（$155）";
+    } else if (daily >= 100) {
+      dailyRef = "一杯路易莎拿鐵（$100）";
+    } else if (daily >= 55) {
+      dailyRef = "一杯路易莎美式（$55）";
+    } else {
+      dailyRef = "一瓶超商飲料";
+    }
     if (daily >= 30) {
-      lines.push("💸 每天 $" + daily + " 正在溜走——等於每天丟掉" + dailyRef + "的錢");
+      lines.push("💸 每天 $" + daily + " 正在溜走——等於每天丟掉" + dailyRef);
     } else if (daily >= 10) {
       lines.push("💸 每天 $" + daily + " 不知不覺流出去");
     }
