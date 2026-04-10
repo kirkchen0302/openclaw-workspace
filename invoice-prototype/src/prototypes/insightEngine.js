@@ -75,35 +75,78 @@ export function computeStats(invoices) {
   return { brands, brandsByTotal, cats, months, totalAmount, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys };
 }
 
-// ── Personalized comparisons ────────────────────────────────────────
+// ── Personalized comparisons（消費心理學框架）────────────────────────
+// Layer 1: Self-anchoring — 用自己的消費做錨點（最有感）
+// Layer 2: Experiential alternative — 體驗型替代（旅行、聚餐、課程）
+// Layer 3: Daily loss frame — 日均損失框架（Loss Aversion + 時間粒度）
 function fmtComparisons(amount, stats) {
-  const comps = [];
   const { brands, cats, months, totalAmount, totalDays } = stats;
-  // Equivalent visits to top brands
-  brands.slice(0, 2).forEach((b) => {
-    const avg = Math.round(b.total / b.visits);
-    if (avg > 5) {
-      const times = Math.round(amount / avg);
-      if (times >= 2) comps.push(catIcon(b.cat) + " 免費去 " + times + " 次「" + b.brand + "」");
+  const lines = [];
+
+  // ── Layer 1: 自我消費錨點 ─────────────────────────────────────────
+  // 「這筆錢 = 你去全聯 X 次大採購」— 用你已經在做的事來比
+  const anchors = brands.filter((b) => b.visits >= 5 && !BILL_CATS.includes(b.cat) && b.cat !== "其他")
+    .map((b) => ({ brand: b.brand, cat: b.cat, avg: Math.round(b.total / b.visits) }))
+    .filter((b) => b.avg > 30);
+  if (anchors.length > 0) {
+    // Pick one with medium avg (not too cheap, not too expensive) for relatable comparison
+    const anchor = anchors.sort((a, b) => Math.abs(a.avg - 200) - Math.abs(b.avg - 200))[0];
+    const times = Math.round(amount / anchor.avg);
+    if (times >= 2) {
+      lines.push(catIcon(anchor.cat) + " 等於你去「" + anchor.brand + "」" + times + " 次（均 $" + anchor.avg + "）");
     }
-  });
-  // Equivalent months of category
-  cats.filter((c) => !BILL_CATS.includes(c.cat) && c.cat !== "其他" && c.total > 0).slice(0, 2).forEach((c) => {
-    const monthly = Math.round(c.total / Math.max(months.length, 1));
-    if (monthly > 0) {
-      const mo = (amount / monthly).toFixed(1);
-      if (parseFloat(mo) >= 1) comps.push(catIcon(c.cat) + " " + mo + " 個月的「" + c.cat + "」消費");
-    }
-  });
-  // Days of average spend
-  const daily = Math.round(totalAmount / totalDays);
-  if (daily > 0) comps.push("📅 " + Math.round(amount / daily) + " 天的日均消費");
-  // Travel
-  if (amount >= 3000) {
-    const t = (amount / 8000).toFixed(1);
-    comps.push("✈️ " + (parseFloat(t) >= 1 ? t + " 趟東京來回" : "攢 " + Math.round((1 - amount / 8000) * 100) + "% 就能飛東京"));
   }
-  return comps.slice(0, 4).join("\n");
+
+  // ── Layer 2: 體驗型替代（體驗 > 物質）─────────────────────────────
+  // 研究顯示體驗型消費的幸福感遠大於物質消費
+  const experiences = [];
+  // 旅行（最高幸福感）
+  if (amount >= 15000) {
+    const days = Math.round(amount / 3000); // ~$3000/day for a decent trip day
+    experiences.push("✈️ 一趟 " + Math.min(days, 7) + " 天的日本自由行");
+  } else if (amount >= 8000) {
+    experiences.push("✈️ 一趟東京 3 天快閃小旅行");
+  } else if (amount >= 4000) {
+    experiences.push("🏖️ 一趟國內 2 天 1 夜小旅行");
+  }
+  // 社交聚餐（高頻體驗）
+  const mealBudget = 500; // avg nice dinner per person
+  const meals = Math.round(amount / mealBudget);
+  if (meals >= 2) {
+    experiences.push("🍽️ 跟朋友聚餐 " + meals + " 次（每次 $" + mealBudget + " 的好餐廳）");
+  }
+  // 自我投資
+  if (amount >= 3000) {
+    experiences.push("📚 " + Math.round(amount / 1500) + " 堂線上課程或工作坊");
+  }
+  // 健身/wellness
+  if (amount >= 5000) {
+    experiences.push("💪 " + Math.round(amount / 1200) + " 個月的健身房會員");
+  }
+  // Pick best 1-2 experiences
+  lines.push(...experiences.slice(0, 2));
+
+  // ── Layer 3: 日均損失框架 ─────────────────────────────────────────
+  // 「每天 $X 正在從你的口袋溜走」— Loss Aversion 是得到的 2 倍痛
+  const daily = Math.round(amount / 365);
+  if (daily > 0) {
+    // Find a daily reference the user can relate to
+    const coffeePrice = brands.find((b) => b.cat === "咖啡");
+    const convPrice = brands.find((b) => b.cat === "超商");
+    const dailyRef = coffeePrice ? "一杯" + coffeePrice.brand
+      : convPrice ? "一次" + convPrice.brand
+      : "一杯咖啡";
+    if (daily >= 30) {
+      lines.push("💸 每天 $" + daily + " 正在溜走——等於每天丟掉" + dailyRef + "的錢");
+    } else if (daily >= 10) {
+      lines.push("💸 每天 $" + daily + " 不知不覺流出去");
+    }
+  }
+
+  if (lines.length === 0) {
+    return "這筆 $" + fmt(amount) + " 積少成多，值得注意。";
+  }
+  return lines.slice(0, 4).join("\n");
 }
 
 // ── Insight candidates ──────────────────────────────────────────────
