@@ -197,89 +197,120 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     });
   }
 
-  // ── Type: HIDDEN_HIGH_SPENDER ─────────────────────────────────────
-  // Mid-low frequency but high total — things user didn't realize cost so much
+  // ── Type: SPENDING_CREEP ────────────────────────────────────────────
+  // Brands where average-per-visit is creeping up — the real overconsumption signal
   const nonBillBrands = brandsByTotal.filter((b) => !BILL_CATS.includes(b.cat) && b.cat !== "其他");
-  const avgFreq = invoiceCount / brands.length;
-  const hiddenSpenders = nonBillBrands.filter((b) => b.visits <= avgFreq * 1.2 && b.visits >= 3 && b.total > totalAmount * 0.03)
-    .sort((a, b) => b.total - a.total);
+  const creepingBrands = brands.filter((b) => {
+    const bef = brandFirst[b.brand];
+    const aft = brandSecond[b.brand];
+    if (!bef || !aft || bef.visits < 3 || aft.visits < 3) return false;
+    if (BILL_CATS.includes(b.cat) || b.cat === "其他") return false;
+    const avgBef = Math.round(bef.total / bef.visits);
+    const avgAft = Math.round(aft.total / aft.visits);
+    b._avgBef = avgBef;
+    b._avgAft = avgAft;
+    b._avgCreep = avgBef > 0 ? Math.round(((avgAft - avgBef) / avgBef) * 100) : 0;
+    return b._avgCreep > 15; // avg increased >15%
+  }).sort((a, b) => b._avgCreep - a._avgCreep);
 
-  if (hiddenSpenders.length > 0) {
-    const h = hiddenSpenders[0];
-    const hAvg = Math.round(h.total / h.visits);
-    const topFreq = brands[0];
-    const topFreqAvg = Math.round(topFreq.total / topFreq.visits);
-    const multiplier = topFreqAvg > 0 ? Math.round(hAvg / topFreqAvg) : 0;
-    const score = 75 + Math.min(Math.round(h.total / totalAmount * 100), 25);
+  if (creepingBrands.length > 0) {
+    const c = creepingBrands[0];
+    const extraPerVisit = c._avgAft - c._avgBef;
+    const extraYearly = Math.round(extraPerVisit * (c.visits / months.length) * 12);
+    const score = 80 + Math.min(c._avgCreep, 20);
 
     candidates.push({
-      type: "hidden", score,
+      type: "creep", score,
       hook: {
-        id: "hidden",
-        q: "哪裡在不知不覺吃掉你的預算？",
-        big: "$" + fmt(h.total),
-        bigSub: "「" + h.brand + "」只去 " + h.visits + " 次就花了這麼多——均 $" + fmt(hAvg) + "/次",
-        body: "你可能沒意識到，每次去「" + h.brand + "」的花費（$" + fmt(hAvg) + "）" + (multiplier > 2 ? "是去「" + topFreq.brand + "」的 " + multiplier + " 倍" : "遠高於平均") + "。\n\n去的少不代表花的少：",
-        ranks: hiddenSpenders.slice(0, 5).map((b, i) => ({
-          rank: (i + 1) + "", name: b.brand,
-          freq: b.visits + "次 $" + fmt(b.total),
-          note: "均$" + Math.round(b.total / b.visits) + " " + (Math.round(b.total / b.visits) > avgPerVisit * 2 ? "⚠️" : ""),
+        id: "creep",
+        q: "哪裡每次花的錢越來越多？",
+        big: "+" + c._avgCreep + "%",
+        bigSub: "「" + c.brand + "」每次消費從 $" + fmt(c._avgBef) + " 升到 $" + fmt(c._avgAft),
+        body: "去的次數沒變多，但每次花的錢在悄悄增加。這種「均價爬升」是最不容易察覺的過度消費：",
+        ranks: creepingBrands.slice(0, 5).map((b, i) => ({
+          rank: "📈", name: b.brand,
+          freq: "$" + b._avgBef + " → $" + b._avgAft,
+          note: "+" + b._avgCreep + "%（" + b.cat + "）",
         })),
-        tip: "這些通路你不常去所以不會注意，但每次去的金額都很高。" + h.brand + " " + h.visits + " 次 = $" + fmt(h.total) + "，比你去 " + topFreq.visits + " 次「" + topFreq.brand + "」（$" + fmt(topFreq.total) + "）還多。",
+        tip: "「" + c.brand + "」每次多花 $" + extraPerVisit + " 看起來不多，但累積一年就是多花 $" + fmt(extraYearly) + "。均價爬升是最隱形的預算殺手——因為你不會注意到每次「只是多了一點」。",
         followups: [
           {
-            q: "每次去「" + h.brand + "」的 $" + fmt(hAvg) + " 是花在什麼？",
-            a: "「" + h.brand + "」屬於「" + h.cat + "」類別。均單價 $" + fmt(hAvg) + "，" + h.visits + " 次累計 $" + fmt(h.total) + "。\n\n如果每次能控制在 $" + fmt(Math.round(hAvg * 0.7)) + " 以內（-30%），一年可省 ~$" + fmt(Math.round(h.total / months.length * 12 * 0.3)) + "。\n\n列個清單或設個預算上限再出門，是最簡單的方式。",
+            q: "每次多花的錢累積起來有多少？",
+            a: (() => {
+              const items = creepingBrands.slice(0, 3).map((b) => {
+                const extra = b._avgAft - b._avgBef;
+                const yearly = Math.round(extra * (b.visits / months.length) * 12);
+                return catIcon(b.cat) + " " + b.brand + "：每次多 $" + extra + "，一年多花 $" + fmt(yearly);
+              });
+              const totalExtra = creepingBrands.slice(0, 3).reduce((s, b) => s + Math.round((b._avgAft - b._avgBef) * (b.visits / months.length) * 12), 0);
+              return "均價上升造成的額外支出：\n\n" + items.join("\n") + "\n\n合計每年多花 $" + fmt(totalExtra) + "——你的消費習慣沒變，但花的錢變多了。\n\n" + fmtComparisons(totalExtra, stats);
+            })(),
             followups: [
               {
-                q: "控制這個通路能省多少？",
+                q: "怎麼控制均價不繼續漲？",
                 a: (() => {
-                  const yearSave = Math.round(h.total / months.length * 12 * 0.3);
-                  return "如果每次去「" + h.brand + "」少花 30%：\n\n📉 每年省 ~$" + fmt(yearSave) + "\n\n" + fmtComparisons(yearSave, stats);
+                  return "最有效的方法：\n\n1️⃣ 設定每次消費上限（例如「" + c.brand + "」控制在 $" + fmt(c._avgBef) + " 以內）\n2️⃣ 出門前列清單，避免「順便加購」\n3️⃣ 注意促銷陷阱——買多不一定省，反而可能拉高均價\n\n關鍵是回到之前的均價水準（$" + fmt(c._avgBef) + "），而不是少去。";
                 })(),
               },
               {
-                q: "有更便宜的替代選擇嗎？",
+                q: "是什麼原因讓均價在漲？",
                 a: (() => {
-                  const sameCat = cats.find((c) => c.cat === h.cat);
-                  const alternatives = sameCat ? sameCat.brands.filter((b) => b.brand !== h.brand && b.visits >= 2).sort((a, b) => (a.total / a.visits) - (b.total / b.visits)) : [];
-                  if (alternatives.length > 0) {
-                    return "同類別中更便宜的選擇：\n\n" + alternatives.slice(0, 3).map((a) => catIcon(a.cat) + " " + a.brand + "：均 $" + Math.round(a.total / a.visits) + "/次（比" + h.brand + "便宜 " + Math.round((1 - (a.total / a.visits) / hAvg) * 100) + "%）").join("\n");
-                  }
-                  return "在你目前的消費通路中，「" + h.cat + "」類別沒有明顯更便宜的替代。可以考慮減少頻率或控制單次消費。";
+                  const catBrands = brands.filter((b) => b.cat === c.cat && b._avgCreep > 0);
+                  const isCatWide = catBrands.length > 1;
+                  return isCatWide
+                    ? "不只「" + c.brand + "」——整個「" + c.cat + "」類別的均價都在上升。可能是物價因素，也可能是你的消費升級（選了更貴的品項）。\n\n值得檢視你是否在不知不覺中「升級」了日常消費的規格。"
+                    : "可能的原因：\n\n• 選了更多/更貴的品項（消費升級）\n• 促銷買多（看似省但總額更高）\n• 「順便」加購增加了每次消費\n\n如果是有意識的升級那就沒問題，怕的是不知不覺中越花越多。";
                 })(),
               },
             ],
           },
           {
-            q: "前 5 大花費佔了多少？",
+            q: "有沒有均價在下降的通路？",
             a: (() => {
-              const top5 = nonBillBrands.slice(0, 5);
-              const top5Total = top5.reduce((s, b) => s + b.total, 0);
-              const pct = Math.round(top5Total / totalAmount * 100);
-              return "前 5 大通路花費（排除帳單）：\n\n" + top5.map((b, i) => (i + 1) + ". " + b.brand + "：$" + fmt(b.total) + "（" + b.visits + " 次，均 $" + Math.round(b.total / b.visits) + "）").join("\n") + "\n\n合計 $" + fmt(top5Total) + "，佔 " + pct + "%。" + (pct < 30 ? "\n\n剩下 " + (100 - pct) + "% 散落在其他通路——零散消費才是真正的黑洞。" : "");
+              const decreasing = brands.filter((b) => {
+                const bef = brandFirst[b.brand];
+                const aft = brandSecond[b.brand];
+                if (!bef || !aft || bef.visits < 3 || aft.visits < 3) return false;
+                if (BILL_CATS.includes(b.cat) || b.cat === "其他") return false;
+                const avgBef = Math.round(bef.total / bef.visits);
+                const avgAft = Math.round(aft.total / aft.visits);
+                b._decBef = avgBef;
+                b._decAft = avgAft;
+                b._decPct = avgBef > 0 ? Math.round(((avgAft - avgBef) / avgBef) * 100) : 0;
+                return b._decPct < -10;
+              }).sort((a, b) => a._decPct - b._decPct);
+              if (!decreasing.length) return "目前沒有均價明顯下降的通路。所有通路的單次消費都在持平或上升。";
+              return "有幾個通路的均價在下降（代表你有在控制）：\n\n" + decreasing.slice(0, 3).map((b) => "📉 " + b.brand + "：$" + b._decBef + " → $" + b._decAft + "（" + b._decPct + "%）").join("\n") + "\n\n這些地方你消費得越來越精準，值得肯定。";
             })(),
             followups: [
               {
-                q: "哪筆最值得重新檢視？",
+                q: "整體均價趨勢？",
                 a: (() => {
-                  const highest = hiddenSpenders[0];
-                  const yearSave = Math.round(highest.total / months.length * 12 * 0.3);
-                  return "「" + highest.brand + "」——均 $" + fmt(Math.round(highest.total / highest.visits)) + "/次是高頻通路中最高的。每次少花 30% 就能年省 $" + fmt(yearSave) + "。";
+                  const firstTotal = Object.values(brandFirst).reduce((s, v) => s + v.total, 0);
+                  const firstVisits = Object.values(brandFirst).reduce((s, v) => s + v.visits, 0);
+                  const secondTotal = Object.values(brandSecond).reduce((s, v) => s + v.total, 0);
+                  const secondVisits = Object.values(brandSecond).reduce((s, v) => s + v.visits, 0);
+                  const overallBef = firstVisits > 0 ? Math.round(firstTotal / firstVisits) : 0;
+                  const overallAft = secondVisits > 0 ? Math.round(secondTotal / secondVisits) : 0;
+                  const change = overallBef > 0 ? Math.round(((overallAft - overallBef) / overallBef) * 100) : 0;
+                  return "整體均價：前期 $" + fmt(overallBef) + "/次 → 近期 $" + fmt(overallAft) + "/次（" + (change >= 0 ? "+" : "") + change + "%）。\n\n" + (change > 10 ? "整體單次消費在上升，不只是個別通路的問題。" : change < -5 ? "整體均價在下降，你花得更精準了。" : "整體均價大致穩定。");
                 })(),
               },
               {
-                q: "有可以合併的重複消費嗎？",
+                q: "哪個通路最值得學習？",
                 a: (() => {
-                  const catBrands = {};
-                  brands.filter((b) => b.visits >= 3 && !BILL_CATS.includes(b.cat)).forEach((b) => {
-                    if (!catBrands[b.cat]) catBrands[b.cat] = [];
-                    catBrands[b.cat].push(b);
-                  });
-                  const mergeable = Object.entries(catBrands).filter(([, bs]) => bs.length >= 2).map(([cat, bs]) => ({ cat, brands: bs, total: bs.reduce((s, b) => s + b.total, 0) })).sort((a, b) => b.total - a.total);
-                  if (!mergeable.length) return "你的消費通路沒有明顯重複。";
-                  const m = mergeable[0];
-                  return "「" + m.cat + "」分散在 " + m.brands.length + " 家：\n" + m.brands.map((b) => "• " + b.brand + " " + b.visits + "次 $" + fmt(b.total)).join("\n") + "\n\n集中在一家可累積回饋，還能減少衝動消費。";
+                  const bestControl = brands.filter((b) => {
+                    const bef = brandFirst[b.brand];
+                    const aft = brandSecond[b.brand];
+                    return bef && aft && bef.visits >= 3 && aft.visits >= 3 && !BILL_CATS.includes(b.cat);
+                  }).map((b) => {
+                    const avgBef = Math.round(brandFirst[b.brand].total / brandFirst[b.brand].visits);
+                    const avgAft = Math.round(brandSecond[b.brand].total / brandSecond[b.brand].visits);
+                    return { brand: b.brand, cat: b.cat, avgBef, avgAft, change: avgBef > 0 ? Math.round(((avgAft - avgBef) / avgBef) * 100) : 0 };
+                  }).filter((b) => b.change <= 0 && b.avgBef > 100).sort((a, b) => a.change - b.change);
+                  if (!bestControl.length) return "目前各通路的均價都在持平或上升。";
+                  const best = bestControl[0];
+                  return "「" + best.brand + "」做得最好——均價從 $" + best.avgBef + " 降到 $" + best.avgAft + "（" + best.change + "%）。\n\n你在「" + best.cat + "」的消費越來越精準，把這個方法套用到其他通路看看。";
                 })(),
               },
             ],
@@ -554,20 +585,20 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     const next = picked[i + 1];
     const bridgeMap = {
       "frequency→growth": "知道了你最依賴什麼。但有些消費正在悄悄擴張中——",
-      "frequency→hidden": "知道了你去最多的地方。但真正吃掉預算的，可能不是你想的那些——",
+      "frequency→creep": "知道了你去最多的地方。但有些通路，你每次花的錢正在悄悄增加——",
       "frequency→dominance": "知道了你的消費依賴。接下來看看你的錢到底集中在哪個類別——",
       "frequency→projection": "知道了你最常去哪。但照這個花法，一年下來呢？",
-      "growth→hidden": "看到了什麼在擴張。但還有些「低頻高消費」的隱形殺手——",
+      "growth→creep": "看到了什麼在擴張。同時有些通路的均價也在悄悄爬升——",
       "growth→dominance": "新習慣在增加。來看看整體類別分布——你的錢主要花在哪？",
       "growth→projection": "新習慣會持續燒錢。照目前趨勢，一年後呢？",
-      "hidden→growth": "找到了隱形高消費。同時有些新習慣正在快速形成——",
-      "hidden→dominance": "知道了哪裡在偷吃預算。來看看整體分布——",
-      "hidden→projection": "找到了隱形殺手。如果不調整，一年後呢？",
+      "creep→growth": "知道了均價在爬升。同時有些新消費習慣也在快速形成——",
+      "creep→dominance": "看到了均價在哪裡漲。來看看整體類別分布——",
+      "creep→projection": "均價在爬升，如果不調整，一年後呢？",
       "dominance→growth": "看到了消費集中的地方。同時有些新趨勢在發生——",
-      "dominance→hidden": "知道了類別分布。但有些通路在不知不覺中吃掉你的預算——",
+      "dominance→creep": "知道了類別分布。但有些通路每次消費正在悄悄變貴——",
       "dominance→projection": "知道了錢花在哪。照這樣下去，一年呢？",
       "projection→growth": "看到了未來預估。來看看哪些消費正在加速——",
-      "projection→hidden": "知道了年花費。但有些你沒注意到的通路特別吃預算——",
+      "projection→creep": "知道了年花費。但你可能沒注意到，有些通路每次花的錢越來越多——",
       "projection→dominance": "看到了整體數字。來看看具體花在哪個類別——",
     };
     bridges.push(bridgeMap[curr.type + "→" + next.type] || "接下來看看另一個有趣的發現——");
@@ -579,7 +610,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
   const summaryParts = [];
   if (topBrand) summaryParts.push("最依賴「" + topBrand.brand + "」（每 " + (totalDays / topBrand.visits).toFixed(1) + " 天）");
   if (topGrowth) summaryParts.push("「" + topGrowth.brand + "」成長最快（" + (topGrowth.growth === 999 ? "新增" : "+" + topGrowth.growth + "%") + "）");
-  if (hiddenSpenders[0]) summaryParts.push("「" + hiddenSpenders[0].brand + "」是隱形高消費（均 $" + Math.round(hiddenSpenders[0].total / hiddenSpenders[0].visits) + "/次）");
+  if (creepingBrands[0]) summaryParts.push("「" + creepingBrands[0].brand + "」均價正在爬升（$" + creepingBrands[0]._avgBef + "→$" + creepingBrands[0]._avgAft + "）");
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
   return { hooks, bridges, summary };
