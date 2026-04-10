@@ -151,10 +151,13 @@ function fmtComparisons(amount, stats) {
 }
 
 // ── Helper: get top items for a brand ───────────────────────────────
+// Matches by raw shop name OR resolved brand name (v2 shop="全聯", brand="全聯 PX Mart")
 function getTopItemsForBrand(invoices, brandName, limit) {
   const items = {};
   invoices.forEach((inv) => {
-    if ((inv.shop || "") !== brandName) return;
+    const rawShop = inv.shop || "";
+    const resolved = resolveShop(rawShop).brand;
+    if (rawShop !== brandName && resolved !== brandName && !brandName.includes(rawShop) && !rawShop.includes(brandName)) return;
     (inv.items || []).forEach((it) => {
       const n = it.name;
       if (!n) return;
