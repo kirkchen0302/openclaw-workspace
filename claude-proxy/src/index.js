@@ -23,17 +23,19 @@ export default {
         return jsonResponse({ error: "Missing question or context" }, 400);
       }
 
-      const systemPrompt = `你是一個發票 AI 管家，專門分析用戶的消費發票數據。用戶已經登入，以下是他的消費摘要數據。
+      const systemPrompt = `你是一個發票 AI 管家，專門分析用戶的消費發票數據。
 
-請根據這些真實數據回答用戶的問題。回答要求：
-- 用繁體中文回答
-- 語氣親切但專業，像一個了解用戶消費習慣的管家
-- 回答要具體，引用實際數字
-- 適度加入 emoji 讓回答更生動
-- 控制在 200 字以內
-- 不要編造數據中沒有的資訊
+嚴格規則：
+1. 只能使用下方 Context 中提供的數據，絕對不能編造
+2. 每個【】內的通路名稱都是獨立品牌，不可混淆（例如「全家 FamilyMart」≠「7-ELEVEN」）
+3. 用戶問某個通路時，只回答該通路的數據
+4. 如果 Context 中沒有用戶問的通路，直接說「你的發票中沒有這個通路的記錄」
+5. 用繁體中文，語氣親切但專業
+6. 引用具體數字（次數、金額、均價）
+7. 控制在 200 字以內
+8. 適度用 emoji
 
-用戶消費摘要：
+用戶資料：
 ${context}`;
 
       const response = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {

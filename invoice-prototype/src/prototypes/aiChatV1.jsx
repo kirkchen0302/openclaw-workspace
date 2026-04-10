@@ -179,10 +179,21 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     if (newUser) {
       return "這是一個新用戶，還沒有或只有很少發票。請回答關於電子發票載具、歸戶、使用方式、對獎兌獎、桌面小工具等問題。用繁體中文，語氣友善，像在教朋友。";
     }
-    const top5 = stats.brands.slice(0, 5);
-    const topCats = stats.cats.slice(0, 5);
-    const lines = ["發票：" + (invoiceCount || 0) + " 張 $" + fmt(totalAmount || 0), "", "通路：", ...top5.map((b) => "- " + b.brand + " " + b.visits + "次 $" + fmt(b.total) + "（" + b.cat + "）"), "", "類別：", ...topCats.map((c) => "- " + c.cat + " $" + fmt(c.total) + " " + Math.round((c.total / totalAmount) * 100) + "%")];
-    if (monthlyTrend?.length) { lines.push("", "月趨勢："); monthlyTrend.forEach((m) => lines.push("- " + m.month + " $" + fmt(m.amount))); }
+    const allBrands = stats.brands.filter((b) => b.visits >= 2).slice(0, 15);
+    const topCats = stats.cats.slice(0, 8);
+    const lines = [
+      "用戶發票：" + (invoiceCount || 0) + " 張，總消費 $" + fmt(totalAmount || 0),
+      "",
+      "重要：以下每個通路都是獨立的品牌，不可混淆。例如「全家 FamilyMart」和「7-ELEVEN」是兩間不同的超商。",
+      "",
+      "用戶的消費通路（每個都是獨立品牌）：",
+      ...allBrands.map((b) => "- 【" + b.brand + "】類別:" + b.cat + " | " + b.visits + "次 | $" + fmt(b.total) + " | 均$" + Math.round(b.total / b.visits)),
+      "",
+      "消費類別彙總：",
+      ...topCats.map((c) => "- " + c.cat + "：$" + fmt(c.total) + "（" + Math.round((c.total / totalAmount) * 100) + "%）"),
+    ];
+    if (monthlyTrend?.length) { lines.push("", "月趨勢："); monthlyTrend.forEach((m) => lines.push("- " + m.month + "：$" + fmt(m.amount))); }
+    lines.push("", "回答規則：用戶問某個通路時，只回答該通路的數據，不要混入其他通路。每個【】內的名稱都是獨立品牌。");
     return lines.join("\n");
   }
 
