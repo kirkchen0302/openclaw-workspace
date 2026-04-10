@@ -197,10 +197,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     if (hasItems) {
       lines.push("", "各通路常買品項明細（實際品名）：");
       allBrands.slice(0, 8).forEach((b) => {
-        const shopInvs = invoices.filter((inv) => {
-          const raw = inv.shop || "";
-          return raw === b.brand || b.brand.includes(raw) || raw.includes(b.brand);
-        });
+        const shopInvs = invoices.filter((inv) => (inv.shop || "") === b.brand);
         const items = {};
         shopInvs.forEach((inv) => {
           (inv.items || []).forEach((it) => {

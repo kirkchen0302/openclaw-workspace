@@ -14,10 +14,20 @@ const BILL_CATS = ["電費", "水費", "瓦斯費", "電信費", "網路"];
 const PLATFORM_FEE_THRESHOLD = 50; // avg < $50 likely platform fee only
 
 // ── Stats computation ───────────────────────────────────────────────
+// v2 data has clean shop names from BQ channel table — use directly, only resolve for category
+function resolveV2Shop(shopName) {
+  // Try resolveShop for category, but keep the original name as brand
+  const resolved = resolveShop(shopName);
+  // If resolveShop found a mapping, use its category but keep original display name
+  return { brand: shopName, cat: resolved.cat };
+}
+
 export function computeStats(invoices) {
+  // Detect v2: has "items" or "hour" field
+  const isV2 = invoices.length > 0 && (invoices[0].items || invoices[0].hour !== undefined);
   const brandMap = {};
   invoices.forEach((inv) => {
-    const { brand, cat } = resolveShop(inv.shop);
+    const { brand, cat } = isV2 ? resolveV2Shop(inv.shop) : resolveShop(inv.shop);
     if (!brandMap[brand]) brandMap[brand] = { brand, cat, visits: 0, total: 0, byWeek: {}, byMonth: {} };
     brandMap[brand].visits++;
     brandMap[brand].total += inv.amount || 0;
@@ -57,7 +67,7 @@ export function computeStats(invoices) {
   const brandFirst = {};
   const brandSecond = {};
   invoices.forEach((inv) => {
-    const { brand } = resolveShop(inv.shop);
+    const { brand } = isV2 ? resolveV2Shop(inv.shop) : resolveShop(inv.shop);
     const ym = inv.yearMonth || "";
     if (firstKeys.includes(ym)) {
       if (!brandFirst[brand]) brandFirst[brand] = { visits: 0, total: 0 };
@@ -151,13 +161,11 @@ function fmtComparisons(amount, stats) {
 }
 
 // ── Helper: get top items for a brand ───────────────────────────────
-// Matches by raw shop name OR resolved brand name (v2 shop="全聯", brand="全聯 PX Mart")
 function getTopItemsForBrand(invoices, brandName, limit) {
   const items = {};
   invoices.forEach((inv) => {
-    const rawShop = inv.shop || "";
-    const resolved = resolveShop(rawShop).brand;
-    if (rawShop !== brandName && resolved !== brandName && !brandName.includes(rawShop) && !rawShop.includes(brandName)) return;
+    const shop = inv.shop || "";
+    if (shop !== brandName) return;
     (inv.items || []).forEach((it) => {
       const n = it.name;
       if (!n) return;
