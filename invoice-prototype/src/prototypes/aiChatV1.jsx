@@ -242,13 +242,34 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
           <div style={{ maxHeight: 180, overflowY: "auto", padding: "8px 16px 0" }}>
             {deepFollowups.length > 0 && (
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>深入了解：</div>
-                {deepFollowups.map((dfq, i) => (<button key={"d" + i} onClick={() => tapDeepFollowup(dfq)} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #5B4A9E", background: "rgba(91,127,255,0.05)", color: "#B4A0FF", fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: 6 }}>{dfq.q}</button>))}
+                {deepFollowups.some((d) => d.q.startsWith("✅") || d.q.startsWith("⏰"))
+                  ? <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>設定好了嗎？</div>
+                  : <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>深入了解：</div>
+                }
+                {deepFollowups.map((dfq, i) => {
+                  const isAction = dfq.q.startsWith("✅");
+                  const isDefer = dfq.q.startsWith("⏰");
+                  const isCheckpoint = isAction || isDefer;
+                  return (<button key={"d" + i} onClick={() => tapDeepFollowup(dfq)} style={{
+                    display: isCheckpoint ? "inline-block" : "block",
+                    width: isCheckpoint ? "auto" : "100%",
+                    padding: isCheckpoint ? "10px 20px" : "10px 14px",
+                    borderRadius: isCheckpoint ? 20 : 12,
+                    border: isAction ? "1.5px solid #34C759" : isDefer ? "1.5px solid #636366" : "1px solid #5B4A9E",
+                    background: isAction ? "rgba(52,199,89,0.1)" : isDefer ? "rgba(99,99,102,0.1)" : "rgba(91,127,255,0.05)",
+                    color: isAction ? "#34C759" : isDefer ? "#8E8E93" : "#B4A0FF",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center",
+                    marginBottom: 6, marginRight: isCheckpoint ? 8 : 0,
+                  }}>{dfq.q}</button>);
+                })}
               </div>
             )}
             {followups.length > 0 && (
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>{deepFollowups.length > 0 ? "或回到其他追問：" : "追問更多："}</div>
+                {followups[0] && (followups[0].q.startsWith("💳") || followups[0].q.startsWith("🚇") || followups[0].q.startsWith("📱") || followups[0].q.startsWith("💵"))
+                  ? <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>選擇你的付款方式：</div>
+                  : <div style={{ fontSize: 11, color: "#636366", marginBottom: 6 }}>{deepFollowups.length > 0 ? "或回到其他追問：" : "追問更多："}</div>
+                }
                 {followups.map((fq, i) => (<button key={"f" + i} onClick={() => tapFollowup(fq)} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid #3A3A3C", background: "#1C1C1E", color: "#E5E5EA", fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left", marginBottom: 6 }}>{fq.q}</button>))}
               </div>
             )}
