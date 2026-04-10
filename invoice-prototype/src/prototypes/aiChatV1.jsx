@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { computeStats, detectInsights, fmtComparisons } from "./insightEngine";
+import { isNewUser, buildOnboardingContent } from "./onboardingEngine";
 
 const fmt = (n) => n.toLocaleString();
 const AI_PROXY_URL = "https://invoice-claude-proxy.kirk-chen-669.workers.dev";
@@ -42,17 +43,28 @@ function InsightBubble({ hook }) {
 
 // ── AI Chat 主元件（動態洞察 + 樹狀敘事鏈）──────────────────────────────
 export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTrend }) {
-  const stats = useMemo(() => computeStats(invoices || []), [invoices]);
-  const { hooks: HOOKS, bridges: BRIDGES, summary: SUMMARY, opener: OPENER } = useMemo(
-    () => detectInsights(stats, invoiceCount || 0, totalAmount || 0, monthlyTrend),
-    [stats, invoiceCount, totalAmount, monthlyTrend]
-  );
+  const newUser = isNewUser(invoiceCount);
+  const stats = useMemo(() => newUser ? null : computeStats(invoices || []), [invoices, newUser]);
 
-  const OPENS = useMemo(() => [
-    { text: "嗨，我看完了你 " + (invoiceCount || 0) + " 張發票。", delay: 400 },
-    { text: "想跟你聊聊我觀察到的事。", delay: 1200, dim: true },
-    { text: OPENER, delay: 2200, hook: true },
-  ], [invoiceCount, OPENER]);
+  const { hooks: HOOKS, bridges: BRIDGES, summary: SUMMARY, opener: OPENER } = useMemo(() => {
+    if (newUser) return buildOnboardingContent(invoiceCount || 0);
+    return detectInsights(stats, invoiceCount || 0, totalAmount || 0, monthlyTrend);
+  }, [newUser, stats, invoiceCount, totalAmount, monthlyTrend]);
+
+  const OPENS = useMemo(() => {
+    if (newUser) {
+      return [
+        { text: "嗨！歡迎來到 AI 管家 👋", delay: 400 },
+        { text: "我是你的發票智慧助手，幫你管理發票、分析消費、自動對獎。", delay: 1200, dim: true },
+        { text: OPENER, delay: 2200, hook: true },
+      ];
+    }
+    return [
+      { text: "嗨，我看完了你 " + (invoiceCount || 0) + " 張發票。", delay: 400 },
+      { text: "想跟你聊聊我觀察到的事。", delay: 1200, dim: true },
+      { text: OPENER, delay: 2200, hook: true },
+    ];
+  }, [newUser, invoiceCount, OPENER]);
 
   const [msgs, setMsgs] = useState([]);
   const [phase, setPhase] = useState("opening");
@@ -164,6 +176,9 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   }
 
   function buildContext() {
+    if (newUser) {
+      return "這是一個新用戶，還沒有或只有很少發票。請回答關於電子發票載具、歸戶、使用方式、對獎兌獎、桌面小工具等問題。用繁體中文，語氣友善，像在教朋友。";
+    }
     const top5 = stats.brands.slice(0, 5);
     const topCats = stats.cats.slice(0, 5);
     const lines = ["發票：" + (invoiceCount || 0) + " 張 $" + fmt(totalAmount || 0), "", "通路：", ...top5.map((b) => "- " + b.brand + " " + b.visits + "次 $" + fmt(b.total) + "（" + b.cat + "）"), "", "類別：", ...topCats.map((c) => "- " + c.cat + " $" + fmt(c.total) + " " + Math.round((c.total / totalAmount) * 100) + "%")];
@@ -193,7 +208,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     <div style={{ display: "flex", flexDirection: "column", flex: 1, background: "#000" }}>
       <div style={{ padding: "14px 16px 12px", borderBottom: "0.5px solid #2C2C2E", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 36, height: 36, borderRadius: 18, background: "linear-gradient(135deg,#5B7FFF,#8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#fff" }}>✦</div>
-        <div style={{ flex: 1 }}><div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>AI 管家</div><div style={{ fontSize: 12, color: "#636366" }}>已分析 {invoiceCount || 0} 張發票</div></div>
+        <div style={{ flex: 1 }}><div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>AI 管家</div><div style={{ fontSize: 12, color: "#636366" }}>{newUser ? "新手引導模式" : "已分析 " + (invoiceCount || 0) + " 張發票"}</div></div>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px", display: "flex", flexDirection: "column", gap: 10 }}>

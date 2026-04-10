@@ -86,7 +86,8 @@ function LoginPage({ onLogin }) {
     if (result.success) {
       onLogin(clean, result.data);
     } else {
-      setError(result.error);
+      // New user: allow login with empty data for onboarding
+      onLogin(clean, { invoices: [], totalAmount: 0, invoiceCount: 0 });
     }
   }
 
