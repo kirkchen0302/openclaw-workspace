@@ -150,11 +150,33 @@ function fmtComparisons(amount, stats) {
   return lines.slice(0, 4).join("\n");
 }
 
+// ── Helper: get top items for a brand ───────────────────────────────
+function getTopItemsForBrand(invoices, brandName, limit) {
+  const items = {};
+  invoices.forEach((inv) => {
+    if ((inv.shop || "") !== brandName) return;
+    (inv.items || []).forEach((it) => {
+      const n = it.name;
+      if (!n) return;
+      if (!items[n]) items[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
+      items[n].count += it.qty || 1;
+      items[n].total += it.price || 0;
+    });
+  });
+  return Object.values(items).sort((a, b) => b.count - a.count).slice(0, limit || 5);
+}
+
+function fmtTopItems(items) {
+  if (!items.length) return "";
+  return items.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n");
+}
+
 // ── Insight candidates ──────────────────────────────────────────────
 
 function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices) {
   const { brands, brandsByTotal, cats, months, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys } = stats;
   invoices = invoices || [];
+  const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
   const candidates = [];
 
   // ── Type: EXPLOSIVE_GROWTH ────────────────────────────────────────
@@ -177,14 +199,25 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         q: "什麼消費正在悄悄擴張？",
         big: isNew ? "從 0 到 " + g.aft + " 次" : "+" + g.growth + "%",
         bigSub: "「" + g.brand + "」" + (isNew ? "是你近期新養成的消費" : "前期 " + g.bef + " 次 → 近期 " + g.aft + " 次"),
-        body: isNew
-          ? "「" + g.brand + "」在前期完全沒有出現，但近期已經去了 " + g.aft + " 次，累計 $" + fmt(g.total) + "。這是一個正在形成的新消費習慣。"
-          : "「" + g.brand + "」的消費頻率從前期 " + g.bef + " 次飆到近期 " + g.aft + " 次（+" + g.growth + "%）。\n\n這個增長速度代表它正在從「偶爾去」變成「固定消費」。",
-        ranks: growthList.slice(0, 4).map((x, i) => ({
-          rank: x.growth === 999 ? "🆕" : "📈",
-          name: x.brand, freq: x.bef + " → " + x.aft + " 次",
-          note: x.growth === 999 ? "新增！" : "+" + x.growth + "%",
-        })),
+        body: (() => {
+          let t = isNew
+            ? "「" + g.brand + "」在前期完全沒有出現，但近期已經去了 " + g.aft + " 次，累計 $" + fmt(g.total) + "。"
+            : "「" + g.brand + "」的消費頻率從前期 " + g.bef + " 次飆到近期 " + g.aft + " 次（+" + g.growth + "%）。";
+          if (hasItems) {
+            const topIt = getTopItemsForBrand(invoices, g.brand, 3);
+            if (topIt.length) t += "\n\n你在「" + g.brand + "」最常買：" + topIt.map((it) => it.name).join("、") + "。";
+          }
+          t += "\n\n這" + (isNew ? "是一個正在形成的新消費習慣" : "個增長速度代表它正在變成「固定消費」") + "。";
+          return t;
+        })(),
+        ranks: growthList.slice(0, 4).map((x, i) => {
+          const topIt = hasItems ? getTopItemsForBrand(invoices, x.brand, 1)[0] : null;
+          return {
+            rank: x.growth === 999 ? "🆕" : "📈",
+            name: x.brand, freq: x.bef + " → " + x.aft + " 次",
+            note: (topIt ? topIt.name + " · " : "") + (x.growth === 999 ? "新增！" : "+" + x.growth + "%"),
+          };
+        }),
         tip: "新消費習慣一旦固定下來就很難改變。現在是你能有意識決定「要不要讓它變成日常」的最後時機。",
         followups: [
           {
@@ -380,13 +413,39 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         q: "你最離不開什麼？",
         big: "每 " + freq + " 天",
         bigSub: "你去「" + topFreq.brand + "」的頻率" + (isPlatformFee ? "（發票為平台服務費）" : ""),
-        body: "你在這段期間去了「" + topFreq.brand + "」" + topFreq.visits + " 次" + (isPlatformFee ? "（金額為平台手續費 $" + fmt(topFreq.total) + "，實際餐費另計）" : "，累計 $" + fmt(topFreq.total)) + "。\n\n你的消費依賴排行：",
+        body: (() => {
+          let t = "你在這段期間去了「" + topFreq.brand + "」" + topFreq.visits + " 次" + (isPlatformFee ? "（金額為平台手續費 $" + fmt(topFreq.total) + "，實際餐費另計）" : "，累計 $" + fmt(topFreq.total)) + "。";
+          if (hasItems) {
+            const topItems = getTopItemsForBrand(invoices, topFreq.brand, 3);
+            if (topItems.length > 0) {
+              t += "\n\n你在「" + topFreq.brand + "」最常買的：" + topItems.map((it) => it.name).join("、") + "。";
+            }
+          }
+          t += "\n\n你的消費依賴排行：";
+          return t;
+        })(),
         ranks: brands.slice(0, 4).map((b, i) => {
           const f = (totalDays / b.visits).toFixed(1);
           const avg = Math.round(b.total / b.visits);
-          return { rank: ["🥇", "🥈", "🥉", "4️⃣"][i], name: b.brand, freq: "每" + f + "天", note: avg < PLATFORM_FEE_THRESHOLD ? b.cat + "（平台費）" : b.cat + " · 均$" + avg };
+          const topIt = hasItems ? getTopItemsForBrand(invoices, b.brand, 1)[0] : null;
+          return { rank: ["🥇", "🥈", "🥉", "4️⃣"][i], name: b.brand, freq: "每" + f + "天", note: (topIt ? topIt.name + " · " : "") + (avg < PLATFORM_FEE_THRESHOLD ? b.cat + "（平台費）" : "均$" + avg) };
         }),
-        tip: "前 4 大通路佔了你 " + Math.round(brands.slice(0, 4).reduce((s, b) => s + b.visits, 0) / invoiceCount * 100) + "% 的消費次數。你的日常生活高度依賴這幾個地方。",
+        tip: (() => {
+          let t = "前 4 大通路佔了你 " + Math.round(brands.slice(0, 4).reduce((s, b) => s + b.visits, 0) / invoiceCount * 100) + "% 的消費次數。";
+          if (hasItems) {
+            const allItems = {};
+            invoices.forEach((inv) => (inv.items || []).forEach((it) => {
+              if (!it.name) return;
+              const cat = classifyItem(it.name);
+              if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
+              if (!allItems[it.name]) allItems[it.name] = 0;
+              allItems[it.name] += it.qty || 1;
+            }));
+            const topAllItem = Object.entries(allItems).sort((a, b) => b[1] - a[1])[0];
+            if (topAllItem) t += " 你所有消費中買最多的品項是「" + topAllItem[0] + "」（" + topAllItem[1] + " 次）。";
+          }
+          return t;
+        })(),
         followups: [
           {
             q: "這個依賴在變強還是變弱？",
@@ -427,7 +486,15 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
             a: (() => {
               const growing = growthList.filter((b) => b.brand !== topFreq.brand).slice(0, 3);
               if (!growing.length) return "目前沒有明顯在增加的新消費。你的通路選擇很穩定。";
-              return "成長中的通路：\n\n" + growing.map((g) => catIcon(g.cat) + " " + g.brand + "：前期 " + g.bef + " → 近期 " + g.aft + (g.growth === 999 ? "（新增！）" : "（+" + g.growth + "%）")).join("\n");
+              let t = "成長中的通路：\n\n" + growing.map((g) => {
+                let line = catIcon(g.cat) + " " + g.brand + "：前期 " + g.bef + " → 近期 " + g.aft + (g.growth === 999 ? "（新增！）" : "（+" + g.growth + "%）");
+                if (hasItems) {
+                  const topIt = getTopItemsForBrand(invoices, g.brand, 2);
+                  if (topIt.length) line += "\n  常買：" + topIt.map((it) => it.name).join("、");
+                }
+                return line;
+              }).join("\n\n");
+              return t;
             })(),
             followups: [
               {
@@ -746,7 +813,6 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
   // ── Type: ITEM_INSIGHT ─────────────────────────────────────────────
   // Item-level analysis — what you actually buy, not just where
-  const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
   if (hasItems) {
     const itemCats = aggregateItemCategories(invoices);
     const meaningfulCats = itemCats.filter((c) => c.cat !== "其他" && c.cat !== "外送服務費" && c.cat !== "餐飲消費");

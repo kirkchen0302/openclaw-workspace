@@ -184,16 +184,36 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     const lines = [
       "用戶發票：" + (invoiceCount || 0) + " 張，總消費 $" + fmt(totalAmount || 0),
       "",
-      "重要：以下每個通路都是獨立的品牌，不可混淆。例如「全家 FamilyMart」和「7-ELEVEN」是兩間不同的超商。",
+      "重要：每個通路都是獨立品牌，不可混淆。",
       "",
-      "用戶的消費通路（每個都是獨立品牌）：",
-      ...allBrands.map((b) => "- 【" + b.brand + "】類別:" + b.cat + " | " + b.visits + "次 | $" + fmt(b.total) + " | 均$" + Math.round(b.total / b.visits)),
+      "通路（每個都是獨立品牌）：",
+      ...allBrands.map((b) => "- 【" + b.brand + "】" + b.cat + " | " + b.visits + "次 $" + fmt(b.total) + " 均$" + Math.round(b.total / b.visits)),
       "",
-      "消費類別彙總：",
+      "類別：",
       ...topCats.map((c) => "- " + c.cat + "：$" + fmt(c.total) + "（" + Math.round((c.total / totalAmount) * 100) + "%）"),
     ];
+    // Add item-level details per store (top items for top 8 stores)
+    const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
+    if (hasItems) {
+      lines.push("", "各通路常買品項明細（實際品名）：");
+      allBrands.slice(0, 8).forEach((b) => {
+        const shopInvs = invoices.filter((inv) => (inv.shop || "") === b.brand || (inv.shop || "").includes(b.brand));
+        const items = {};
+        shopInvs.forEach((inv) => {
+          (inv.items || []).forEach((it) => {
+            if (!items[it.name]) items[it.name] = { count: 0, total: 0 };
+            items[it.name].count += it.qty || 1;
+            items[it.name].total += it.price || 0;
+          });
+        });
+        const topItems = Object.entries(items).sort((a, b) => b[1].count - a[1].count).slice(0, 6);
+        if (topItems.length > 0) {
+          lines.push("【" + b.brand + "】" + topItems.map(([name, d]) => name + "(" + d.count + "次$" + Math.round(d.total) + ")").join("、"));
+        }
+      });
+    }
     if (monthlyTrend?.length) { lines.push("", "月趨勢："); monthlyTrend.forEach((m) => lines.push("- " + m.month + "：$" + fmt(m.amount))); }
-    lines.push("", "回答規則：用戶問某個通路時，只回答該通路的數據，不要混入其他通路。每個【】內的名稱都是獨立品牌。");
+    lines.push("", "回答規則：用戶問某個通路時，只回答該通路的數據，不要混入其他。用戶問品項時，要列出實際品項名稱和次數。");
     return lines.join("\n");
   }
 
