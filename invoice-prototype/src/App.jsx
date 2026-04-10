@@ -2090,8 +2090,9 @@ export default function App() {
   const path = window.location.pathname.replace(/\/$/, "");
   const isAiButlerV1 = path === "/prototype/ai_agent/0408_v1";
   const isAiButlerV2 = path === "/prototype/ai_agent/0409_v2";
+  const isAiButlerV3 = path === "/prototype/ai_agent/0409_v3";
 
-  if (isAiButlerV1 || isAiButlerV2) {
+  if (isAiButlerV1 || isAiButlerV2 || isAiButlerV3) {
     return <InvoicePrototypeV3 />;
   }
 

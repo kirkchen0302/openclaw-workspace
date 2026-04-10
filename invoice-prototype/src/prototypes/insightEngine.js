@@ -616,6 +616,143 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     });
   }
 
+  // ── Type: SAVE_PLAN ────────────────────────────────────────────────
+  // Concrete, ranked saving strategies based on user's actual data
+  const savePlans = [];
+  // Strategy 1: Convenience store → supermarket migration
+  const convCat = cats.find((c) => c.cat === "超商");
+  const marketBrand = brands.find((b) => b.cat === "超市");
+  if (convCat && convCat.visits >= 10 && marketBrand) {
+    const yearlySave = Math.round(convCat.total / months.length * 12 * 0.25);
+    savePlans.push({ icon: "🏪→🛒", label: "超商固定品項改在「" + marketBrand.brand + "」買", save: yearlySave, effort: "低", detail: "同品項超市便宜 20-30%，你已經固定去" + marketBrand.brand + "，多帶幾樣就好", monthly: Math.round(yearlySave / 12) });
+  }
+  // Strategy 2: Control avg-price creep
+  if (creepingBrands.length > 0) {
+    const cb = creepingBrands[0];
+    const extra = cb._avgAft - cb._avgBef;
+    const yearlySave = Math.round(extra * (cb.visits / months.length) * 12);
+    savePlans.push({ icon: "📉", label: "「" + cb.brand + "」每次控制回 $" + fmt(cb._avgBef), save: yearlySave, effort: "低", detail: "列清單再出門，避免順便加購。回到之前的均價就好", monthly: Math.round(yearlySave / 12) });
+  }
+  // Strategy 3: Reduce frequency of top brand
+  if (brands[0] && brands[0].visits >= 10) {
+    const tb = brands[0];
+    const avg = Math.round(tb.total / tb.visits);
+    const weeklyVisits = tb.visits / (totalDays / 7);
+    if (weeklyVisits >= 2 && avg > 20) {
+      const yearlySave = avg * 52; // reduce 1/week
+      savePlans.push({ icon: "📅", label: "「" + tb.brand + "」每週少去 1 次", save: yearlySave, effort: "中", detail: "目前每週 " + weeklyVisits.toFixed(1) + " 次，少 1 次不影響生活", monthly: Math.round(yearlySave / 12) });
+    }
+  }
+  // Strategy 4: Consolidate duplicate category brands
+  const catBrandGroups = {};
+  brands.filter((b) => b.visits >= 3 && !BILL_CATS.includes(b.cat) && b.cat !== "其他").forEach((b) => {
+    if (!catBrandGroups[b.cat]) catBrandGroups[b.cat] = [];
+    catBrandGroups[b.cat].push(b);
+  });
+  const mergeableCat = Object.entries(catBrandGroups).filter(([, bs]) => bs.length >= 2).map(([cat, bs]) => {
+    const sorted = bs.sort((a, b) => (a.total / a.visits) - (b.total / b.visits));
+    const cheapest = sorted[0];
+    const others = sorted.slice(1);
+    const saveable = others.reduce((s, b) => s + Math.round((b.total / b.visits - cheapest.total / cheapest.visits) * b.visits), 0);
+    return { cat, cheapest, others, saveable };
+  }).filter((m) => m.saveable > 500).sort((a, b) => b.saveable - a.saveable);
+  if (mergeableCat.length > 0) {
+    const m = mergeableCat[0];
+    const yearlySave = Math.round(m.saveable / months.length * 12);
+    savePlans.push({ icon: "🔄", label: "「" + m.cat + "」集中在「" + m.cheapest.brand + "」消費", save: yearlySave, effort: "低", detail: "目前分散 " + (m.others.length + 1) + " 家，集中一家可累積回饋且減少衝動消費", monthly: Math.round(yearlySave / 12) });
+  }
+  // Strategy 5: New habit awareness (from growth)
+  if (growthList.length > 0) {
+    const newHabit = growthList.find((g) => g.growth === 999 || g.growth > 200);
+    if (newHabit) {
+      const yearlySave = Math.round(newHabit.total / months.length * 12 * 0.5);
+      savePlans.push({ icon: "🆕", label: "新習慣「" + newHabit.brand + "」頻率減半", save: yearlySave, effort: "中", detail: "這個習慣還在形成中，現在調整最容易", monthly: Math.round(yearlySave / 12) });
+    }
+  }
+
+  savePlans.sort((a, b) => b.save - a.save);
+  const totalSaveable = savePlans.reduce((s, p) => s + p.save, 0);
+
+  if (savePlans.length >= 2) {
+    const score = 85; // Always high — everyone wants to know how to save
+
+    candidates.push({
+      type: "save", score,
+      hook: {
+        id: "save",
+        q: "我可以怎麼聰明省錢？",
+        big: "$" + fmt(totalSaveable) + "/年",
+        bigSub: "不用改變生活就能省下的金額",
+        body: "根據你的消費數據，以下是最有效的省錢方案，按「省最多、最不費力」排序：",
+        ranks: savePlans.slice(0, 4).map((p) => ({
+          rank: p.icon, name: p.label,
+          freq: "$" + fmt(p.save) + "/年",
+          note: "每月 $" + fmt(p.monthly) + " · 難度" + p.effort,
+        })),
+        tip: "全部做到可以一年省 $" + fmt(totalSaveable) + "。但不用全做——挑最無痛的 1-2 個開始就好。\n\n" + fmtComparisons(totalSaveable, stats),
+        followups: [
+          {
+            q: "最無痛的第一步是什麼？",
+            a: (() => {
+              const easiest = savePlans.filter((p) => p.effort === "低").sort((a, b) => b.save - a.save)[0];
+              if (!easiest) return "從最高頻的消費開始觀察，小調整就有感。";
+              return "最推薦先做：\n\n" + easiest.icon + " " + easiest.label + "\n\n為什麼？\n• 一年省 $" + fmt(easiest.save) + "\n• " + easiest.detail + "\n• 難度最低，不需要改變任何習慣\n\n" + fmtComparisons(easiest.save, stats);
+            })(),
+            followups: [
+              {
+                q: "做了之後下一步呢？",
+                a: (() => {
+                  const steps = savePlans.filter((p) => p.effort === "低").sort((a, b) => b.save - a.save);
+                  if (steps.length < 2) return "先把第一步養成習慣，穩定後再看看其他調整。";
+                  return "第一步穩定後，接著做：\n\n" + steps.slice(1, 3).map((p) => p.icon + " " + p.label + "（$" + fmt(p.save) + "/年）").join("\n") + "\n\n循序漸進，不要一次改太多。";
+                })(),
+              },
+              {
+                q: "會不會影響生活品質？",
+                a: (() => {
+                  const easiest = savePlans.filter((p) => p.effort === "低")[0];
+                  return "這些都是「轉移」而不是「犧牲」：\n\n" + (easiest ? "• " + easiest.label + "——同樣的東西，只是換個地方買\n" : "") + "• 不是要你少吃少喝，而是把錢花得更聰明\n• 省下的錢可以拿去做讓你更開心的事\n\n生活品質不會變差，只是消費路徑微調。";
+                })(),
+              },
+            ],
+          },
+          {
+            q: "全部做到的話呢？",
+            a: (() => {
+              return "全部執行，一年省 $" + fmt(totalSaveable) + "：\n\n" + savePlans.slice(0, 4).map((p) => p.icon + " " + p.label + "：$" + fmt(p.save) + "/年").join("\n") + "\n\n省下來的錢可以：\n" + fmtComparisons(totalSaveable, stats) + "\n\n但記住：不用全做，挑 1-2 個最適合你的就好。";
+            })(),
+            followups: [
+              {
+                q: "哪個 CP 值最高？",
+                a: (() => {
+                  // Best ratio of savings to effort
+                  const best = savePlans.filter((p) => p.effort === "低").sort((a, b) => b.save - a.save)[0];
+                  if (!best) return "每個方案都不錯，從金額最大的開始。";
+                  return "CP 值最高的是：\n\n" + best.icon + " " + best.label + "\n\n• 省 $" + fmt(best.save) + "/年\n• 難度最低\n• " + best.detail + "\n\n不費力但省最多，這就是聰明消費。";
+                })(),
+              },
+              {
+                q: "我的消費整體算健康嗎？",
+                a: (() => {
+                  const monthlyTotal = Math.round(totalAmount / months.length);
+                  const savePct = Math.round(totalSaveable / (monthlyTotal * 12) * 100);
+                  const healthSignals = [];
+                  if (marketBrand) healthSignals.push("✅ 你有固定去超市採買的習慣");
+                  if (creepingBrands.length === 0) healthSignals.push("✅ 沒有明顯的均價爬升");
+                  if (growthList.length <= 1) healthSignals.push("✅ 消費版圖穩定，沒有失控擴張");
+                  const warnSignals = [];
+                  if (creepingBrands.length > 2) warnSignals.push("⚠️ 多個通路均價在上升");
+                  if (growthList.length > 3) warnSignals.push("⚠️ 新消費習慣增加較快");
+                  return "月均消費 $" + fmt(monthlyTotal) + "，可優化空間約 " + savePct + "%。\n\n" + (healthSignals.length > 0 ? "做得好的：\n" + healthSignals.join("\n") + "\n\n" : "") + (warnSignals.length > 0 ? "可以注意的：\n" + warnSignals.join("\n") : "整體消費習慣不錯，微調就能更好。");
+                })(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
   // ── Pick top 4, sort by score ─────────────────────────────────────
   candidates.sort((a, b) => b.score - a.score);
   const picked = candidates.slice(0, 4);
@@ -643,6 +780,16 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
       "projection→growth": "看到了未來預估。來看看哪些消費正在加速——",
       "projection→creep": "知道了年花費。但你可能沒注意到，有些通路每次花的錢越來越多——",
       "projection→dominance": "看到了整體數字。來看看具體花在哪個類別——",
+      "frequency→save": "知道了你的消費依賴。那有什麼辦法可以花得更聰明？",
+      "growth→save": "新習慣在燒錢。來看看怎麼聰明省下來——",
+      "creep→save": "均價在爬升。有哪些方法可以不費力地省回來？",
+      "dominance→save": "知道了錢集中在哪。來看看怎麼優化最有感——",
+      "projection→save": "看到了一年的數字。接下來看看怎麼讓這個數字小一點——",
+      "save→frequency": "知道了怎麼省。回頭看看你最依賴什麼——",
+      "save→growth": "有了省錢方案。但同時有些新消費在快速形成——",
+      "save→creep": "知道了怎麼省。但有些通路的均價也在悄悄漲——",
+      "save→dominance": "有了省錢計劃。來看看你的錢整體花在哪——",
+      "save→projection": "知道了怎麼省。照目前趨勢，一年後呢？",
     };
     bridges.push(bridgeMap[curr.type + "→" + next.type] || "接下來看看另一個有趣的發現——");
   }
@@ -674,6 +821,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     opener = "你的消費有 " + Math.round(realCats[0].total / totalAmount * 100) + "% 集中在「" + realCats[0].cat + "」——這個比例值得聊聊。";
   } else if (hook1Type === "projection") {
     opener = "照你最近的消費速度，一年下來會是 $" + fmt(Math.round(recentAvg * 12)) + "。這個數字可能比你想的大。";
+  } else if (hook1Type === "save") {
+    opener = "看完你的消費後，我發現有 $" + fmt(totalSaveable) + "/年可以不用改變生活就省下來。想知道怎麼做嗎？";
   }
 
   return { hooks, bridges, summary, opener };
