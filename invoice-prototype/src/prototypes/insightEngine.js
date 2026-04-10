@@ -152,8 +152,9 @@ function fmtComparisons(amount, stats) {
 
 // ── Insight candidates ──────────────────────────────────────────────
 
-function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
+function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices) {
   const { brands, brandsByTotal, cats, months, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys } = stats;
+  invoices = invoices || [];
   const candidates = [];
 
   // ── Type: EXPLOSIVE_GROWTH ────────────────────────────────────────

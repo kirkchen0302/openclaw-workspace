@@ -48,7 +48,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
 
   const { hooks: HOOKS, bridges: BRIDGES, summary: SUMMARY, opener: OPENER } = useMemo(() => {
     if (newUser) return buildOnboardingContent(invoiceCount || 0);
-    return detectInsights(stats, invoiceCount || 0, totalAmount || 0, monthlyTrend);
+    return detectInsights(stats, invoiceCount || 0, totalAmount || 0, monthlyTrend, invoices);
   }, [newUser, stats, invoiceCount, totalAmount, monthlyTrend]);
 
   const OPENS = useMemo(() => {
