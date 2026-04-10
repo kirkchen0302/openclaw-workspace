@@ -43,18 +43,16 @@ function InsightBubble({ hook }) {
 // ── AI Chat 主元件（動態洞察 + 樹狀敘事鏈）──────────────────────────────
 export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTrend }) {
   const stats = useMemo(() => computeStats(invoices || []), [invoices]);
-  const { hooks: HOOKS, bridges: BRIDGES, summary: SUMMARY } = useMemo(
+  const { hooks: HOOKS, bridges: BRIDGES, summary: SUMMARY, opener: OPENER } = useMemo(
     () => detectInsights(stats, invoiceCount || 0, totalAmount || 0, monthlyTrend),
     [stats, invoiceCount, totalAmount, monthlyTrend]
   );
 
-  const topBrand = stats.brands[0];
-
   const OPENS = useMemo(() => [
     { text: "嗨，我看完了你 " + (invoiceCount || 0) + " 張發票。", delay: 400 },
     { text: "想跟你聊聊我觀察到的事。", delay: 1200, dim: true },
-    { text: topBrand ? "你跟「" + topBrand.brand + "」的關係很穩定——平均每 " + (stats.totalDays / topBrand.visits).toFixed(1) + " 天就會去一次。這是你最離不開的消費。" : "讓我幫你分析一下。", delay: 2200, hook: true },
-  ], [topBrand, invoiceCount, stats.totalDays]);
+    { text: OPENER, delay: 2200, hook: true },
+  ], [invoiceCount, OPENER]);
 
   const [msgs, setMsgs] = useState([]);
   const [phase, setPhase] = useState("opening");

@@ -613,7 +613,27 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
   if (creepingBrands[0]) summaryParts.push("「" + creepingBrands[0].brand + "」均價正在爬升（$" + creepingBrands[0]._avgBef + "→$" + creepingBrands[0]._avgAft + "）");
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
-  return { hooks, bridges, summary };
+  // ── Opener — matches Hook 1's theme ───────────────────────────────
+  const hook1 = hooks[0];
+  const hook1Type = picked[0]?.type;
+  let opener = "讓我幫你分析一下消費狀況。";
+  if (hook1Type === "growth" && growthList[0]) {
+    const g = growthList[0];
+    opener = g.growth === 999
+      ? "「" + g.brand + "」是你近期才開始的消費——短短幾個月已經去了 " + g.aft + " 次。這個新習慣值得聊聊。"
+      : "「" + g.brand + "」的消費正在快速增加——從前期 " + g.bef + " 次到近期 " + g.aft + " 次，成長了 " + g.growth + "%。";
+  } else if (hook1Type === "frequency" && brands[0]) {
+    opener = "你跟「" + brands[0].brand + "」的關係很穩定——平均每 " + (totalDays / brands[0].visits).toFixed(1) + " 天就會去一次。這是你最離不開的消費。";
+  } else if (hook1Type === "creep" && creepingBrands[0]) {
+    const c = creepingBrands[0];
+    opener = "你去「" + c.brand + "」的頻率沒變，但每次花的錢從 $" + c._avgBef + " 升到了 $" + c._avgAft + "。這種「悄悄變貴」很容易忽略。";
+  } else if (hook1Type === "dominance" && realCats[0]) {
+    opener = "你的消費有 " + Math.round(realCats[0].total / totalAmount * 100) + "% 集中在「" + realCats[0].cat + "」——這個比例值得聊聊。";
+  } else if (hook1Type === "projection") {
+    opener = "照你最近的消費速度，一年下來會是 $" + fmt(Math.round(recentAvg * 12)) + "。這個數字可能比你想的大。";
+  }
+
+  return { hooks, bridges, summary, opener };
 }
 
 export { detectInsights, fmtComparisons };
