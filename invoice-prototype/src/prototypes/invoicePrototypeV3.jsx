@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { fetchUserData } from "../firebase";
 import { resolveShop } from "./shopMapping";
+import { classifyItem } from "./itemClassifier";
 import AIChat from "./aiChatV1";
 
 const fmt = (n) => n.toLocaleString();
@@ -176,10 +177,21 @@ function InvoicesPage({ invoices, totalAmount, invoiceCount }) {
                       <div style={{ fontSize: 11, color: "#8E8E93" }}>{inv.week}</div>
                     </div>
                     <div style={{ flex: 1, paddingLeft: 12, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{resolved.brand}</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.shop || resolved.brand}</div>
                       <div style={{ fontSize: 12, color: "#8E8E93", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                         <span style={{ background: "#F2F2F7", padding: "1px 6px", borderRadius: 4, fontSize: 11 }}>{resolved.cat}</span>
+                        {inv.hour !== undefined && <span style={{ fontSize: 11, color: "#AEAEB2" }}>{inv.hour}:{String(new Date(inv.issued_at || 0).getMinutes()).padStart(2, "0")}</span>}
                       </div>
+                      {inv.items && inv.items.length > 0 && (
+                        <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 3 }}>
+                          {inv.items.slice(0, 3).map((item, j) => (
+                            <span key={j} style={{ fontSize: 10, color: "#636366", background: "#F8F8FA", padding: "1px 5px", borderRadius: 3 }}>
+                              {item.name} ${item.price}
+                            </span>
+                          ))}
+                          {inv.items.length > 3 && <span style={{ fontSize: 10, color: "#AEAEB2" }}>+{inv.items.length - 3}</span>}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>${fmt(inv.amount)}</div>
                   </div>
@@ -372,9 +384,11 @@ export default function InvoicePrototypeV3() {
   }
 
   const { data } = user;
-  const invoices = data.invoices || [];
-  const totalAmount = data.totalAmount || 0;
-  const invoiceCount = data.invoiceCount || 0;
+  // Prefer v2 data (with item details) when available, fallback to v1
+  const hasV2 = data.invoices_v2 && data.invoices_v2.length > 0;
+  const invoices = hasV2 ? data.invoices_v2 : (data.invoices || []);
+  const totalAmount = hasV2 ? (data.totalAmount_v2 || 0) : (data.totalAmount || 0);
+  const invoiceCount = hasV2 ? (data.invoiceCount_v2 || 0) : (data.invoiceCount || 0);
 
   let content = null;
   if (tab === "invoices") content = <InvoicesPage invoices={invoices} totalAmount={totalAmount} invoiceCount={invoiceCount} />;

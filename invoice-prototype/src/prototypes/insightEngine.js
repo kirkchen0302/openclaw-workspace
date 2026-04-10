@@ -3,9 +3,11 @@
  * 動態生成 4 個 Hook，每個有 2 追問 × 2 深追問
  */
 import { resolveShop } from "./shopMapping";
+import { classifyItem, aggregateItemCategories } from "./itemClassifier";
 
 const fmt = (n) => n.toLocaleString();
 const catIcon = (cat) => ({ "外送": "🛵", "速食": "🍔", "超商": "🏪", "超市": "🛒", "咖啡": "☕", "飲料": "🧋", "餐飲": "🍽", "網購": "📦", "美妝": "💄", "訂閱": "📱", "加油": "⛽", "量販": "🛒", "百貨": "🏬", "停車": "🅿️", "電影娛樂": "🎬", "運動": "💪" }[cat] || "📌");
+const itemCatIcon = (cat) => ({ "咖啡": "☕", "茶飲": "🍵", "手搖飲": "🧋", "瓶裝飲料": "🥤", "乳製品": "🥛", "速食餐點": "🍔", "便當/正餐": "🍱", "麵包/烘焙": "🍞", "零食/餅乾": "🍪", "滷味/小食": "🥚", "生鮮蔬果": "🥬", "生鮮肉品": "🥩", "衛生紙/面紙": "🧻", "洗髮/沐浴": "🧴", "美妝保養": "💄", "生理用品": "🩹", "外送服務費": "🛵", "訂閱服務": "📱", "加油": "⛽" }[cat] || "📦");
 
 // Exclude bill-type categories from "surprise" insights
 const BILL_CATS = ["電費", "水費", "瓦斯費", "電信費", "網路"];
@@ -741,6 +743,139 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     });
   }
 
+  // ── Type: ITEM_INSIGHT ─────────────────────────────────────────────
+  // Item-level analysis — what you actually buy, not just where
+  const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
+  if (hasItems) {
+    const itemCats = aggregateItemCategories(invoices);
+    const meaningfulCats = itemCats.filter((c) => c.cat !== "其他" && c.cat !== "外送服務費" && c.cat !== "餐飲消費");
+    const topItemCat = meaningfulCats[0];
+
+    if (topItemCat && topItemCat.count >= 5) {
+      const topItem = topItemCat.items[0];
+      const totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
+      const score = 82 + Math.min(meaningfulCats.length, 10);
+
+      candidates.push({
+        type: "items", score,
+        hook: {
+          id: "items",
+          q: "你最常買的東西是什麼？",
+          big: topItem ? topItem.count + " 次" : topItemCat.count + " 次",
+          bigSub: topItem ? "「" + topItem.name + "」是你的最愛——買了 " + topItem.count + " 次" : "「" + topItemCat.cat + "」類品項你買最多",
+          body: "從你的發票品項明細來看，你的消費分佈在這些品類：",
+          ranks: meaningfulCats.slice(0, 6).map((c) => ({
+            rank: itemCatIcon(c.cat),
+            name: c.cat,
+            freq: c.count + " 項 $" + fmt(Math.round(c.total)),
+            note: c.items[0] ? "常買：" + c.items[0].name : "",
+          })),
+          tip: "「" + topItemCat.cat + "」佔了你品項消費的 " + (totalItemSpend > 0 ? Math.round(topItemCat.total / totalItemSpend * 100) : 0) + "%。了解你買什麼，比只看去哪裡更能反映真實的消費習慣。",
+          followups: [
+            {
+              q: "我在「" + (brands[0]?.brand || "最常去的店") + "」都買什麼？",
+              a: (() => {
+                const topShop = brands[0]?.brand;
+                if (!topShop) return "資料不足。";
+                const shopInvs = invoices.filter((inv) => inv.shop === topShop || resolveShop(inv.shop).brand === topShop);
+                const shopItems = {};
+                shopInvs.forEach((inv) => {
+                  (inv.items || []).forEach((item) => {
+                    const n = item.name;
+                    if (!shopItems[n]) shopItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
+                    shopItems[n].count += item.qty || 1;
+                    shopItems[n].total += item.price || 0;
+                  });
+                });
+                const sorted = Object.values(shopItems).sort((a, b) => b.count - a.count).slice(0, 8);
+                if (!sorted.length) return "這個通路的品項明細不夠多。";
+                return "你在「" + topShop + "」最常買的：\n\n" + sorted.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n");
+              })(),
+              followups: [
+                {
+                  q: "有沒有每次都會買的「固定班底」？",
+                  a: (() => {
+                    const allItems = {};
+                    invoices.forEach((inv) => {
+                      (inv.items || []).forEach((item) => {
+                        const n = item.name;
+                        if (!allItems[n]) allItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
+                        allItems[n].count += item.qty || 1;
+                        allItems[n].total += item.price || 0;
+                      });
+                    });
+                    const regulars = Object.values(allItems).filter((it) => it.count >= 5 && it.cat !== "其他" && it.cat !== "外送服務費").sort((a, b) => b.count - a.count).slice(0, 6);
+                    if (!regulars.length) return "沒有特別高頻的固定品項。";
+                    const yearTotal = regulars.reduce((s, it) => s + Math.round(it.total / months.length * 12), 0);
+                    return "你的「固定班底」——買超過 5 次的品項：\n\n" + regulars.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次，年化 $" + fmt(Math.round(it.total / months.length * 12)) + "）").join("\n") + "\n\n這些固定品項一年合計約 $" + fmt(yearTotal) + "。";
+                  })(),
+                },
+                {
+                  q: "哪些品項的錢花最多？",
+                  a: (() => {
+                    const allItems = {};
+                    invoices.forEach((inv) => {
+                      (inv.items || []).forEach((item) => {
+                        const n = item.name;
+                        if (!allItems[n]) allItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
+                        allItems[n].count += item.qty || 1;
+                        allItems[n].total += item.price || 0;
+                      });
+                    });
+                    const bySpend = Object.values(allItems).filter((it) => it.cat !== "其他" && it.cat !== "外送服務費").sort((a, b) => b.total - a.total).slice(0, 6);
+                    return "花費最高的品項：\n\n" + bySpend.map((it, i) => (i + 1) + ". " + it.name + "：$" + fmt(Math.round(it.total)) + "（" + it.count + " 次，" + it.cat + "）").join("\n");
+                  })(),
+                },
+              ],
+            },
+            {
+              q: "飲料類花了多少？",
+              a: (() => {
+                const drinkCats = itemCats.filter((c) => ["咖啡", "茶飲", "手搖飲", "瓶裝飲料"].includes(c.cat));
+                const drinkTotal = drinkCats.reduce((s, c) => s + c.total, 0);
+                const drinkCount = drinkCats.reduce((s, c) => s + c.count, 0);
+                const yearly = Math.round(drinkTotal / months.length * 12);
+                if (drinkCount === 0) return "你的發票品項中沒有明顯的飲料消費。";
+                return "你的飲料消費：\n\n" + drinkCats.map((c) => itemCatIcon(c.cat) + " " + c.cat + "：" + c.count + " 杯/瓶 $" + fmt(Math.round(c.total))).join("\n") + "\n\n合計 " + drinkCount + " 杯/瓶 $" + fmt(Math.round(drinkTotal)) + "，年化 $" + fmt(yearly) + "。\n\n" + fmtComparisons(yearly, stats);
+              })(),
+              followups: [
+                {
+                  q: "我最常喝的飲料是什麼？",
+                  a: (() => {
+                    const drinkItems = {};
+                    invoices.forEach((inv) => {
+                      (inv.items || []).forEach((item) => {
+                        const cat = classifyItem(item.name);
+                        if (["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"].includes(cat)) {
+                          const n = item.name;
+                          if (!drinkItems[n]) drinkItems[n] = { name: n, count: 0, total: 0, cat };
+                          drinkItems[n].count += item.qty || 1;
+                          drinkItems[n].total += item.price || 0;
+                        }
+                      });
+                    });
+                    const sorted = Object.values(drinkItems).sort((a, b) => b.count - a.count).slice(0, 6);
+                    if (!sorted.length) return "沒有足夠的飲料品項資料。";
+                    return "你的飲料排行榜：\n\n" + sorted.map((it, i) => (i + 1) + ". " + itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n");
+                  })(),
+                },
+                {
+                  q: "零食花了多少？",
+                  a: (() => {
+                    const snackCat = itemCats.find((c) => c.cat === "零食/餅乾");
+                    if (!snackCat || snackCat.count < 2) return "你的零食消費不多，或品項明細中沒有明顯的零食記錄。";
+                    const yearly = Math.round(snackCat.total / months.length * 12);
+                    return "零食/餅乾：" + snackCat.count + " 次 $" + fmt(Math.round(snackCat.total)) + "\n\n最常買的：\n" + snackCat.items.slice(0, 5).map((it) => "• " + it.name + "（" + it.count + " 次）").join("\n") + "\n\n年化 $" + fmt(yearly) + "。" + (yearly > 3000 ? "\n\n" + fmtComparisons(yearly, stats) : "");
+                  })(),
+                },
+              ],
+            },
+          ],
+        },
+      });
+    }
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -927,6 +1062,20 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
       "dominance→positive": "看了類別分佈。但不全是壞消息——有些地方你做得不錯。",
       "projection→positive": "看了未來預估。但也有好消息——你有些地方做得很好。",
       "save→positive": "有了省錢計劃。順便看看你已經做得好的地方——值得肯定。",
+      "items→frequency": "看了你最常買的東西。接下來看看你最依賴哪個通路——",
+      "items→growth": "知道了你買什麼。但有些消費正在悄悄增加——",
+      "items→creep": "看了品項明細。有些通路每次花的錢也在變多——",
+      "items→dominance": "了解了你買什麼。來看看整體類別分佈——",
+      "items→projection": "知道了你的消費品項。照這個花法，一年呢？",
+      "items→save": "看了你常買的東西。那有什麼辦法可以花得更聰明？",
+      "items→positive": "知道了你買什麼。也有好消息——有些地方你做得不錯。",
+      "frequency→items": "知道了你最依賴哪。但你在這些店都買什麼？從品項看更有趣——",
+      "growth→items": "看到了什麼在擴張。來看看你實際都在買什麼——",
+      "creep→items": "均價在爬升。那你都在買什麼東西？從品項找答案——",
+      "dominance→items": "看了類別分佈。來看看你實際最常買的品項是什麼——",
+      "projection→items": "看了年花費。但你的錢具體花在什麼品項上？",
+      "save→items": "有了省錢方案。來看看你最常買什麼——說不定能找到更精準的切入點。",
+      "positive→items": "知道了做得好的地方。來看看你實際都在買什麼——",
     };
     bridges.push(bridgeMap[curr.type + "→" + next.type] || "接下來看看另一個有趣的發現——");
   }
@@ -962,6 +1111,10 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     opener = "看完你的消費後，我發現有 $" + fmt(totalSaveable) + "/年可以不用改變生活就省下來。想知道怎麼做嗎？";
   } else if (hook1Type === "positive" && stableBrands[0]) {
     opener = "看完你的發票，發現你在「" + stableBrands[0].brand + "」的消費越來越精準——均價從 $" + stableBrands[0]._posBef + " 降到 $" + stableBrands[0]._posAft + "。不是所有消費都要改。";
+  } else if (hook1Type === "items" && hasItems) {
+    const topItemCats = aggregateItemCategories(invoices).filter((c) => c.cat !== "其他" && c.cat !== "外送服務費");
+    const topIt = topItemCats[0];
+    opener = topIt ? "我看了你的消費品項明細——你買最多的是「" + topIt.cat + "」類（" + topIt.count + " 次），比你想的可能還多。" : "我看了你的消費品項明細，有些有趣的發現。";
   }
 
   return { hooks, bridges, summary, opener };
