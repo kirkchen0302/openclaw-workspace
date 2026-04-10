@@ -615,6 +615,132 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     });
   }
 
+  // ── Type: POSITIVE_SIGNAL ──────────────────────────────────────────
+  // Brands where avg-per-visit is stable or DECREASING — "你其實做得不錯"
+  const stableBrands = brands.filter((b) => {
+    const bef = brandFirst[b.brand];
+    const aft = brandSecond[b.brand];
+    if (!bef || !aft || bef.visits < 3 || aft.visits < 3) return false;
+    if (BILL_CATS.includes(b.cat) || b.cat === "其他") return false;
+    const avgBef = Math.round(bef.total / bef.visits);
+    const avgAft = Math.round(aft.total / aft.visits);
+    b._posBef = avgBef;
+    b._posAft = avgAft;
+    b._posChange = avgBef > 0 ? Math.round(((avgAft - avgBef) / avgBef) * 100) : 0;
+    return b._posChange <= 0 && avgBef > 50; // avg decreased or stayed same, and meaningful amount
+  }).sort((a, b) => a._posChange - b._posChange); // most decreased first
+
+  const disciplinedBrands = brands.filter((b) => {
+    const bef = brandFirst[b.brand];
+    const aft = brandSecond[b.brand];
+    if (!bef || !aft || bef.visits < 3 || aft.visits < 3) return false;
+    if (BILL_CATS.includes(b.cat) || b.cat === "其他") return false;
+    const avgBef = Math.round(bef.total / bef.visits);
+    const avgAft = Math.round(aft.total / aft.visits);
+    return Math.abs(avgAft - avgBef) <= avgBef * 0.1 && avgBef > 50; // within 10% = disciplined
+  });
+
+  if (stableBrands.length >= 1 || disciplinedBrands.length >= 2) {
+    const goodNews = [...stableBrands.slice(0, 3), ...disciplinedBrands.filter((b) => !stableBrands.includes(b)).slice(0, 2)].slice(0, 4);
+    const bestBrand = goodNews[0];
+    const score = 72 + goodNews.length * 3;
+
+    candidates.push({
+      type: "positive", score,
+      hook: {
+        id: "positive",
+        q: "我有哪裡做得不錯？",
+        big: bestBrand ? bestBrand._posChange + "%" : "穩定",
+        bigSub: bestBrand ? "「" + bestBrand.brand + "」的均價從 $" + bestBrand._posBef + " 降到 $" + bestBrand._posAft + "——你花得越來越精準" : "你有幾個通路的消費非常穩定",
+        body: "不是所有消費都需要調整。以下是你做得好的地方：",
+        ranks: goodNews.map((b) => ({
+          rank: b._posChange < -5 ? "📉" : "✅",
+          name: b.brand,
+          freq: "$" + b._posBef + " → $" + b._posAft,
+          note: b._posChange < -5 ? "均價下降 " + b._posChange + "%，越花越精準" : "均價穩定，有紀律的消費",
+        })),
+        tip: "這些通路你消費得很有意識——" + (stableBrands.length > 0 ? "均價在下降代表你在篩選更好的選擇" : "均價穩定代表你沒有衝動加購") + "。值得肯定，也值得把這個方法套用到其他地方。",
+        followups: [
+          {
+            q: "我是怎麼做到的？可以複製嗎？",
+            a: (() => {
+              const best = goodNews[0];
+              const methods = [];
+              if (best.cat === "超市") methods.push("你在超市的消費很穩定，可能是因為你有固定的採購清單或習慣");
+              else if (best.cat === "超商") methods.push("你在超商的單次消費在下降，代表你在有意識地控制「順便買」");
+              else methods.push("你在「" + best.brand + "」的消費越來越精準，代表你知道自己要什麼、不會多買");
+              methods.push("這個「知道要買什麼就不多買」的方法，可以直接套用到其他高頻通路");
+              return methods.join("。\n\n") + "。\n\n如果能在其他通路也做到均價穩定或下降，整體省下來的金額會很可觀。";
+            })(),
+            followups: [
+              {
+                q: "套用到哪個通路效果最大？",
+                a: (() => {
+                  const needImprove = creepingBrands.slice(0, 2);
+                  if (!needImprove.length) return "目前你的各通路均價都控制得不錯，繼續保持！";
+                  return "最適合套用的：\n\n" + needImprove.map((b) => "📈 " + b.brand + "：均價從 $" + b._avgBef + " 升到 $" + b._avgAft + "（+" + b._avgCreep + "%）").join("\n") + "\n\n用你在「" + goodNews[0].brand + "」的方式——出門前想好要買什麼、設定消費上限——直接套用過去。";
+                })(),
+              },
+              {
+                q: "如果所有通路都能做到呢？",
+                a: (() => {
+                  // Estimate savings if all creeping brands returned to previous avg
+                  const totalSaveable = creepingBrands.reduce((s, b) => {
+                    const extra = b._avgAft - b._avgBef;
+                    return s + Math.round(extra * (b.visits / months.length) * 12);
+                  }, 0);
+                  return totalSaveable > 0
+                    ? "如果所有均價上升的通路都回到之前的水準，一年可以省 $" + fmt(totalSaveable) + "。\n\n" + fmtComparisons(totalSaveable, stats) + "\n\n不需要少買，只需要每次買得更精準。"
+                    : "你目前大部分通路的均價都很穩定，做得很好！";
+                })(),
+              },
+            ],
+          },
+          {
+            q: "整體來看我的消費健康嗎？",
+            a: (() => {
+              const signals = [];
+              if (stableBrands.length > 0) signals.push("✅ " + stableBrands.length + " 個通路均價在下降——花得越來越精準");
+              if (disciplinedBrands.length > 0) signals.push("✅ " + disciplinedBrands.length + " 個通路均價穩定——有紀律的消費");
+              const marketBrand = brands.find((b) => b.cat === "超市");
+              if (marketBrand) signals.push("✅ 有固定去超市的習慣——比全靠超商外食健康");
+              const warns = [];
+              if (creepingBrands.length > 0) warns.push("⚠️ " + creepingBrands.length + " 個通路均價在爬升——需要注意");
+              if (growthList.length > 3) warns.push("⚠️ 新消費習慣增加較快——消費版圖在擴張");
+              const monthlyAvg = Math.round(totalAmount / months.length);
+              return "月均消費 $" + fmt(monthlyAvg) + "。\n\n" + (signals.length > 0 ? "做得好的：\n" + signals.join("\n") : "") + (warns.length > 0 ? "\n\n可以注意的：\n" + warns.join("\n") : "") + "\n\n整體來說，" + (warns.length <= signals.length ? "你的消費習慣比你想的更健康。" : "有一些地方可以優化，但也有不少做得好的。");
+            })(),
+            followups: [
+              {
+                q: "跟半年前比，我進步了嗎？",
+                a: (() => {
+                  const improved = stableBrands.length;
+                  const worsened = creepingBrands.length;
+                  return improved > worsened
+                    ? "進步了！有 " + improved + " 個通路的均價在下降，只有 " + worsened + " 個在上升。\n\n你的消費精準度在提高——這是很正面的趨勢。"
+                    : improved === worsened
+                    ? "持平。有 " + improved + " 個通路在改善，" + worsened + " 個在上升。還有優化空間。"
+                    : "有 " + worsened + " 個通路均價在升，" + improved + " 個在降。整體可以再精進。\n\n好消息是——你已經證明自己做得到（" + goodNews.map((b) => b.brand).join("、") + "），只是需要把方法擴展到更多地方。";
+                })(),
+              },
+              {
+                q: "給我一個消費者評語吧",
+                a: (() => {
+                  const monthlyAvg = Math.round(totalAmount / months.length);
+                  const topCat = cats.filter((c) => c.cat !== "其他" && !BILL_CATS.includes(c.cat))[0];
+                  const style = topCat ? topCat.cat : "多元";
+                  const discipline = stableBrands.length >= 3 ? "高紀律" : stableBrands.length >= 1 ? "有意識" : "需關注";
+                  const growth = growthList.length >= 3 ? "擴張型" : "穩定型";
+                  return "你的消費者畫像：\n\n📊 「" + style + "導向 · " + discipline + " · " + growth + "」\n\n• 月均消費 $" + fmt(monthlyAvg) + "\n• 最依賴「" + brands[0].brand + "」\n• " + (stableBrands.length > 0 ? "在「" + stableBrands[0].brand + "」花得最精準" : "消費精準度還有提升空間") + "\n\n" + (discipline === "高紀律" ? "你比大部分人更懂得控制消費——繼續保持！" : "你有做得好的地方，放大這些優勢就能花得更聰明。");
+                })(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -789,6 +915,18 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
       "save→creep": "知道了怎麼省。但有些通路的均價也在悄悄漲——",
       "save→dominance": "有了省錢計劃。來看看你的錢整體花在哪——",
       "save→projection": "知道了怎麼省。照目前趨勢，一年後呢？",
+      "positive→frequency": "知道了你做得好的地方。接下來看看你最依賴什麼——",
+      "positive→growth": "有些地方做得好。但同時有些消費在快速擴張——",
+      "positive→creep": "做得好的值得肯定。但也有些通路的均價在悄悄漲——",
+      "positive→dominance": "知道了你的優勢。來看看整體消費分佈——",
+      "positive→projection": "做得不錯！但照整體趨勢，一年後呢？",
+      "positive→save": "知道了優勢在哪。接下來看看怎麼更聰明地省——",
+      "frequency→positive": "知道了你的依賴。但不是所有消費都要改——有些你做得很好。",
+      "growth→positive": "看到了在擴張的。但也有好消息——有些地方你控制得不錯。",
+      "creep→positive": "均價在爬升的要注意。但也有些通路你做得很好——",
+      "dominance→positive": "看了類別分佈。但不全是壞消息——有些地方你做得不錯。",
+      "projection→positive": "看了未來預估。但也有好消息——你有些地方做得很好。",
+      "save→positive": "有了省錢計劃。順便看看你已經做得好的地方——值得肯定。",
     };
     bridges.push(bridgeMap[curr.type + "→" + next.type] || "接下來看看另一個有趣的發現——");
   }
@@ -822,6 +960,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend) {
     opener = "照你最近的消費速度，一年下來會是 $" + fmt(Math.round(recentAvg * 12)) + "。這個數字可能比你想的大。";
   } else if (hook1Type === "save") {
     opener = "看完你的消費後，我發現有 $" + fmt(totalSaveable) + "/年可以不用改變生活就省下來。想知道怎麼做嗎？";
+  } else if (hook1Type === "positive" && stableBrands[0]) {
+    opener = "看完你的發票，發現你在「" + stableBrands[0].brand + "」的消費越來越精準——均價從 $" + stableBrands[0]._posBef + " 降到 $" + stableBrands[0]._posAft + "。不是所有消費都要改。";
   }
 
   return { hooks, bridges, summary, opener };
