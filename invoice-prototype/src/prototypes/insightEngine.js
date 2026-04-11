@@ -1318,9 +1318,34 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
   }
 
-  // ── Pick top 4, sort by score ─────────────────────────────────────
-  candidates.sort((a, b) => b.score - a.score);
-  const picked = candidates.slice(0, 4);
+  // ── Pick top 4 ────────────────────────────────────────────────────
+  // When item data is available, prioritize the item-based insights:
+  // PREDICT → item drinks/categories → PRICE_GAP → SAVE
+  // This ensures the 4 hooks leverage item data for maximum impact
+  let picked;
+  if (hasItems) {
+    const preferred = ["predict", "items", "pricegap", "save"];
+    const preferredPicked = [];
+    preferred.forEach((type) => {
+      const found = candidates.find((c) => c.type === type);
+      if (found && preferredPicked.length < 4) preferredPicked.push(found);
+    });
+    // Fill remaining slots with highest-scoring non-preferred
+    if (preferredPicked.length < 4) {
+      const usedTypes = new Set(preferredPicked.map((c) => c.type));
+      candidates.sort((a, b) => b.score - a.score);
+      candidates.forEach((c) => {
+        if (!usedTypes.has(c.type) && preferredPicked.length < 4) {
+          preferredPicked.push(c);
+          usedTypes.add(c.type);
+        }
+      });
+    }
+    picked = preferredPicked;
+  } else {
+    candidates.sort((a, b) => b.score - a.score);
+    picked = candidates.slice(0, 4);
+  }
   const hooks = picked.map((c) => c.hook);
 
   // ── Dynamic bridge sentences ──────────────────────────────────────
