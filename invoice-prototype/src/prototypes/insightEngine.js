@@ -84,6 +84,9 @@ export function computeStats(invoices) {
   });
   const brands = Object.values(brandMap).sort((a, b) => b.visits - a.visits);
   const brandsByTotal = [...brands].sort((a, b) => b.total - a.total);
+  // Exclude delivery platforms for "top brand" analysis (their invoices are just service fees)
+  const brandsReal = brands.filter((b) => !isDeliveryPlatform(b.brand));
+  const brandsRealByTotal = brandsByTotal.filter((b) => !isDeliveryPlatform(b.brand));
 
   const catMap = {};
   brands.forEach((b) => {
@@ -128,7 +131,7 @@ export function computeStats(invoices) {
   const totalDays = Math.max(months.length * 30, 30);
   const avgPerVisit = totalAmount / invoices.length || 0;
 
-  return { brands, brandsByTotal, cats, months, totalAmount, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys };
+  return { brands, brandsByTotal, brandsReal, brandsRealByTotal, cats, months, totalAmount, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys };
 }
 
 // ── Personalized comparisons（消費心理學框架）────────────────────────
@@ -229,7 +232,7 @@ function fmtTopItems(items) {
 // ── Insight candidates ──────────────────────────────────────────────
 
 function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices) {
-  const { brands, brandsByTotal, cats, months, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys } = stats;
+  const { brands, brandsByTotal, brandsReal, brandsRealByTotal, cats, months, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys } = stats;
   invoices = invoices || [];
   const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
   const candidates = [];
@@ -1587,42 +1590,50 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   if (creepingBrands[0]) summaryParts.push("「" + creepingBrands[0].brand + "」均價正在爬升（$" + creepingBrands[0]._avgBef + "→$" + creepingBrands[0]._avgAft + "）");
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
-  // ── Opener — matches Hook 1's theme ───────────────────────────────
-  const hook1 = hooks[0];
-  const hook1Type = picked[0]?.type;
+  // ── Opener — pick the single most impactful fact ───────────────────
+  // Always exclude delivery platforms. Pick whichever fact is most shocking.
   let opener = "讓我幫你分析一下消費狀況。";
-  if (hook1Type === "growth" && growthList[0]) {
-    const g = growthList[0];
-    opener = g.growth === 999
-      ? "「" + g.brand + "」是你近期才開始的消費——短短幾個月已經去了 " + g.aft + " 次。這個新習慣值得聊聊。"
-      : "「" + g.brand + "」的消費正在快速增加——從前期 " + g.bef + " 次到近期 " + g.aft + " 次，成長了 " + g.growth + "%。";
-  } else if (hook1Type === "frequency" && brands[0]) {
-    opener = "你跟「" + brands[0].brand + "」的關係很穩定——平均每 " + (totalDays / brands[0].visits).toFixed(1) + " 天就會去一次。這是你最離不開的消費。";
-  } else if (hook1Type === "creep" && creepingBrands[0]) {
-    const c = creepingBrands[0];
-    opener = "你去「" + c.brand + "」的頻率沒變，但每次花的錢從 $" + c._avgBef + " 升到了 $" + c._avgAft + "。這種「悄悄變貴」很容易忽略。";
-  } else if (hook1Type === "dominance" && realCats[0]) {
-    opener = "你的消費有 " + Math.round(realCats[0].total / totalAmount * 100) + "% 集中在「" + realCats[0].cat + "」——這個比例值得聊聊。";
-  } else if (hook1Type === "projection") {
-    opener = "照你最近的消費速度，一年下來會是 $" + fmt(Math.round(recentAvg * 12)) + "。這個數字可能比你想的大。";
-  } else if (hook1Type === "save") {
-    opener = "看完你的消費後，我發現有 $" + fmt(totalSaveable) + "/年可以不用改變生活就省下來。想知道怎麼做嗎？";
-  } else if (hook1Type === "positive" && stableBrands[0]) {
-    opener = "看完你的發票，發現你在「" + stableBrands[0].brand + "」的消費越來越精準——均價從 $" + stableBrands[0]._posBef + " 降到 $" + stableBrands[0]._posAft + "。不是所有消費都要改。";
-  } else if (hook1Type === "predict" && hasItems) {
-    const topPred = brands[0];
-    const topIt = topPred ? getTopItemsForBrand(invoices, topPred.brand, 1)[0] : null;
-    opener = topIt ? "我看完你 " + (invoiceCount || 0) + " 張發票的品項明細後，發現一件事——你走進「" + topPred.brand + "」，我有 " + Math.round(topIt.count / topPred.visits * 100) + "% 的把握知道你會買什麼。" : "我看完你的品項明細，發現你的消費比你想的更可預測。";
-  } else if (hook1Type === "pricegap" && hasItems) {
-    const topG = gaps[0];
-    opener = topG ? "同樣是「" + topG.cat + "」，你在「" + topG.most.shop + "」付的比「" + topG.cheapest.shop + "」貴了 " + topG.gapPct + "%——你可能從來沒注意過。" : "你在不同地方買同一類東西，價格差距比你想的大。";
-  } else if (hook1Type === "subscription") {
-    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款——加起來 $" + fmt(Math.round(userSubs.reduce((s, sub) => s + sub.price, 0))) + "/月。你可能忘了其中幾個。";
-  } else if (hook1Type === "items" && hasItems) {
-    const topItemCats = aggregateItemCategories(invoices).filter((c) => c.cat !== "其他" && c.cat !== "外送服務費");
-    const topIt = topItemCats[0];
-    opener = topIt ? "我看了你的消費品項明細——你買最多的是「" + topIt.cat + "」類（" + topIt.count + " 次），比你想的可能還多。" : "我看了你的消費品項明細，有些有趣的發現。";
+  const openerCandidates = [];
+
+  // Candidate: PREDICT — "AI knows what you'll buy"
+  if (hasItems && brandsReal[0]) {
+    const topPred = brandsReal[0];
+    const topIt = getTopItemsForBrand(invoices, topPred.brand, 1).filter((it) => classifyItem(it.name) !== "外送服務費")[0];
+    if (topIt) {
+      const hitRate = Math.round(topIt.count / topPred.visits * 100);
+      openerCandidates.push({ score: hitRate, text: "我看完你 " + invoiceCount + " 張發票的 " + invoices.reduce((s, inv) => s + (inv.items || []).length, 0) + " 個品項後——你走進「" + topPred.brand + "」，我有 " + hitRate + "% 的把握知道你會點什麼。" });
+    }
   }
+
+  // Candidate: DRINKS — "You drank X cups in 6 months"
+  if (hasItems) {
+    const drinkCats = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
+    const nonDelivery = invoices.filter((inv) => !isDeliveryPlatform(inv.shop));
+    let drinkCount = 0;
+    nonDelivery.forEach((inv) => (inv.items || []).forEach((it) => {
+      if (drinkCats.includes(classifyItem(it.name))) drinkCount += it.qty || 1;
+    }));
+    if (drinkCount >= 30) {
+      openerCandidates.push({ score: Math.min(drinkCount, 80), text: "你在這段期間喝了 " + drinkCount + " 杯飲料——平均每天 " + (drinkCount / totalDays).toFixed(1) + " 杯。你可能沒意識到。" });
+    }
+  }
+
+  // Candidate: PRICE_GAP — "Same thing, different prices"
+  if (gaps.length > 0) {
+    const topG = gaps[0];
+    openerCandidates.push({ score: topG.gapPct, text: "同樣是「" + topG.cat + "」，你在不同地方買的價差高達 " + topG.gapPct + "%——你可能從來沒注意過。" });
+  }
+
+  // Candidate: Top real brand frequency
+  if (brandsReal[0]) {
+    const top = brandsReal[0];
+    const freq = (totalDays / top.visits).toFixed(1);
+    openerCandidates.push({ score: Math.min(top.visits, 50), text: "你跟「" + top.brand + "」的關係很穩定——平均每 " + freq + " 天就會去一次。" });
+  }
+
+  // Pick highest score
+  openerCandidates.sort((a, b) => b.score - a.score);
+  if (openerCandidates.length > 0) opener = openerCandidates[0].text;
 
   return { hooks, bridges, summary, opener };
 }
