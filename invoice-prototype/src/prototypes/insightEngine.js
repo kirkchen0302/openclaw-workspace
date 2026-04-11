@@ -1122,25 +1122,42 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       const totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
       const score = 82 + Math.min(meaningfulCats.length, 10);
 
+      // Check if drinks dominate — if so, make this a drinks-focused hook
+      const drinkCatsCheck = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
+      const drinkMeaningful = meaningfulCats.filter((c) => drinkCatsCheck.includes(c.cat));
+      const drinkTotalCount = drinkMeaningful.reduce((s, c) => s + c.count, 0);
+      const drinkTotalSpend = drinkMeaningful.reduce((s, c) => s + c.total, 0);
+      const isDrinkFocused = drinkTotalCount >= 20;
+
+      // Top drink item
+      const topDrinkItem = drinkMeaningful.flatMap((c) => c.items).sort((a, b) => b.count - a.count)[0];
+
       candidates.push({
         type: "items", score,
         hook: {
           id: "items",
-          q: (() => {
-            const drinkCatsQ = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-            const dcQ = meaningfulCats.filter((c) => drinkCatsQ.includes(c.cat)).reduce((s, c) => s + c.count, 0);
-            return dcQ >= 20 ? "我的 " + dcQ + " 杯飲料都花在哪？" : "我的錢都花在買什麼？";
-          })(),
-          big: topItem ? topItem.count + " 次" : topItemCat.count + " 次",
-          bigSub: topItem ? "「" + topItem.name + "」是你的最愛——買了 " + topItem.count + " 次" : "「" + topItemCat.cat + "」類品項你買最多",
-          body: "從你的發票品項明細來看，你的消費分佈在這些品類：",
-          ranks: meaningfulCats.slice(0, 6).map((c) => ({
-            rank: itemCatIcon(c.cat),
-            name: c.cat,
-            freq: c.count + " 項 $" + fmt(Math.round(c.total)),
-            note: c.items[0] ? "常買：" + c.items[0].name : "",
-          })),
-          tip: "「" + topItemCat.cat + "」佔了你品項消費的 " + (totalItemSpend > 0 ? Math.round(topItemCat.total / totalItemSpend * 100) : 0) + "%。了解你買什麼，比只看去哪裡更能反映真實的消費習慣。",
+          q: isDrinkFocused ? "這 " + drinkTotalCount + " 杯飲料都花在哪？" : "我的錢都花在買什麼？",
+          big: isDrinkFocused ? drinkTotalCount + " 杯" : (topItem ? topItem.count + " 次" : topItemCat.count + " 次"),
+          bigSub: isDrinkFocused
+            ? "你喝了這麼多飲料，花了 $" + fmt(Math.round(drinkTotalSpend)) + "——年化 $" + fmt(Math.round(drinkTotalSpend / months.length * 12))
+            : (topItem ? "「" + topItem.name + "」是你的最愛——買了 " + topItem.count + " 次" : "「" + topItemCat.cat + "」類品項你買最多"),
+          body: isDrinkFocused ? "你的飲料消費分佈：" : "從你的發票品項明細來看，你的消費分佈在這些品類：",
+          ranks: isDrinkFocused
+            ? drinkMeaningful.map((c) => ({
+                rank: itemCatIcon(c.cat),
+                name: c.cat,
+                freq: c.count + " 杯 $" + fmt(Math.round(c.total)),
+                note: c.items[0] ? "最常喝：" + c.items[0].name : "",
+              }))
+            : meaningfulCats.slice(0, 6).map((c) => ({
+                rank: itemCatIcon(c.cat),
+                name: c.cat,
+                freq: c.count + " 項 $" + fmt(Math.round(c.total)),
+                note: c.items[0] ? "常買：" + c.items[0].name : "",
+              })),
+          tip: isDrinkFocused
+            ? "每杯平均 $" + (drinkTotalCount > 0 ? Math.round(drinkTotalSpend / drinkTotalCount) : 0) + "，看起來不多，但 " + drinkTotalCount + " 杯加起來是 $" + fmt(Math.round(drinkTotalSpend)) + "。" + (topDrinkItem ? "你喝最多的是「" + topDrinkItem.name + "」（" + topDrinkItem.count + " 次）。" : "")
+            : "「" + topItemCat.cat + "」佔了你品項消費的 " + (totalItemSpend > 0 ? Math.round(topItemCat.total / totalItemSpend * 100) : 0) + "%。了解你買什麼，比只看去哪裡更能反映真實的消費習慣。",
           followups: [
             {
               q: "我在「" + (brands[0]?.brand || "最常去的店") + "」都買什麼？",
