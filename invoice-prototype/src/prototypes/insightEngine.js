@@ -19,6 +19,9 @@ function isDeliveryPlatform(shopName) {
   const lower = shopName.toLowerCase();
   return DELIVERY_PLATFORMS.some((p) => lower.includes(p));
 }
+// Online/bulk stores — box purchases vs single items aren't comparable for price gap
+const ONLINE_BULK = ["momo", "蝦皮", "shopee", "酷澎", "coupang", "好市多", "costco", "pchome", "yahoo"];
+function isOnlineBulk(shop) { return ONLINE_BULK.some((k) => (shop || "").toLowerCase().includes(k)); }
 
 // Subscription detection — strict keyword match for real subscriptions only
 const SUB_KEYWORDS = ["訂閱", "月費", "會員訂閱", "uber one", "pandapro", "panda pro", "蝦皮vip"];
@@ -991,12 +994,15 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     // Find categories with price gaps across ≥2 stores
     const gaps = [];
     Object.entries(catByStore).forEach(([cat, stores]) => {
-      const storeList = Object.entries(stores).filter(([, d]) => d.count >= 2).map(([shop, d]) => ({ shop, count: d.count, avg: Math.round(d.total / d.count) }));
+      // Only compare physical retail stores (convenience stores, supermarkets, fast food, coffee shops)
+      const storeList = Object.entries(stores)
+        .filter(([shop, d]) => d.count >= 2 && !isOnlineBulk(shop))
+        .map(([shop, d]) => ({ shop, count: d.count, avg: Math.round(d.total / d.count) }));
       if (storeList.length < 2) return;
       storeList.sort((a, b) => a.avg - b.avg);
       const cheapest = storeList[0];
       const most = storeList[storeList.length - 1];
-      if (most.avg <= cheapest.avg * 1.15) return; // less than 15% gap — not interesting
+      if (most.avg <= cheapest.avg * 1.15 || most.avg > cheapest.avg * 5) return; // 15-500% range only
       const gapPct = Math.round((most.avg - cheapest.avg) / cheapest.avg * 100);
       // How much could be saved if always buying from cheapest
       const totalBought = storeList.reduce((s, st) => s + st.count, 0);
@@ -1591,40 +1597,66 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
   // ── Opener — pick the single most impactful fact ───────────────────
-  // Always exclude delivery platforms. Pick whichever fact is most shocking.
+  // Exclude delivery/online platforms. Score 0-100 range for fair comparison.
   let opener = "讓我幫你分析一下消費狀況。";
   const openerCandidates = [];
 
-  // Candidate: PREDICT — "AI knows what you'll buy"
+  // Candidate: PREDICT — only when hit rate ≥30% (otherwise not impressive)
   if (hasItems && brandsReal[0]) {
     const topPred = brandsReal[0];
     const topIt = getTopItemsForBrand(invoices, topPred.brand, 1).filter((it) => classifyItem(it.name) !== "外送服務費")[0];
     if (topIt) {
       const hitRate = Math.round(topIt.count / topPred.visits * 100);
-      openerCandidates.push({ score: hitRate, text: "我看完你 " + invoiceCount + " 張發票的 " + invoices.reduce((s, inv) => s + (inv.items || []).length, 0) + " 個品項後——你走進「" + topPred.brand + "」，我有 " + hitRate + "% 的把握知道你會點什麼。" });
+      if (hitRate >= 30) {
+        openerCandidates.push({ score: Math.min(hitRate, 90), text: "你走進「" + topPred.brand + "」，AI 有 " + hitRate + "% 的把握知道你會買「" + topIt.name.slice(0, 12) + "」——你的消費比你想的更可預測。" });
+      }
     }
   }
 
-  // Candidate: DRINKS — "You drank X cups in 6 months"
+  // Candidate: DRINKS total — very relatable, almost always surprising
   if (hasItems) {
     const drinkCats = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-    const nonDelivery = invoices.filter((inv) => !isDeliveryPlatform(inv.shop));
+    const nonDelivery = invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop));
     let drinkCount = 0;
+    let drinkTotal = 0;
     nonDelivery.forEach((inv) => (inv.items || []).forEach((it) => {
-      if (drinkCats.includes(classifyItem(it.name))) drinkCount += it.qty || 1;
+      if (drinkCats.includes(classifyItem(it.name))) { drinkCount += it.qty || 1; drinkTotal += it.price || 0; }
     }));
-    if (drinkCount >= 30) {
-      openerCandidates.push({ score: Math.min(drinkCount, 80), text: "你在這段期間喝了 " + drinkCount + " 杯飲料——平均每天 " + (drinkCount / totalDays).toFixed(1) + " 杯。你可能沒意識到。" });
+    if (drinkCount >= 20) {
+      const yearly = Math.round(drinkTotal / months.length * 12);
+      openerCandidates.push({ score: Math.min(drinkCount, 85), text: "你在這段期間喝了 " + drinkCount + " 杯飲料，花了 $" + fmt(Math.round(drinkTotal)) + "——年化 $" + fmt(yearly) + "。一杯一杯累積的速度比你想的快。" });
     }
   }
 
-  // Candidate: PRICE_GAP — "Same thing, different prices"
-  if (gaps.length > 0) {
+  // Candidate: PRICE_GAP — only if reasonable gap (already filtered online/bulk)
+  if (gaps.length > 0 && gaps[0].gapPct <= 300) {
     const topG = gaps[0];
-    openerCandidates.push({ score: topG.gapPct, text: "同樣是「" + topG.cat + "」，你在不同地方買的價差高達 " + topG.gapPct + "%——你可能從來沒注意過。" });
+    openerCandidates.push({ score: Math.min(topG.gapPct, 80), text: "同樣是「" + topG.cat + "」，你在「" + topG.most.shop + "」付的比「" + topG.cheapest.shop + "」貴了 " + topG.gapPct + "%——你可能沒注意過。" });
   }
 
-  // Candidate: Top real brand frequency
+  // Candidate: Repeat item shock — your #1 most purchased item
+  if (hasItems) {
+    const allItemsMap = {};
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => {
+      const cat = classifyItem(it.name);
+      if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
+      if (!allItemsMap[it.name]) allItemsMap[it.name] = { count: 0, total: 0 };
+      allItemsMap[it.name].count += it.qty || 1;
+      allItemsMap[it.name].total += it.price || 0;
+    }));
+    const topRepeat = Object.entries(allItemsMap).sort((a, b) => b[1].count - a[1].count)[0];
+    if (topRepeat && topRepeat[1].count >= 8) {
+      openerCandidates.push({ score: Math.min(topRepeat[1].count * 3, 75), text: "你買了 " + topRepeat[1].count + " 次「" + topRepeat[0].slice(0, 15) + "」——這是你最離不開的一個品項。" });
+    }
+  }
+
+  // Candidate: Subscription total
+  if (userSubs.length >= 2) {
+    const monthlyTotal = userSubs.reduce((s, sub) => s + sub.price, 0);
+    openerCandidates.push({ score: 55, text: "你有 " + userSubs.length + " 個訂閱正在自動扣款——每月 $" + fmt(Math.round(monthlyTotal)) + "，你可能忘了其中幾個。" });
+  }
+
+  // Candidate: Frequency (baseline, always available)
   if (brandsReal[0]) {
     const top = brandsReal[0];
     const freq = (totalDays / top.visits).toFixed(1);
