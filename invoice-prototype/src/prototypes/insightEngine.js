@@ -12,6 +12,13 @@ const itemCatIcon = (cat) => ({ "咖啡": "☕", "茶飲": "🍵", "手搖飲": 
 // Exclude bill-type categories from "surprise" insights
 const BILL_CATS = ["電費", "水費", "瓦斯費", "電信費", "網路"];
 const PLATFORM_FEE_THRESHOLD = 50; // avg < $50 likely platform fee only
+// Delivery platforms — invoices are service fees, not actual food purchases
+const DELIVERY_PLATFORMS = ["ubereats", "uber eats", "foodpanda", "uber", "外送"];
+function isDeliveryPlatform(shopName) {
+  if (!shopName) return false;
+  const lower = shopName.toLowerCase();
+  return DELIVERY_PLATFORMS.some((p) => lower.includes(p));
+}
 
 // ── Stats computation ───────────────────────────────────────────────
 // v2 data has clean shop names from BQ channel table — use directly, only resolve for category
@@ -826,8 +833,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // "AI can predict what you'll buy next" — status quo bias shock
   if (hasItems) {
     const predictions = [];
-    brands.filter((b) => b.visits >= 5).slice(0, 6).forEach((b) => {
-      const topIt = getTopItemsForBrand(invoices, b.brand, 3);
+    brands.filter((b) => b.visits >= 5 && !isDeliveryPlatform(b.brand)).slice(0, 6).forEach((b) => {
+      const topIt = getTopItemsForBrand(invoices, b.brand, 3).filter((it) => classifyItem(it.name) !== "外送服務費");
       if (topIt.length === 0) return;
       const hitRate = Math.round(topIt[0].count / b.visits * 100);
       if (hitRate >= 30) {
@@ -929,6 +936,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     // Find item categories that appear across multiple stores
     const catByStore = {}; // { itemCat: { storeName: { count, total, avgPrice } } }
     invoices.forEach((inv) => {
+      if (isDeliveryPlatform(inv.shop)) return; // Skip delivery platforms
       (inv.items || []).forEach((it) => {
         const cat = classifyItem(it.name);
         if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費" || cat === "訂閱服務") return;
@@ -1052,7 +1060,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // ── Type: ITEM_INSIGHT ─────────────────────────────────────────────
   // Item-level analysis — what you actually buy, not just where
   if (hasItems) {
-    const itemCats = aggregateItemCategories(invoices);
+    const nonDeliveryInvoices = invoices.filter((inv) => !isDeliveryPlatform(inv.shop));
+    const itemCats = aggregateItemCategories(nonDeliveryInvoices);
     const meaningfulCats = itemCats.filter((c) => c.cat !== "其他" && c.cat !== "外送服務費" && c.cat !== "餐飲消費");
     const topItemCat = meaningfulCats[0];
 
