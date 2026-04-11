@@ -875,7 +875,10 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
   // ── Type: AUTOPAY ──────────────────────────────────────────────────
   // "Your habits auto-charge you $X/month" — mental accounting shock
-  // Reframes repeat purchases as invisible subscriptions you never signed up for
+  // Declared at function scope so opener can reference them
+  let habitItems = [];
+  let habitMonthly = 0;
+  let habitYearly = 0;
   if (hasItems) {
     const repeatItems = {};
     invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
@@ -887,9 +890,9 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         repeatItems[it.name].total += it.price || 0;
       });
     });
-    const habitItems = Object.values(repeatItems).filter((it) => it.count >= 3).sort((a, b) => b.total - a.total);
-    const habitMonthly = Math.round(habitItems.reduce((s, it) => s + it.total, 0) / Math.max(months.length, 1));
-    const habitYearly = habitMonthly * 12;
+    habitItems = Object.values(repeatItems).filter((it) => it.count >= 3).sort((a, b) => b.total - a.total);
+    habitMonthly = Math.round(habitItems.reduce((s, it) => s + it.total, 0) / Math.max(months.length, 1));
+    habitYearly = habitMonthly * 12;
 
     if (habitItems.length >= 3 && habitMonthly > 200) {
       const score = 95 + Math.min(habitItems.length, 10);
