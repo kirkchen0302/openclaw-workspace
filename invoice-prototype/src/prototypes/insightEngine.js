@@ -1455,22 +1455,23 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // This ensures the 4 hooks leverage item data for maximum impact
   let picked;
   if (hasItems) {
-    // subscription replaces save when user has subscriptions (more targeted)
-    const hasSubs = candidates.some((c) => c.type === "subscription");
-    const preferred = hasSubs
-      ? ["predict", "items", "pricegap", "subscription"]
-      : ["predict", "items", "pricegap", "save"];
+    // 4 hooks base, add 5th (subscription) when user has ≥2 subscriptions
+    const subCandidate = candidates.find((c) => c.type === "subscription");
+    const hasManySubscriptions = subCandidate && userSubs.length >= 2;
+    const preferred = ["predict", "items", "pricegap", "save"];
+    if (hasManySubscriptions) preferred.push("subscription");
+    const maxHooks = preferred.length; // 4 or 5
     const preferredPicked = [];
     preferred.forEach((type) => {
       const found = candidates.find((c) => c.type === type);
-      if (found && preferredPicked.length < 4) preferredPicked.push(found);
+      if (found && preferredPicked.length < maxHooks) preferredPicked.push(found);
     });
     // Fill remaining slots with highest-scoring non-preferred
-    if (preferredPicked.length < 4) {
+    if (preferredPicked.length < maxHooks) {
       const usedTypes = new Set(preferredPicked.map((c) => c.type));
       candidates.sort((a, b) => b.score - a.score);
       candidates.forEach((c) => {
-        if (!usedTypes.has(c.type) && preferredPicked.length < 4) {
+        if (!usedTypes.has(c.type) && preferredPicked.length < maxHooks) {
           preferredPicked.push(c);
           usedTypes.add(c.type);
         }
