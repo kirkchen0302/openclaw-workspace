@@ -74,7 +74,9 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   const [dispText, setDispText] = useState("");
   const [usedIds, setUsedIds] = useState([]);
   const [qState, setQState] = useState({
-    followups: [], deepFollowups: [], unlocked: [0], bridgeSent: {},
+    followups: [], deepFollowups: [],
+    unlocked: HOOKS.map((_, i) => i), // All hooks visible from start
+    bridgeSent: {},
   });
   const scrollRef = useRef(null);
   const typingRef = useRef(false);
@@ -157,17 +159,10 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   }
 
   function doUnlockNext() {
+    // All hooks already visible — just check if all used → show summary
     setQState((prev) => {
-      const lastUsedIdx = HOOKS.reduce((max, h, i) => usedIds.includes(h.id) ? i : max, -1);
-      const currentMax = Math.max(lastUsedIdx, ...usedIds.map((id) => HOOKS.findIndex((h) => h.id === id)));
-      const nextIdx = currentMax + 1;
-      if (nextIdx < HOOKS.length && !prev.unlocked.includes(nextIdx) && !prev.bridgeSent[currentMax]) {
-        setTimeout(() => {
-          const bridgeText = BRIDGES[currentMax] || "";
-          if (bridgeText) setMsgs((p) => [...p, { role: "bridge", text: bridgeText }]);
-        }, 800);
-        return { ...prev, unlocked: [...prev.unlocked, nextIdx], bridgeSent: { ...prev.bridgeSent, [currentMax]: true } };
-      } else if (nextIdx >= HOOKS.length && !prev.bridgeSent["final"]) {
+      const allUsed = HOOKS.every((h) => usedIds.includes(h.id));
+      if (allUsed && !prev.bridgeSent["final"]) {
         setTimeout(() => { setMsgs((p) => [...p, { role: "ai", text: SUMMARY }]); }, 800);
         return { ...prev, bridgeSent: { ...prev.bridgeSent, final: true } };
       }

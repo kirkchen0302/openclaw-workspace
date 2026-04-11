@@ -2093,8 +2093,9 @@ export default function App() {
   const isAiButlerV3 = path === "/prototype/ai_agent/0409_v3";
   const isAiButlerV4 = path === "/prototype/ai_agent/0410_v4";
   const isAiButlerV5 = path === "/prototype/ai_agent/0410_v5";
+  const isAiButlerV6 = path === "/prototype/ai_agent/0411_v1";
 
-  if (isAiButlerV1 || isAiButlerV2 || isAiButlerV3 || isAiButlerV4 || isAiButlerV5) {
+  if (isAiButlerV1 || isAiButlerV2 || isAiButlerV3 || isAiButlerV4 || isAiButlerV5 || isAiButlerV6) {
     return <InvoicePrototypeV3 />;
   }
 

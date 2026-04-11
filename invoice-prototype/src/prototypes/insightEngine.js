@@ -1276,33 +1276,22 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
             ],
           },
           {
-            q: "外送平台訂閱划算嗎？",
+            q: "放大到一年來看呢？",
             a: (() => {
-              const deliverySubs = userSubs.filter((s) => isDeliveryPlatform(s.shop));
-              if (!deliverySubs.length) return "你目前沒有外送平台的訂閱。";
-              // Count delivery platform usage
-              const deliveryInvCount = invoices.filter((inv) => isDeliveryPlatform(inv.shop)).length;
-              const subCost = deliverySubs.reduce((s, d) => s + d.price, 0);
-              const perOrder = deliveryInvCount > 0 ? Math.round(subCost / deliveryInvCount * months.length) : 0;
-              return "你的外送訂閱：\n\n" + deliverySubs.map((s) => "🛵 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月（" + s.item.slice(0, 30) + "）").join("\n") + "\n\n近 " + months.length + " 個月叫了 " + deliveryInvCount + " 次外送。\n\n訂閱費分攤到每次外送 = $" + fmt(perOrder) + "/次。" + (perOrder > 30 ? "\n\n⚠️ 每次分攤超過 $30，可能不太划算。通常免運門檻 $49-60，如果每月叫不到 3-4 次就虧了。" : "\n\n✅ 分攤下來還算划算，繼續觀察。");
+              return "每月 $" + fmt(Math.round(monthlySubTotal)) + " 感覺還好，但拉長到一年：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 → $" + fmt(Math.round(s.price * 12)) + "/年").join("\n") + "\n\n年度訂閱總費用：$" + fmt(Math.round(yearlySubTotal)) + "\n\n" + fmtComparisons(yearlySubTotal, stats) + "\n\n每一筆月費看起來不痛，但加在一起就是一筆可觀的固定支出。";
             })(),
             followups: [
               {
-                q: "要叫幾次才划算？",
+                q: "哪些訂閱我可能用不夠？",
                 a: (() => {
-                  const deliverySubs = userSubs.filter((s) => isDeliveryPlatform(s.shop));
-                  if (!deliverySubs.length) return "你沒有外送訂閱。";
-                  return deliverySubs.map((s) => {
-                    const freeDeliveryValue = 49; // typical delivery fee saved per order
-                    const breakEven = Math.ceil(s.price / freeDeliveryValue);
-                    return "🛵 " + s.shop + "（$" + fmt(Math.round(s.price)) + "/月）\n  → 每月至少叫 " + breakEven + " 次才划算（假設每次省 $" + freeDeliveryValue + " 運費）";
-                  }).join("\n\n");
+                  return "你可以逐一問自己：\n\n" + userSubs.map((s) => "📱 " + s.shop + "（$" + fmt(Math.round(s.price)) + "/月）\n  → 上個月用了幾次？值不值這個價？").join("\n\n") + "\n\n如果答不出「上個月用了幾次」——那就很可能是在浪費。\n\n訂閱的設計就是讓你「忘記在付錢」。定期檢視是唯一的解法。";
                 })(),
               },
               {
-                q: "訂閱費一年加起來多少？",
+                q: "如果暫停一半，能省多少？",
                 a: (() => {
-                  return "所有訂閱年花費：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 = $" + fmt(Math.round(s.price * 12)) + "/年").join("\n") + "\n\n合計 $" + fmt(Math.round(yearlySubTotal)) + "/年。\n\n" + fmtComparisons(yearlySubTotal, stats);
+                  const halfSave = Math.round(yearlySubTotal / 2);
+                  return "暫停一半的訂閱 = 年省 $" + fmt(halfSave) + "。\n\n" + fmtComparisons(halfSave, stats) + "\n\n不需要全砍——把「不確定值不值得」的先暫停一個月，看看生活有沒有影響。沒影響的就不用恢復了。";
                 })(),
               },
             ],
