@@ -1483,7 +1483,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     // 4 hooks base, add 5th (subscription) when user has ≥2 subscriptions
     const subCandidate = candidates.find((c) => c.type === "subscription");
     const hasManySubscriptions = subCandidate && userSubs.length >= 2;
-    const preferred = ["autopay", "items", "pricegap", "save"];
+    // autopay + items + save are core, 4th slot filled by best-scoring remaining insight
+    const preferred = ["autopay", "items", "save"];
     if (hasManySubscriptions) preferred.push("subscription");
     const maxHooks = preferred.length; // 4 or 5
     const preferredPicked = [];
@@ -1647,10 +1648,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     openerOptions.push({ type: "autopay", score: Math.min(habitMonthly / 30, 70), text: "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個品項自動累積的。" });
   }
 
-  // Price gap — "X% price difference"
-  if (gaps.length > 0 && gaps[0].gapPct >= 20 && gaps[0].gapPct <= 300) {
-    openerOptions.push({ type: "pricegap", score: Math.min(gaps[0].gapPct, 60), text: "同樣是「" + gaps[0].cat + "」，你在不同地方買的價差高達 " + gaps[0].gapPct + "%。" });
-  }
+  // (PRICE_GAP removed — cross-store price comparison not meaningful due to different store positioning)
 
   // Subscription
   if (userSubs.length >= 2) {
