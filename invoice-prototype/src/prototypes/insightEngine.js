@@ -901,7 +901,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "autopay", score,
         hook: {
           id: "autopay",
-          q: "你每月有一筆「隱形月費」？",
+          q: "我的習慣每月「自動扣款」多少？",
           big: "$" + fmt(habitMonthly) + "/月",
           bigSub: "不是訂閱——是你的消費習慣每月自動幫你「扣款」這麼多",
           body: "你有 " + habitItems.length + " 個品項買了 3 次以上。這些不是你「決定」要買的，是你的習慣自動在下單：",
@@ -1029,7 +1029,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "pricegap", score,
         hook: {
           id: "pricegap",
-          q: "同一個東西，你付了幾種價格？",
+          q: "同樣的「" + topGap.cat + "」為什麼價差 " + topGap.gapPct + "%？",
           big: topGap.gapPct + "%",
           bigSub: "同樣是「" + topGap.cat + "」，你在「" + topGap.most.shop + "」付的比「" + topGap.cheapest.shop + "」貴 " + topGap.gapPct + "%",
           body: "你不需要少買——你只是在「不同價格的同一個東西」之間搖擺：",
@@ -1126,7 +1126,11 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "items", score,
         hook: {
           id: "items",
-          q: "你最常買的東西是什麼？",
+          q: (() => {
+            const drinkCatsQ = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
+            const dcQ = meaningfulCats.filter((c) => drinkCatsQ.includes(c.cat)).reduce((s, c) => s + c.count, 0);
+            return dcQ >= 20 ? "我的 " + dcQ + " 杯飲料都花在哪？" : "我的錢都花在買什麼？";
+          })(),
           big: topItem ? topItem.count + " 次" : topItemCat.count + " 次",
           bigSub: topItem ? "「" + topItem.name + "」是你的最愛——買了 " + topItem.count + " 次" : "「" + topItemCat.cat + "」類品項你買最多",
           body: "從你的發票品項明細來看，你的消費分佈在這些品類：",
