@@ -901,7 +901,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "autopay", score,
         hook: {
           id: "autopay",
-          q: "我的習慣每月「自動扣款」多少？",
+          q: "這 $" + fmt(habitMonthly) + " 都花在哪些品項？",
           big: "$" + fmt(habitMonthly) + "/月",
           bigSub: "不是訂閱——是你的消費習慣每月自動幫你「扣款」這麼多",
           body: "你有 " + habitItems.length + " 個品項買了 3 次以上。這些不是你「決定」要買的，是你的習慣自動在下單：",
@@ -1029,7 +1029,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "pricegap", score,
         hook: {
           id: "pricegap",
-          q: "同樣的「" + topGap.cat + "」為什麼價差 " + topGap.gapPct + "%？",
+          q: "還有哪些東西我買貴了？",
           big: topGap.gapPct + "%",
           bigSub: "同樣是「" + topGap.cat + "」，你在「" + topGap.most.shop + "」付的比「" + topGap.cheapest.shop + "」貴 " + topGap.gapPct + "%",
           body: "你不需要少買——你只是在「不同價格的同一個東西」之間搖擺：",
@@ -1258,7 +1258,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       type: "subscription", score,
       hook: {
         id: "subscription",
-        q: "你每月有多少「自動扣款」？",
+        q: "哪些訂閱可能在浪費？",
         big: "$" + fmt(Math.round(monthlySubTotal)) + "/月",
         bigSub: "你有 " + userSubs.length + " 個訂閱服務正在自動扣款——年花 $" + fmt(Math.round(yearlySubTotal)),
         body: "這些訂閱每個月自動從你的帳戶扣款，你可能已經忘了它們的存在：",
@@ -1384,7 +1384,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       type: "save", score,
       hook: {
         id: "save",
-        q: "我可以怎麼聰明省錢？",
+        q: "怎麼省最有感？",
         big: "$" + fmt(totalSaveable) + "/年",
         bigSub: "不用改變生活就能省下的金額",
         body: "根據你的消費數據，以下是最有效的省錢方案，按「省最多、最不費力」排序：",
@@ -1621,9 +1621,10 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     const g = gaps[0];
     opener = "同樣是「" + g.cat + "」，你在「" + g.most.shop + "」付的比「" + g.cheapest.shop + "」貴了 " + g.gapPct + "%——你可能沒注意過。";
   } else if (hook1Type === "save") {
-    opener = "看完你的消費後，我發現有方法可以不改變生活就省下一筆——想知道怎麼做嗎？";
+    opener = "看完你的消費後，我發現每年有 $" + fmt(totalSaveable) + " 可以不改變生活就省下來。";
   } else if (hook1Type === "subscription") {
-    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款——加起來可能比你想的多。";
+    const subTotal = userSubs.reduce((s, sub) => s + sub.price, 0);
+    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款 $" + fmt(Math.round(subTotal)) + "——其中有些你可能已經忘了。";
   } else if (brandsReal[0]) {
     opener = "你跟「" + brandsReal[0].brand + "」的關係很穩定——平均每 " + (totalDays / brandsReal[0].visits).toFixed(1) + " 天就會去一次。";
   }
