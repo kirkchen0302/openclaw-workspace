@@ -901,17 +901,17 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "autopay", score,
         hook: {
           id: "autopay",
-          q: "這 $" + fmt(habitMonthly) + " 都花在哪些品項？",
-          big: "$" + fmt(habitMonthly) + "/月",
-          bigSub: "不是訂閱——是你的消費習慣每月自動幫你「扣款」這麼多",
-          body: "你有 " + habitItems.length + " 個品項買了 3 次以上。這些不是你「決定」要買的，是你的習慣自動在下單：",
+          q: "這 $" + fmt(Math.round(habitItems.reduce((s, it) => s + it.total, 0))) + " 都花在哪些品項？",
+          big: habitItems.length + " 個",
+          bigSub: "你有 " + habitItems.length + " 個品項反覆在買——累計 $" + fmt(Math.round(habitItems.reduce((s, it) => s + it.total, 0))),
+          body: "這些品項你買了 3 次以上，不是你每次都「決定」要買的，是習慣自動在下單：",
           ranks: habitItems.slice(0, 6).map((it) => ({
             rank: itemCatIcon(it.cat),
             name: it.name.slice(0, 15),
             freq: it.count + " 次",
-            note: "$" + fmt(Math.round(it.total / months.length)) + "/月 在「" + it.shop + "」",
+            note: "共 $" + fmt(Math.round(it.total)) + " 在「" + it.shop + "」",
           })),
-          tip: "這些「隱形月費」合計 $" + fmt(habitMonthly) + "/月、$" + fmt(habitYearly) + "/年——比你的 Netflix + Spotify 加起來還貴。\n\n每一筆都不痛，但加在一起就是一筆可觀的「習慣稅」。",
+          tip: "這 " + habitItems.length + " 個品項累計 $" + fmt(Math.round(habitItems.reduce((s, it) => s + it.total, 0))) + "，年化 $" + fmt(habitYearly) + "。\n\n每一筆都不痛，但加在一起就是一筆可觀的「習慣稅」。",
           followups: [
             {
               q: "哪些是我想保留的、哪些該檢視？",
@@ -1645,7 +1645,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
   // Habit autopay — "$X/month you didn't know about"
   if (habitMonthly > 200) {
-    openerOptions.push({ type: "autopay", score: Math.min(habitMonthly / 30, 70), text: "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個品項自動累積的。" });
+    const habitTotal = habitItems.reduce((s, it) => s + it.total, 0);
+    openerOptions.push({ type: "autopay", score: Math.min(habitItems.length * 2, 70), text: "你有 " + habitItems.length + " 個品項你反覆在買——累計花了 $" + fmt(Math.round(habitTotal)) + "，你可能沒注意到。" });
   }
 
   // (PRICE_GAP removed — cross-store price comparison not meaningful due to different store positioning)
