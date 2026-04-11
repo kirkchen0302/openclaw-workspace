@@ -976,6 +976,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
   // ── Type: PRICE_GAP ───────────────────────────────────────────────
   // "Same drink, 3 different prices" — opportunity cost neglect
+  let gaps = [];
   if (hasItems) {
     // Find item categories that appear across multiple stores
     const catByStore = {}; // { itemCat: { storeName: { count, total, avgPrice } } }
@@ -993,7 +994,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
 
     // Find categories with price gaps across ≥2 stores
-    const gaps = [];
+    gaps = [];
     Object.entries(catByStore).forEach(([cat, stores]) => {
       // Only compare physical retail stores (convenience stores, supermarkets, fast food, coffee shops)
       const storeList = Object.entries(stores)
