@@ -1606,27 +1606,53 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   if (creepingBrands[0]) summaryParts.push("「" + creepingBrands[0].brand + "」均價正在爬升（$" + creepingBrands[0]._avgBef + "→$" + creepingBrands[0]._avgAft + "）");
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
-  // ── Opener — always matches Hook 1 for narrative continuity ────────
-  const hook1Type = picked[0]?.type;
-  let opener = "讓我幫你分析一下消費狀況。";
+  // ── Opener — pick the most WOW fact, then reorder hooks to match ───
+  // Score each potential opener by "shock factor" — the bigger the contrast with expectations, the better
+  const openerOptions = [];
 
-  if (hook1Type === "autopay" && habitMonthly > 0) {
-    opener = "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個你重複購買的品項自動累積的。";
-  } else if (hook1Type === "items" && hasItems) {
-    const drinkCats = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-    let dc = 0;
-    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => { if (drinkCats.includes(classifyItem(it.name))) dc += it.qty || 1; }));
-    opener = dc >= 20 ? "你在這段期間喝了 " + dc + " 杯飲料——平均每天 " + (dc / totalDays).toFixed(1) + " 杯。你可能沒意識到累積的速度有多快。" : "我看了你的品項明細，發現一些你可能沒注意到的消費模式。";
-  } else if (hook1Type === "pricegap" && gaps.length > 0) {
-    const g = gaps[0];
-    opener = "同樣是「" + g.cat + "」，你在「" + g.most.shop + "」付的比「" + g.cheapest.shop + "」貴了 " + g.gapPct + "%——你可能沒注意過。";
-  } else if (hook1Type === "save") {
-    opener = "看完你的消費後，我發現每年有 $" + fmt(totalSaveable) + " 可以不改變生活就省下來。";
-  } else if (hook1Type === "subscription") {
+  // Drinks count — "你喝了 X 杯" is universally shocking
+  if (hasItems) {
+    const drinkCatsO = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
+    let dc = 0, dt = 0;
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => { if (drinkCatsO.includes(classifyItem(it.name))) { dc += it.qty || 1; dt += it.price || 0; } }));
+    if (dc >= 20) {
+      openerOptions.push({ type: "items", score: dc, text: "你在這段期間喝了 " + dc + " 杯飲料——平均每天 " + (dc / totalDays).toFixed(1) + " 杯。你可能沒意識到累積的速度有多快。" });
+    }
+  }
+
+  // Savings — "每年可省 $X" — big number is shocking
+  if (totalSaveable > 3000) {
+    openerOptions.push({ type: "save", score: Math.min(totalSaveable / 500, 80), text: "看完你的消費後，我發現每年有 $" + fmt(totalSaveable) + " 可以不改變生活就省下來。" });
+  }
+
+  // Habit autopay — "$X/month you didn't know about"
+  if (habitMonthly > 200) {
+    openerOptions.push({ type: "autopay", score: Math.min(habitMonthly / 30, 70), text: "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個品項自動累積的。" });
+  }
+
+  // Price gap — "X% price difference"
+  if (gaps.length > 0 && gaps[0].gapPct >= 20 && gaps[0].gapPct <= 300) {
+    openerOptions.push({ type: "pricegap", score: Math.min(gaps[0].gapPct, 60), text: "同樣是「" + gaps[0].cat + "」，你在不同地方買的價差高達 " + gaps[0].gapPct + "%。" });
+  }
+
+  // Subscription
+  if (userSubs.length >= 2) {
     const subTotal = userSubs.reduce((s, sub) => s + sub.price, 0);
-    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款 $" + fmt(Math.round(subTotal)) + "——其中有些你可能已經忘了。";
-  } else if (brandsReal[0]) {
-    opener = "你跟「" + brandsReal[0].brand + "」的關係很穩定——平均每 " + (totalDays / brandsReal[0].visits).toFixed(1) + " 天就會去一次。";
+    openerOptions.push({ type: "subscription", score: Math.min(subTotal / 20, 50), text: "你有 " + userSubs.length + " 個訂閱正在每月自動扣款 $" + fmt(Math.round(subTotal)) + "——其中有些你可能已經忘了。" });
+  }
+
+  // Pick most shocking
+  openerOptions.sort((a, b) => b.score - a.score);
+  const bestOpener = openerOptions[0];
+  let opener = bestOpener ? bestOpener.text : "讓我幫你分析一下消費狀況。";
+
+  // Reorder hooks so the matching hook is first
+  if (bestOpener) {
+    const matchIdx = hooks.findIndex((h) => picked.find((p) => p.type === bestOpener.type)?.hook.id === h.id);
+    if (matchIdx > 0) {
+      const [matched] = hooks.splice(matchIdx, 1);
+      hooks.unshift(matched);
+    }
   }
 
   return { hooks, bridges, summary, opener };
