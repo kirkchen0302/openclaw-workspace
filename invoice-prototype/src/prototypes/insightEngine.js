@@ -1602,69 +1602,27 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   if (creepingBrands[0]) summaryParts.push("「" + creepingBrands[0].brand + "」均價正在爬升（$" + creepingBrands[0]._avgBef + "→$" + creepingBrands[0]._avgAft + "）");
   const summary = "分析完你的 " + invoiceCount + " 張發票。" + summaryParts.join("；") + "。";
 
-  // ── Opener — pick the single most impactful fact ───────────────────
-  // Exclude delivery/online platforms. Score 0-100 range for fair comparison.
+  // ── Opener — always matches Hook 1 for narrative continuity ────────
+  const hook1Type = picked[0]?.type;
   let opener = "讓我幫你分析一下消費狀況。";
-  const openerCandidates = [];
 
-  // Candidate: AUTOPAY — "Your habits auto-charge you $X/month"
-  if (habitItems && habitItems.length >= 3 && habitMonthly > 200) {
-    openerCandidates.push({ score: Math.min(90, 60 + habitItems.length * 2), text: "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個你重複購買的品項自動累積的。" });
-  }
-
-  // Candidate: DRINKS total — very relatable, almost always surprising
-  if (hasItems) {
+  if (hook1Type === "autopay" && habitMonthly > 0) {
+    opener = "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個你重複購買的品項自動累積的。";
+  } else if (hook1Type === "items" && hasItems) {
     const drinkCats = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-    const nonDelivery = invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop));
-    let drinkCount = 0;
-    let drinkTotal = 0;
-    nonDelivery.forEach((inv) => (inv.items || []).forEach((it) => {
-      if (drinkCats.includes(classifyItem(it.name))) { drinkCount += it.qty || 1; drinkTotal += it.price || 0; }
-    }));
-    if (drinkCount >= 20) {
-      const yearly = Math.round(drinkTotal / months.length * 12);
-      openerCandidates.push({ score: Math.min(drinkCount, 85), text: "你在這段期間喝了 " + drinkCount + " 杯飲料，花了 $" + fmt(Math.round(drinkTotal)) + "——年化 $" + fmt(yearly) + "。一杯一杯累積的速度比你想的快。" });
-    }
+    let dc = 0;
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => { if (drinkCats.includes(classifyItem(it.name))) dc += it.qty || 1; }));
+    opener = dc >= 20 ? "你在這段期間喝了 " + dc + " 杯飲料——平均每天 " + (dc / totalDays).toFixed(1) + " 杯。你可能沒意識到累積的速度有多快。" : "我看了你的品項明細，發現一些你可能沒注意到的消費模式。";
+  } else if (hook1Type === "pricegap" && gaps.length > 0) {
+    const g = gaps[0];
+    opener = "同樣是「" + g.cat + "」，你在「" + g.most.shop + "」付的比「" + g.cheapest.shop + "」貴了 " + g.gapPct + "%——你可能沒注意過。";
+  } else if (hook1Type === "save") {
+    opener = "看完你的消費後，我發現有方法可以不改變生活就省下一筆——想知道怎麼做嗎？";
+  } else if (hook1Type === "subscription") {
+    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款——加起來可能比你想的多。";
+  } else if (brandsReal[0]) {
+    opener = "你跟「" + brandsReal[0].brand + "」的關係很穩定——平均每 " + (totalDays / brandsReal[0].visits).toFixed(1) + " 天就會去一次。";
   }
-
-  // Candidate: PRICE_GAP — only if reasonable gap (already filtered online/bulk)
-  if (gaps.length > 0 && gaps[0].gapPct <= 300) {
-    const topG = gaps[0];
-    openerCandidates.push({ score: Math.min(topG.gapPct, 80), text: "同樣是「" + topG.cat + "」，你在「" + topG.most.shop + "」付的比「" + topG.cheapest.shop + "」貴了 " + topG.gapPct + "%——你可能沒注意過。" });
-  }
-
-  // Candidate: Repeat item shock — your #1 most purchased item
-  if (hasItems) {
-    const allItemsMap = {};
-    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => {
-      const cat = classifyItem(it.name);
-      if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
-      if (!allItemsMap[it.name]) allItemsMap[it.name] = { count: 0, total: 0 };
-      allItemsMap[it.name].count += it.qty || 1;
-      allItemsMap[it.name].total += it.price || 0;
-    }));
-    const topRepeat = Object.entries(allItemsMap).sort((a, b) => b[1].count - a[1].count)[0];
-    if (topRepeat && topRepeat[1].count >= 8) {
-      openerCandidates.push({ score: Math.min(topRepeat[1].count * 3, 75), text: "你買了 " + topRepeat[1].count + " 次「" + topRepeat[0].slice(0, 15) + "」——這是你最離不開的一個品項。" });
-    }
-  }
-
-  // Candidate: Subscription total
-  if (userSubs.length >= 2) {
-    const monthlyTotal = userSubs.reduce((s, sub) => s + sub.price, 0);
-    openerCandidates.push({ score: 55, text: "你有 " + userSubs.length + " 個訂閱正在自動扣款——每月 $" + fmt(Math.round(monthlyTotal)) + "，你可能忘了其中幾個。" });
-  }
-
-  // Candidate: Frequency (baseline, always available)
-  if (brandsReal[0]) {
-    const top = brandsReal[0];
-    const freq = (totalDays / top.visits).toFixed(1);
-    openerCandidates.push({ score: Math.min(top.visits, 50), text: "你跟「" + top.brand + "」的關係很穩定——平均每 " + freq + " 天就會去一次。" });
-  }
-
-  // Pick highest score
-  openerCandidates.sort((a, b) => b.score - a.score);
-  if (openerCandidates.length > 0) opener = openerCandidates[0].text;
 
   return { hooks, bridges, summary, opener };
 }
