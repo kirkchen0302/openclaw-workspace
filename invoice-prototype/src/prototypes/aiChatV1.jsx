@@ -75,7 +75,6 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
   const [usedIds, setUsedIds] = useState([]);
   const [qState, setQState] = useState({
     followups: [], deepFollowups: [],
-    unlocked: HOOKS.map((_, i) => i), // All hooks visible from start
     bridgeSent: {},
   });
   const scrollRef = useRef(null);
@@ -227,8 +226,8 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
     } catch { typeText("連線失敗，請稍後再試。"); }
   }
 
-  const { followups, deepFollowups, unlocked: unlockedHooks } = qState;
-  const available = HOOKS.filter((h, i) => unlockedHooks.includes(i) && !usedIds.includes(h.id));
+  const { followups, deepFollowups } = qState;
+  const available = HOOKS.filter((h) => !usedIds.includes(h.id));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, background: "#000" }}>
