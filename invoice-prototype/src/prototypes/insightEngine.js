@@ -20,6 +20,43 @@ function isDeliveryPlatform(shopName) {
   return DELIVERY_PLATFORMS.some((p) => lower.includes(p));
 }
 
+// Subscription detection — strict keyword match for real subscriptions only
+const SUB_KEYWORDS = ["訂閱", "月費", "會員訂閱", "uber one", "pandapro", "panda pro", "蝦皮vip"];
+const SUB_EXCLUDE = ["apple store", "momo", "shopee蝦皮購物"]; // one-time purchases, not subscriptions
+function detectSubscriptions(invoices) {
+  const subs = {};
+  invoices.forEach((inv) => {
+    (inv.items || []).forEach((it) => {
+      const itemLower = (it.name || "").toLowerCase();
+      const shopLower = (inv.shop || "").toLowerCase();
+      // Skip excluded stores (unless the item itself says 訂閱/月費)
+      const isExcludedShop = SUB_EXCLUDE.some((ex) => shopLower.includes(ex));
+      const isSubItem = SUB_KEYWORDS.some((kw) => itemLower.includes(kw));
+      if (!isSubItem) return;
+      if (isExcludedShop && !itemLower.includes("訂閱") && !itemLower.includes("月費")) return;
+      // Deduplicate by service name
+      const key = inv.shop + "_" + Math.round(it.price);
+      if (!subs[key]) subs[key] = { shop: inv.shop, item: it.name, price: it.price, count: 0, dates: [] };
+      subs[key].count++;
+      subs[key].dates.push(inv.issued_at || inv.yearMonth || "");
+    });
+  });
+  // Also detect delivery platform subscription fees specifically
+  invoices.forEach((inv) => {
+    if (!isDeliveryPlatform(inv.shop)) return;
+    (inv.items || []).forEach((it) => {
+      const itemLower = (it.name || "").toLowerCase();
+      if (itemLower.includes("訂閱") || itemLower.includes("月費") || itemLower.includes("uber one") || itemLower.includes("pandapro")) {
+        const key = inv.shop + "_sub";
+        if (!subs[key]) subs[key] = { shop: inv.shop, item: it.name, price: it.price, count: 0, dates: [] };
+        subs[key].count++;
+        subs[key].dates.push(inv.issued_at || "");
+      }
+    });
+  });
+  return Object.values(subs).sort((a, b) => b.price - a.price);
+}
+
 // ── Stats computation ───────────────────────────────────────────────
 // v2 data has clean shop names from BQ channel table — use directly, only resolve for category
 function resolveV2Shop(shopName) {
@@ -1190,6 +1227,91 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     }
   }
 
+  // ── Type: SUBSCRIPTION ─────────────────────────────────────────────
+  // Detect and analyze subscription spending
+  const userSubs = detectSubscriptions(invoices);
+  if (userSubs.length >= 1) {
+    const monthlySubTotal = userSubs.reduce((s, sub) => s + sub.price, 0);
+    const yearlySubTotal = monthlySubTotal * 12;
+    const score = 78 + Math.min(userSubs.length * 3, 12);
+
+    candidates.push({
+      type: "subscription", score,
+      hook: {
+        id: "subscription",
+        q: "你每月有多少「自動扣款」？",
+        big: "$" + fmt(Math.round(monthlySubTotal)) + "/月",
+        bigSub: "你有 " + userSubs.length + " 個訂閱服務正在自動扣款——年花 $" + fmt(Math.round(yearlySubTotal)),
+        body: "這些訂閱每個月自動從你的帳戶扣款，你可能已經忘了它們的存在：",
+        ranks: userSubs.slice(0, 5).map((sub) => ({
+          rank: "📱",
+          name: sub.shop,
+          freq: "$" + fmt(Math.round(sub.price)) + "/月",
+          note: sub.item.slice(0, 25) + (sub.count > 1 ? "（已扣 " + sub.count + " 次）" : ""),
+        })),
+        tip: "訂閱服務的設計就是讓你「忘記自己在付錢」。每月 $" + fmt(Math.round(monthlySubTotal)) + " 看似不多，但一年就是 $" + fmt(Math.round(yearlySubTotal)) + "。\n\n" + fmtComparisons(yearlySubTotal, stats),
+        followups: [
+          {
+            q: "這些訂閱都還值得嗎？",
+            a: (() => {
+              const lines = userSubs.map((sub) => {
+                const yearly = Math.round(sub.price * 12);
+                return "📱 " + sub.shop + "（$" + fmt(Math.round(sub.price)) + "/月 = $" + fmt(yearly) + "/年）\n  → " + sub.item.slice(0, 40);
+              });
+              return "逐一檢視：\n\n" + lines.join("\n\n") + "\n\n問自己：「上個月我用了幾次？」如果答不出來，可能就不值得了。";
+            })(),
+            followups: [
+              {
+                q: "如果全部取消能省多少？",
+                a: "全部取消 = 每年省 $" + fmt(Math.round(yearlySubTotal)) + "。\n\n" + fmtComparisons(yearlySubTotal, stats) + "\n\n當然不是叫你全取消——但至少知道這筆「隱形月費」的全貌。",
+              },
+              {
+                q: "哪個最可能是浪費？",
+                a: (() => {
+                  // The most expensive one is most likely to be worth reviewing
+                  const most = userSubs[0];
+                  return "最值得檢視的：「" + most.shop + "」$" + fmt(Math.round(most.price)) + "/月。\n\n因為它是你最貴的訂閱。問自己：\n• 上個月用了幾次？\n• 不訂的話會怎樣？\n• 有更便宜的替代方案嗎？\n\n如果三個問題都答不出明確的「值得」，就值得考慮暫停。";
+                })(),
+              },
+            ],
+          },
+          {
+            q: "外送平台訂閱划算嗎？",
+            a: (() => {
+              const deliverySubs = userSubs.filter((s) => isDeliveryPlatform(s.shop));
+              if (!deliverySubs.length) return "你目前沒有外送平台的訂閱。";
+              // Count delivery platform usage
+              const deliveryInvCount = invoices.filter((inv) => isDeliveryPlatform(inv.shop)).length;
+              const subCost = deliverySubs.reduce((s, d) => s + d.price, 0);
+              const perOrder = deliveryInvCount > 0 ? Math.round(subCost / deliveryInvCount * months.length) : 0;
+              return "你的外送訂閱：\n\n" + deliverySubs.map((s) => "🛵 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月（" + s.item.slice(0, 30) + "）").join("\n") + "\n\n近 " + months.length + " 個月叫了 " + deliveryInvCount + " 次外送。\n\n訂閱費分攤到每次外送 = $" + fmt(perOrder) + "/次。" + (perOrder > 30 ? "\n\n⚠️ 每次分攤超過 $30，可能不太划算。通常免運門檻 $49-60，如果每月叫不到 3-4 次就虧了。" : "\n\n✅ 分攤下來還算划算，繼續觀察。");
+            })(),
+            followups: [
+              {
+                q: "要叫幾次才划算？",
+                a: (() => {
+                  const deliverySubs = userSubs.filter((s) => isDeliveryPlatform(s.shop));
+                  if (!deliverySubs.length) return "你沒有外送訂閱。";
+                  return deliverySubs.map((s) => {
+                    const freeDeliveryValue = 49; // typical delivery fee saved per order
+                    const breakEven = Math.ceil(s.price / freeDeliveryValue);
+                    return "🛵 " + s.shop + "（$" + fmt(Math.round(s.price)) + "/月）\n  → 每月至少叫 " + breakEven + " 次才划算（假設每次省 $" + freeDeliveryValue + " 運費）";
+                  }).join("\n\n");
+                })(),
+              },
+              {
+                q: "訂閱費一年加起來多少？",
+                a: (() => {
+                  return "所有訂閱年花費：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 = $" + fmt(Math.round(s.price * 12)) + "/年").join("\n") + "\n\n合計 $" + fmt(Math.round(yearlySubTotal)) + "/年。\n\n" + fmtComparisons(yearlySubTotal, stats);
+                })(),
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -1333,7 +1455,11 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // This ensures the 4 hooks leverage item data for maximum impact
   let picked;
   if (hasItems) {
-    const preferred = ["predict", "items", "pricegap", "save"];
+    // subscription replaces save when user has subscriptions (more targeted)
+    const hasSubs = candidates.some((c) => c.type === "subscription");
+    const preferred = hasSubs
+      ? ["predict", "items", "pricegap", "subscription"]
+      : ["predict", "items", "pricegap", "save"];
     const preferredPicked = [];
     preferred.forEach((type) => {
       const found = candidates.find((c) => c.type === type);
@@ -1446,6 +1572,18 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       "positive→pricegap": "做得好的值得肯定。但同一個東西的價差你可能沒注意到——",
       "creep→pricegap": "均價在爬升。同時同一個東西在不同通路的價差也很明顯——",
       "projection→pricegap": "看了未來預估。但你可能沒注意到同一個東西在不同地方價差多少——",
+      "predict→subscription": "看到了你的自動消費。說到「自動」——你還有幾筆訂閱也在自動扣款。",
+      "items→subscription": "知道了你買什麼。另外你有幾筆訂閱正在自動扣款——",
+      "pricegap→subscription": "看了價差。另外你的訂閱月費也值得看一下——",
+      "save→subscription": "有了省錢方案。另外看看你的訂閱——這些也是每月自動扣款。",
+      "subscription→predict": "看了訂閱費。另外你的消費模式也很有趣——AI 能預測你會買什麼。",
+      "subscription→items": "檢視了訂閱。來看看你日常都在買什麼——",
+      "subscription→pricegap": "看了訂閱。同一個東西在不同地方的價差也很驚人——",
+      "subscription→save": "知道了訂閱費。來看看完整的省錢方案——",
+      "subscription→frequency": "看了訂閱。來看看你最依賴哪個通路——",
+      "subscription→growth": "檢視了訂閱。另外有些消費正在快速增加——",
+      "frequency→subscription": "知道了你最依賴什麼。另外你有幾筆訂閱在自動扣款——",
+      "growth→subscription": "看到了在擴張的消費。另外你的訂閱也值得檢視——",
     };
     bridges.push(bridgeMap[curr.type + "→" + next.type] || "接下來看看另一個有趣的發現——");
   }
@@ -1488,6 +1626,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   } else if (hook1Type === "pricegap" && hasItems) {
     const topG = gaps[0];
     opener = topG ? "同樣是「" + topG.cat + "」，你在「" + topG.most.shop + "」付的比「" + topG.cheapest.shop + "」貴了 " + topG.gapPct + "%——你可能從來沒注意過。" : "你在不同地方買同一類東西，價格差距比你想的大。";
+  } else if (hook1Type === "subscription") {
+    opener = "你有 " + userSubs.length + " 個訂閱正在每月自動扣款——加起來 $" + fmt(Math.round(userSubs.reduce((s, sub) => s + sub.price, 0))) + "/月。你可能忘了其中幾個。";
   } else if (hook1Type === "items" && hasItems) {
     const topItemCats = aggregateItemCategories(invoices).filter((c) => c.cat !== "其他" && c.cat !== "外送服務費");
     const topIt = topItemCats[0];
