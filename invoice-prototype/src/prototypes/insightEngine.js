@@ -873,64 +873,75 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
   }
 
-  // ── Type: PREDICT ──────────────────────────────────────────────────
-  // "AI can predict what you'll buy next" — status quo bias shock
+  // ── Type: AUTOPAY ──────────────────────────────────────────────────
+  // "Your habits auto-charge you $X/month" — mental accounting shock
+  // Reframes repeat purchases as invisible subscriptions you never signed up for
   if (hasItems) {
-    const predictions = [];
-    brands.filter((b) => b.visits >= 5 && !isDeliveryPlatform(b.brand)).slice(0, 6).forEach((b) => {
-      const topIt = getTopItemsForBrand(invoices, b.brand, 3).filter((it) => classifyItem(it.name) !== "外送服務費");
-      if (topIt.length === 0) return;
-      const hitRate = Math.round(topIt[0].count / b.visits * 100);
-      if (hitRate >= 30) {
-        predictions.push({ brand: b.brand, cat: b.cat, visits: b.visits, topItem: topIt[0], topItems: topIt, hitRate });
-      }
+    const repeatItems = {};
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
+      (inv.items || []).forEach((it) => {
+        const cat = classifyItem(it.name);
+        if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費" || cat === "訂閱服務") return;
+        if (!repeatItems[it.name]) repeatItems[it.name] = { name: it.name, count: 0, total: 0, cat, shop: inv.shop };
+        repeatItems[it.name].count += it.qty || 1;
+        repeatItems[it.name].total += it.price || 0;
+      });
     });
-    predictions.sort((a, b) => b.hitRate - a.hitRate);
+    const habitItems = Object.values(repeatItems).filter((it) => it.count >= 3).sort((a, b) => b.total - a.total);
+    const habitMonthly = Math.round(habitItems.reduce((s, it) => s + it.total, 0) / Math.max(months.length, 1));
+    const habitYearly = habitMonthly * 12;
 
-    if (predictions.length >= 2) {
-      const best = predictions[0];
-      const score = 95 + Math.min(best.hitRate, 10); // Very high score — this is the most shocking
-
-      // Calculate total "autopilot" spending
-      const autoTotal = predictions.reduce((s, p) => s + p.topItems.reduce((s2, it) => s2 + it.total, 0), 0);
-      const autoMonthly = Math.round(autoTotal / Math.max(months.length, 1));
+    if (habitItems.length >= 3 && habitMonthly > 200) {
+      const score = 95 + Math.min(habitItems.length, 10);
 
       candidates.push({
-        type: "predict", score,
+        type: "autopay", score,
         hook: {
-          id: "predict",
-          q: "AI 能預測你下次會買什麼嗎？",
-          big: best.hitRate + "%",
-          bigSub: "你走進「" + best.brand + "」→ AI 猜你會買「" + best.topItem.name + "」——準確率 " + best.hitRate + "%",
-          body: "你以為每次消費都在「選擇」？AI 看完你的品項明細後，已經能預測你在每家店會買什麼：",
-          ranks: predictions.slice(0, 4).map((p) => ({
-            rank: catIcon(p.cat),
-            name: p.brand,
-            freq: p.hitRate + "% 命中",
-            note: "→ " + p.topItem.name + "（" + p.topItem.count + "/" + p.visits + " 次）",
+          id: "autopay",
+          q: "你每月有一筆「隱形月費」？",
+          big: "$" + fmt(habitMonthly) + "/月",
+          bigSub: "不是訂閱——是你的消費習慣每月自動幫你「扣款」這麼多",
+          body: "你有 " + habitItems.length + " 個品項買了 3 次以上。這些不是你「決定」要買的，是你的習慣自動在下單：",
+          ranks: habitItems.slice(0, 6).map((it) => ({
+            rank: itemCatIcon(it.cat),
+            name: it.name.slice(0, 15),
+            freq: it.count + " 次",
+            note: "$" + fmt(Math.round(it.total / months.length)) + "/月 在「" + it.shop + "」",
           })),
-          tip: "你以為自己在「選」，其實你在「重播」。行為經濟學稱這為「現狀偏誤」——大腦把做過的決策當作好的決策，所以你不假思索地重複。這 " + predictions.length + " 個通路的自動化消費，每月 $" + fmt(autoMonthly) + "。",
+          tip: "這些「隱形月費」合計 $" + fmt(habitMonthly) + "/月、$" + fmt(habitYearly) + "/年——比你的 Netflix + Spotify 加起來還貴。\n\n每一筆都不痛，但加在一起就是一筆可觀的「習慣稅」。",
           followups: [
             {
-              q: "我在「" + best.brand + "」的完整固定菜單？",
+              q: "哪些是我想保留的、哪些該檢視？",
               a: (() => {
-                const allIt = getTopItemsForBrand(invoices, best.brand, 8);
-                return "你在「" + best.brand + "」的消費 " + best.visits + " 次中，這些品項反覆出現：\n\n" + allIt.map((it, i) => (i + 1) + ". " + itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n") + "\n\n" + (allIt.length >= 3 ? "前 3 項的組合就是你的「隱藏套餐」——AI 下次看到你進「" + best.brand + "」就知道你會點這些。" : "");
+                const keep = habitItems.filter((it) => ["乳製品", "咖啡", "生鮮蔬果", "生鮮肉品"].includes(it.cat)).slice(0, 3);
+                const review = habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "速食餐點", "茶飲"].includes(it.cat)).slice(0, 3);
+                let t = "";
+                if (keep.length) t += "✅ 值得保留的習慣：\n" + keep.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.cat + "）").join("\n") + "\n\n";
+                if (review.length) t += "🤔 可以檢視的：\n" + review.map((it) => itemCatIcon(it.cat) + " " + it.name + "（$" + fmt(Math.round(it.total / months.length)) + "/月）").join("\n") + "\n\n";
+                t += "健康、營養相關的習慣值得保留。零食、飲料可以想想「是真的想喝，還是順手買的」。";
+                return t || "你的重複購買品項大部分看起來是日常需求，整體還算合理。";
               })(),
               followups: [
                 {
-                  q: "其他店我也有固定套路嗎？",
+                  q: "如果減掉「順手買的」能省多少？",
                   a: (() => {
-                    const others = predictions.filter((p) => p.brand !== best.brand).slice(0, 3);
-                    if (!others.length) return "目前其他店的消費比較隨機，沒有明顯的固定套路。";
-                    return "你在其他店的「自動導航」：\n\n" + others.map((p) => catIcon(p.cat) + " " + p.brand + "（" + p.hitRate + "% 可預測）\n  → " + p.topItems.slice(0, 2).map((it) => it.name).join(" + ")).join("\n\n");
+                    const snackDrink = habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "手搖飲"].includes(it.cat));
+                    const saveable = snackDrink.reduce((s, it) => s + it.total, 0);
+                    const yearSave = Math.round(saveable / months.length * 12);
+                    if (yearSave < 500) return "你的零食飲料類重複消費不多，省不了太多。";
+                    return "零食 + 瓶裝飲料的「習慣消費」：$" + fmt(Math.round(saveable)) + "（" + months.length + " 個月）\n\n年化 $" + fmt(yearSave) + "。\n\n" + fmtComparisons(yearSave, stats) + "\n\n不是說不能買——而是把「無意識的順手」變成「有意識的選擇」。";
                   })(),
                 },
                 {
-                  q: "這些自動化消費一年花多少？",
+                  q: "每家店我的「固定菜單」是什麼？",
                   a: (() => {
-                    const yearly = autoMonthly * 12;
-                    return "你的「自動導航消費」每月 $" + fmt(autoMonthly) + "，一年 $" + fmt(yearly) + "。\n\n" + fmtComparisons(yearly, stats) + "\n\n這些錢不是亂花，但也不是「有意識地決定」的。知道就好。";
+                    const storeMenus = {};
+                    habitItems.forEach((it) => {
+                      if (!storeMenus[it.shop]) storeMenus[it.shop] = [];
+                      storeMenus[it.shop].push(it);
+                    });
+                    const stores = Object.entries(storeMenus).sort((a, b) => b[1].length - a[1].length).slice(0, 4);
+                    return stores.map(([shop, items]) => catIcon(brandsReal.find((b) => b.brand === shop)?.cat || "其他") + " 「" + shop + "」你的固定菜單：\n" + items.slice(0, 3).map((it) => "  " + itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次）").join("\n")).join("\n\n");
                   })(),
                 },
               ],
@@ -938,33 +949,23 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
             {
               q: "哪些品項是我「沒意識到」一直在買的？",
               a: (() => {
-                // Find items with high repeat count but not the "obvious" ones (not top 3 overall)
-                const allItems = {};
-                invoices.forEach((inv) => (inv.items || []).forEach((it) => {
-                  if (!it.name) return;
-                  const cat = classifyItem(it.name);
-                  if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
-                  if (!allItems[it.name]) allItems[it.name] = { name: it.name, count: 0, total: 0, cat, shop: inv.shop };
-                  allItems[it.name].count += it.qty || 1;
-                  allItems[it.name].total += it.price || 0;
-                }));
-                const hidden = Object.values(allItems).filter((it) => it.count >= 3).sort((a, b) => b.count - a.count).slice(3, 10); // skip top 3 obvious ones
+                const hidden = habitItems.slice(3, 10); // skip top 3 obvious ones
                 if (!hidden.length) return "你的重複購買品項不多，消費相對隨機。";
                 return "你可能沒注意到自己一直在買這些：\n\n" + hidden.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）在「" + it.shop + "」").join("\n") + "\n\n這些不是大筆消費，但因為太自動化了你根本不會注意到。";
               })(),
               followups: [
                 {
-                  q: "我的消費有多「自動化」？",
+                  q: "這些加起來一年多少？",
                   a: (() => {
-                    const totalRepeat = predictions.reduce((s, p) => s + p.topItems.reduce((s2, it) => s2 + it.count, 0), 0);
-                    const totalInvItems = invoices.reduce((s, inv) => s + (inv.items || []).length, 0);
-                    const autoPct = totalInvItems > 0 ? Math.round(totalRepeat / totalInvItems * 100) : 0;
-                    return "你的消費品項中，約 " + autoPct + "% 是可預測的重複購買。\n\n" + (autoPct > 40 ? "超過 4 成——你的消費基本上在自動導航。不一定是壞事，但代表你有很大的「微調空間」。" : autoPct > 20 ? "大約 " + autoPct + "%——不算太自動化，但核心品項的重複度很高。" : "比較隨機，沒有太嚴重的自動化問題。");
+                    const hidden = habitItems.slice(3, 10);
+                    const total = hidden.reduce((s, it) => s + it.total, 0);
+                    const yearly = Math.round(total / months.length * 12);
+                    return "這些「隱形品項」合計 $" + fmt(Math.round(total)) + "（" + months.length + " 個月），年化 $" + fmt(yearly) + "。\n\n" + fmtComparisons(yearly, stats);
                   })(),
                 },
                 {
-                  q: "打破自動化有什麼好處？",
-                  a: "不是要你每次都做不同選擇——那太累了。\n\n但「知道自己在自動導航」本身就是好處：\n\n1️⃣ 你可以有意識地保留好的習慣（如 LP33 健康飲）\n2️⃣ 主動淘汰「只是因為習慣」的消費（如每次順手帶的零食）\n3️⃣ 把省下的空間留給新體驗\n\n不是改變，是「升級」你的自動導航路線。",
+                  q: "有沒有更划算的買法？",
+                  a: "幾個無痛省法：\n\n1️⃣ 超商的飲料/零食 → 全聯同款省 20-30%\n2️⃣ 固定喝的咖啡 → 考慮自備保溫杯或買量販包\n3️⃣ 經常買的生活用品 → 網購量大更划算\n\n不需要少買，只是「換個地方買同一個東西」。",
                 },
               ],
             },
@@ -1458,7 +1459,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     // 4 hooks base, add 5th (subscription) when user has ≥2 subscriptions
     const subCandidate = candidates.find((c) => c.type === "subscription");
     const hasManySubscriptions = subCandidate && userSubs.length >= 2;
-    const preferred = ["predict", "items", "pricegap", "save"];
+    const preferred = ["autopay", "items", "pricegap", "save"];
     if (hasManySubscriptions) preferred.push("subscription");
     const maxHooks = preferred.length; // 4 or 5
     const preferredPicked = [];
@@ -1542,42 +1543,42 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       "projection→items": "看了年花費。但你的錢具體花在什麼品項上？",
       "save→items": "有了省錢方案。來看看你最常買什麼——說不定能找到更精準的切入點。",
       "positive→items": "知道了做得好的地方。來看看你實際都在買什麼——",
-      "predict→pricegap": "知道了你的消費有多可預測。但同一個東西你在不同地方的價格可能差很多——",
-      "predict→frequency": "看到了你的自動導航模式。來看看你最依賴哪個通路——",
-      "predict→growth": "你的消費很可預測。但有些新消費正在加入你的「自動導航」——",
-      "predict→creep": "看到了你的固定消費模式。同時有些通路的均價在悄悄上升——",
-      "predict→dominance": "知道了你買什麼。來看看整體類別分佈——",
-      "predict→projection": "看到了你的自動消費。照這個模式，一年呢？",
-      "predict→save": "知道了你的消費模式。那有什麼辦法可以花得更聰明？",
-      "predict→positive": "看到了自動化消費。但也有好消息——有些地方你做得不錯。",
-      "predict→items": "知道了你的預測模式。更深入看看你都在買什麼——",
-      "pricegap→predict": "看到了價差。但你的消費可預測程度可能會嚇到你——",
+      "autopay→pricegap": "知道了你的隱形月費。但同一個東西你在不同地方的價格可能差很多——",
+      "autopay→frequency": "看到了你的隱形月費。來看看你最依賴哪個通路——",
+      "autopay→growth": "看了你的隱形月費。但有些新消費正在加入你的「自動導航」——",
+      "autopay→creep": "看到了你的習慣消費。同時有些通路的均價在悄悄上升——",
+      "autopay→dominance": "知道了你買什麼。來看看整體類別分佈——",
+      "autopay→projection": "看到了你的隱形月費。照這個模式，一年呢？",
+      "autopay→save": "知道了你的消費模式。那有什麼辦法可以花得更聰明？",
+      "autopay→positive": "看到了自動化消費。但也有好消息——有些地方你做得不錯。",
+      "autopay→items": "知道了你的隱形月費。更深入看看你都在買什麼——",
+      "pricegap→autopay": "看到了價差。但你有一筆「隱形月費」——習慣幫你自動扣款——",
       "pricegap→frequency": "知道了同一個東西的價差。來看看你最依賴哪個通路——",
       "pricegap→growth": "看了價差分析。同時有些消費在快速擴張——",
       "pricegap→save": "知道了哪裡有價差。來看看完整的省錢方案——",
       "pricegap→positive": "看了價差。但也有好消息——有些地方你已經選了便宜的。",
       "pricegap→items": "知道了價差。來看看你最常買的品項是什麼——",
       "pricegap→projection": "看了價差。如果不調整，一年呢？",
-      "frequency→predict": "知道了你最依賴哪。但你可能不知道——AI 已經能預測你下次會買什麼。",
-      "growth→predict": "看到了在擴張的消費。但你可能不知道自己的消費有多可預測——",
-      "items→predict": "看了你常買什麼。但你可能不知道——AI 已經能預測你的下一筆消費。",
+      "frequency→autopay": "知道了你最依賴哪。但你可能不知道——你有一筆「隱形月費」你可能沒注意到。",
+      "growth→autopay": "看到了在擴張的消費。但你可能不知道自己有一筆「隱形月費」——",
+      "items→autopay": "看了你常買什麼。但你可能不知道——你有一筆習慣幫你自動扣的「隱形月費」。",
       "items→pricegap": "知道了你買什麼。但同一個東西你在不同地方的價格差很多——",
-      "save→predict": "有了省錢方案。另外你可能不知道——你的消費其實非常可預測。",
+      "save→autopay": "有了省錢方案。另外你可能不知道——你其實有一筆「隱形月費」。",
       "save→pricegap": "有了省錢方案。再看看同一個東西的價差——這也是省錢的切入點。",
       "frequency→pricegap": "知道了你最依賴哪。但同一個東西你在不同通路的價格差很多——",
-      "dominance→predict": "看了類別分佈。但你可能不知道——你的消費模式高度可預測。",
+      "dominance→autopay": "看了類別分佈。但你可能不知道——你有一筆不小的「隱形月費」。",
       "dominance→pricegap": "看了消費分佈。但同一個東西的價差可能會讓你驚訝——",
-      "creep→predict": "均價在爬升。同時你的消費模式也高度可預測——",
-      "projection→predict": "看了年花費。但你可能不知道自己的消費有多「自動化」——",
-      "positive→predict": "知道了做得好的地方。但你的消費可預測程度可能會讓你驚訝——",
+      "creep→autopay": "均價在爬升。同時你也有一筆「隱形月費」——",
+      "projection→autopay": "看了年花費。但你可能不知道習慣幫你「自動扣款」多少——",
+      "positive→autopay": "知道了做得好的地方。但但你的消費習慣每月悄悄「扣款」的金額可能會讓你驚訝——",
       "positive→pricegap": "做得好的值得肯定。但同一個東西的價差你可能沒注意到——",
       "creep→pricegap": "均價在爬升。同時同一個東西在不同通路的價差也很明顯——",
       "projection→pricegap": "看了未來預估。但你可能沒注意到同一個東西在不同地方價差多少——",
-      "predict→subscription": "看到了你的自動消費。說到「自動」——你還有幾筆訂閱也在自動扣款。",
+      "autopay→subscription": "看到了你的隱形月費。說到「自動」——你還有幾筆訂閱也在自動扣款。",
       "items→subscription": "知道了你買什麼。另外你有幾筆訂閱正在自動扣款——",
       "pricegap→subscription": "看了價差。另外你的訂閱月費也值得看一下——",
       "save→subscription": "有了省錢方案。另外看看你的訂閱——這些也是每月自動扣款。",
-      "subscription→predict": "看了訂閱費。另外你的消費模式也很有趣——AI 能預測你會買什麼。",
+      "subscription→autopay": "看了訂閱費。另外你的消費模式也很有趣——你有一筆「隱形月費」——習慣幫你扣的。",
       "subscription→items": "檢視了訂閱。來看看你日常都在買什麼——",
       "subscription→pricegap": "看了訂閱。同一個東西在不同地方的價差也很驚人——",
       "subscription→save": "知道了訂閱費。來看看完整的省錢方案——",
@@ -1603,16 +1604,9 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   let opener = "讓我幫你分析一下消費狀況。";
   const openerCandidates = [];
 
-  // Candidate: PREDICT — only when hit rate ≥30% (otherwise not impressive)
-  if (hasItems && brandsReal[0]) {
-    const topPred = brandsReal[0];
-    const topIt = getTopItemsForBrand(invoices, topPred.brand, 1).filter((it) => classifyItem(it.name) !== "外送服務費")[0];
-    if (topIt) {
-      const hitRate = Math.round(topIt.count / topPred.visits * 100);
-      if (hitRate >= 30) {
-        openerCandidates.push({ score: Math.min(hitRate, 90), text: "你走進「" + topPred.brand + "」，AI 有 " + hitRate + "% 的把握知道你會買「" + topIt.name.slice(0, 12) + "」——你的消費比你想的更可預測。" });
-      }
-    }
+  // Candidate: AUTOPAY — "Your habits auto-charge you $X/month"
+  if (habitItems && habitItems.length >= 3 && habitMonthly > 200) {
+    openerCandidates.push({ score: Math.min(90, 60 + habitItems.length * 2), text: "你的消費習慣每月悄悄「扣款」$" + fmt(habitMonthly) + "——不是訂閱，是 " + habitItems.length + " 個你重複購買的品項自動累積的。" });
   }
 
   // Candidate: DRINKS total — very relatable, almost always surprising
