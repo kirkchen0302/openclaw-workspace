@@ -1,6 +1,7 @@
 /**
  * Insight Engine — 從用戶真實消費數據中挖掘最有衝擊力的洞察
- * 動態生成 4 個 Hook，每個有 2 追問 × 2 深追問
+ * 動態生成 4-5 個 Hook，每個有 2 追問 × 2 深追問
+ * v2: excludes delivery platforms and online bulk stores from item analysis
  */
 import { resolveShop } from "./shopMapping";
 import { classifyItem, aggregateItemCategories } from "./itemClassifier";
