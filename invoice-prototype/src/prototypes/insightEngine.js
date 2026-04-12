@@ -1275,7 +1275,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       type: "subscription", score,
       hook: {
         id: "subscription",
-        q: "哪些訂閱可能在浪費？",
+        q: "我的訂閱還值得嗎？",
         big: "$" + fmt(Math.round(monthlySubTotal)) + "/月",
         bigSub: "你有 " + userSubs.length + " 個訂閱服務正在自動扣款——年花 $" + fmt(Math.round(yearlySubTotal)),
         body: "這些訂閱每個月自動從你的帳戶扣款，你可能已經忘了它們的存在：",
@@ -1302,7 +1302,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                 a: "全部取消 = 每年省 $" + fmt(Math.round(yearlySubTotal)) + "。\n\n" + fmtComparisons(yearlySubTotal, stats) + "\n\n當然不是叫你全取消——但至少知道這筆「隱形月費」的全貌。",
               },
               {
-                q: "哪個最可能是浪費？",
+                q: "哪個訂閱最值得重新想想？",
                 a: (() => {
                   // The most expensive one is most likely to be worth reviewing
                   const most = userSubs[0];
@@ -1320,7 +1320,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
               {
                 q: "哪些訂閱我可能用不夠？",
                 a: (() => {
-                  return "你可以逐一問自己：\n\n" + userSubs.map((s) => "📱 " + s.shop + "（$" + fmt(Math.round(s.price)) + "/月）\n  → 上個月用了幾次？值不值這個價？").join("\n\n") + "\n\n如果答不出「上個月用了幾次」——那就很可能是在浪費。\n\n訂閱的設計就是讓你「忘記在付錢」。定期檢視是唯一的解法。";
+                  return "你可以逐一問自己：\n\n" + userSubs.map((s) => "📱 " + s.shop + "（$" + fmt(Math.round(s.price)) + "/月）\n  → 上個月用了幾次？這筆花費帶給你什麼價值？").join("\n\n") + "\n\n如果想不出來——代表這筆訂閱值得重新評估。\n\n定期檢視訂閱是聰明消費的好習慣。";
                 })(),
               },
               {
