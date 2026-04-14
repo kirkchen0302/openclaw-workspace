@@ -28,6 +28,38 @@ const STORE_TYPE_MAP = {
   "麥當勞": "速食", "肯德基": "速食", "摩斯漢堡": "速食",
 };
 
+// Audience segments — pre-computed from user consumption proportions
+const AUDIENCE_SEGMENTS = {
+  "外食族": { monthlyAvg: 19589, catBenchmarks: { "咖啡": 66, "飲料": 52, "零食": 47, "鮮食": 45 } },
+  "超商族": { monthlyAvg: 12592, catBenchmarks: { "咖啡": 57, "飲料": 38, "零食": 64, "鮮食": 49 } },
+  "網購族": { monthlyAvg: 14485, catBenchmarks: { "咖啡": 55, "飲料": 31, "鮮食": 51 } },
+};
+
+// Detect user's audience segment from their consumption proportions
+function detectAudience(invoices, brands) {
+  const total = invoices.length || 1;
+  const deliveryPct = invoices.filter((inv) => isDeliveryPlatform(inv.shop)).length / total * 100;
+  const fastPct = invoices.filter((inv) => ["麥當勞","肯德基","摩斯漢堡"].includes(inv.shop)).length / total * 100;
+  const convPct = invoices.filter((inv) => ["7-11","全家","萊爾富"].includes(inv.shop)).length / total * 100;
+  const onlinePct = invoices.filter((inv) => isOnlineBulk(inv.shop)).length / total * 100;
+
+  const traits = [
+    { name: "外食族", pct: deliveryPct + fastPct },
+    { name: "超商族", pct: convPct },
+    { name: "網購族", pct: onlinePct },
+  ].sort((a, b) => b.pct - a.pct);
+
+  const primary = traits[0];
+  const secondary = traits[1] && traits[1].pct > 10 ? traits[1] : null;
+  return {
+    primary: primary.name,
+    primaryPct: Math.round(primary.pct),
+    secondary: secondary ? secondary.name : null,
+    label: primary.name + (secondary ? " + " + secondary.name : ""),
+    segment: AUDIENCE_SEGMENTS[primary.name] || null,
+  };
+}
+
 // Exclude bill-type categories from "surprise" insights
 const BILL_CATS = ["電費", "水費", "瓦斯費", "電信費", "網路"];
 const PLATFORM_FEE_THRESHOLD = 50; // avg < $50 likely platform fee only
@@ -288,6 +320,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   const { brands, brandsByTotal, brandsReal, brandsRealByTotal, cats, months, totalDays, avgPerVisit, brandFirst, brandSecond, firstKeys, secondKeys } = stats;
   invoices = invoices || [];
   const hasItems = invoices.some((inv) => inv.items && inv.items.length > 0);
+  const audience = detectAudience(invoices, brandsReal);
   const candidates = [];
 
   // ── Type: EXPLOSIVE_GROWTH ────────────────────────────────────────
@@ -1953,27 +1986,45 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
             })(),
           },
           {
-            q: "別人在「" + tc.cat + "」都怎麼買？我可以學嗎？",
+            q: "跟同類型的人比，我花得算多嗎？",
             a: (() => {
-              if (bmC) {
-                const diff = avgPerItem - bmC.groupAvg;
-                const diffPct = bmC.groupAvg > 0 ? Math.round(diff / bmC.groupAvg * 100) : 0;
-                let t = "「" + tc.cat + "」均價比較（" + bmC.scope + "）：\n\n• 你：$" + avgPerItem + "/次\n• 其他人平均：$" + bmC.groupAvg + "/次\n• 最精打細算：$" + bmC.groupMin + "/次\n\n";
-                if (diffPct > 10) {
-                  const saveable = Math.round(diff * tc.count / months.length * 12);
-                  t += "你高了 " + diffPct + "%。模仿其他人的均價可年省 $" + fmt(saveable) + "。\n\n他們可能的做法：選更平價的品項、善用特價、在較便宜的通路買。\n\n" + fmtComparisons(saveable, stats, tc.cat);
-                } else if (diffPct < -10) {
-                  t += "你比別人省 " + Math.abs(diffPct) + "%！你在這個品類已經是精打細算的消費者。\n\n可以把同樣的選購策略套到其他品類上。";
-                } else {
-                  t += "跟其他人差不多，在合理範圍。你的消費水平是健康的。";
+              let t = "你的消費者定位：「" + audience.label + "」\n\n";
+
+              // Segment-level comparison
+              if (audience.segment) {
+                const seg = audience.segment;
+                const monthlyAvg = Math.round(totalAmount / months.length);
+                const diff = monthlyAvg - seg.monthlyAvg;
+                const diffPct = Math.round(diff / seg.monthlyAvg * 100);
+                t += "跟同為「" + audience.primary + "」的人比：\n• 你的月均消費：$" + fmt(monthlyAvg) + "\n• 「" + audience.primary + "」平均：$" + fmt(seg.monthlyAvg) + "\n• " + (diffPct > 10 ? "你高了 " + diffPct + "%。" : diffPct < -10 ? "你比同族群省 " + Math.abs(diffPct) + "%！" : "差不多，在合理範圍。") + "\n\n";
+
+                // Category benchmark within segment
+                const segBm = seg.catBenchmarks || {};
+                const catComps = [];
+                Object.entries(segBm).forEach(([cat, segAvg]) => {
+                  const userCatData = bmResults.find((b) => b.cat === cat);
+                  if (userCatData) {
+                    const cd = userCatData.userAvg - segAvg;
+                    const cdp = Math.round(cd / segAvg * 100);
+                    catComps.push((cdp > 10 ? "⬆️" : cdp < -10 ? "✅" : "➡️") + " " + cat + "：你 $" + userCatData.userAvg + " vs 同族群均 $" + segAvg + (cdp > 10 ? "（你偏高" + cdp + "%）" : cdp < -10 ? "（你更省" + Math.abs(cdp) + "%）" : ""));
+                  }
+                });
+                if (catComps.length > 0) {
+                  t += "品類均價 vs 同族群：\n" + catComps.join("\n");
                 }
-                // Add other categories comparison
-                if (bmResults.length > 1) {
-                  t += "\n\n其他品類 vs 別人：\n" + bmResults.slice(0, 3).map((b) => (b.diffPct > 10 ? "⬆️" : b.diffPct < -10 ? "✅" : "➡️") + " " + b.cat + "：你$" + b.userAvg + " vs 均$" + b.groupAvg).join("\n");
+              } else {
+                // Fallback to general benchmark
+                if (bmC) {
+                  const diff = avgPerItem - bmC.groupAvg;
+                  const diffPct = bmC.groupAvg > 0 ? Math.round(diff / bmC.groupAvg * 100) : 0;
+                  t += "「" + tc.cat + "」均價：你 $" + avgPerItem + " vs 全體均 $" + bmC.groupAvg;
+                  if (diffPct > 10) t += "（你偏高 " + diffPct + "%）";
+                  else if (diffPct < -10) t += "（你更省 " + Math.abs(diffPct) + "%！）";
                 }
-                return t;
               }
-              return "「" + tc.cat + "」均價 $" + avgPerItem + "/次。這個品類因個人喜好差異大，重點是：你覺得每次花 $" + avgPerItem + " 值不值。";
+
+              t += "\n\n💡 同族群的省錢策略通常最值得參考——因為大家的消費結構相似，做法更容易複製。";
+              return t;
             })(),
           },
         ],
