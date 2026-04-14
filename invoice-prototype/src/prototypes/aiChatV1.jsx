@@ -60,9 +60,7 @@ export default function AIChat({ invoices, invoiceCount, totalAmount, monthlyTre
       ];
     }
     return [
-      { text: "嗨，我看完了你 " + (invoiceCount || 0) + " 張發票。", delay: 400 },
-      { text: "想跟你聊聊我觀察到的事。", delay: 1200, dim: true },
-      { text: OPENER, delay: 2200, hook: true },
+      { text: "嗨，我已經看完你的 " + (invoiceCount || 0) + " 張發票和所有品項明細了。選一個你好奇的問題，我來幫你分析 👇", delay: 400 },
     ];
   }, [newUser, invoiceCount, OPENER]);
 
