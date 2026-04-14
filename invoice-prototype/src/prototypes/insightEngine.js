@@ -43,25 +43,29 @@ const ONLINE_BULK = ["momo", "蝦皮", "shopee", "酷澎", "coupang", "好市多
 function isOnlineBulk(shop) { return ONLINE_BULK.some((k) => (shop || "").toLowerCase().includes(k)); }
 
 // Subscription detection — two methods:
-// Method 1: Item keyword match (品項明細中包含訂閱相關關鍵字)
-// Method 2: Store + specific item match (特定通路的特定品項 = 訂閱)
+// Method 1: Item keyword / regex match
+// Method 2: Store + specific item keyword match
 const SUB_ITEM_KEYWORDS = [
-  "月費", "月訂閱", "季訂閱", "年訂閱", "訂閱費", "premium",
+  "月費", "年費", "月訂閱", "季訂閱", "年訂閱", "訂閱費",
   "訂閱制", "訂閱方案", "訂閱服務", "訂閱月費", "訂閱年費",
   "uber one", "pandapro", "panda pro", "蝦皮vip", "wow 會員",
 ];
-// Store → item keyword pairs (this store + this item keyword = subscription)
+const SUB_ITEM_REGEX = [
+  /(youtube|spotify).*premium/i,
+  /^youtube$/i,
+];
 const SUB_STORE_ITEMS = [
   { store: ["ubereats", "uber eats", "優食台灣", "uber"], items: ["uber one", "訂閱"] },
   { store: ["foodpanda", "富胖達"], items: ["pandapro", "panda pro", "訂閱"] },
   { store: ["酷澎", "coupang"], items: ["wow", "會員", "訂閱"] },
-  { store: ["spotify"], items: ["premium", "訂閱"] },
-  { store: ["netflix"], items: ["訂閱", "月費"] },
+  { store: ["spotify"], items: ["premium", "訂閱", "月費"] },
+  { store: ["netflix"], items: ["訂閱", "月費", "netflix"] },
   { store: ["disney", "迪士尼"], items: ["訂閱", "月費"] },
   { store: ["apple", "itunes"], items: ["icloud", "訂閱", "月費"] },
-  { store: ["google"], items: ["訂閱", "月費", "youtube"] },
+  { store: ["google"], items: ["訂閱", "月費", "youtube", "premium"] },
   { store: ["kkbox"], items: ["訂閱", "月費"] },
   { store: ["蝦皮", "shopee"], items: ["vip", "訂閱"] },
+  { store: ["line"], items: ["訂閱", "月費", "premium"] },
 ];
 const SUB_EXCLUDE = ["apple store", "momo購物"]; // one-time hardware purchases
 
@@ -70,20 +74,21 @@ function detectSubscriptions(invoices) {
   invoices.forEach((inv) => {
     (inv.items || []).forEach((it) => {
       const itemLower = (it.name || "").toLowerCase();
+      const itemRaw = it.name || "";
       const shopLower = (inv.shop || "").toLowerCase();
 
-      // Skip excluded stores for one-time purchases (unless item explicitly says 訂閱)
       const isExcludedShop = SUB_EXCLUDE.some((ex) => shopLower.includes(ex));
       if (isExcludedShop && !itemLower.includes("訂閱") && !itemLower.includes("月費")) return;
 
       let matched = false;
 
-      // Method 1: Item keyword match
-      if (SUB_ITEM_KEYWORDS.some((kw) => itemLower.includes(kw))) {
-        matched = true;
-      }
+      // Method 1a: Keyword match
+      if (SUB_ITEM_KEYWORDS.some((kw) => itemLower.includes(kw))) matched = true;
 
-      // Method 2: Store + specific item match
+      // Method 1b: Regex match
+      if (!matched && SUB_ITEM_REGEX.some((rx) => rx.test(itemRaw))) matched = true;
+
+      // Method 2: Store + item keyword match
       if (!matched) {
         for (const rule of SUB_STORE_ITEMS) {
           const storeMatch = rule.store.some((s) => shopLower.includes(s));
@@ -185,17 +190,18 @@ export function computeStats(invoices) {
 // Layer 1: Self-anchoring — 用自己的消費做錨點（最有感）
 // Layer 2: Experiential alternative — 體驗型替代（旅行、聚餐、課程）
 // Layer 3: Daily loss frame — 日均損失框架（Loss Aversion + 時間粒度）
-function fmtComparisons(amount, stats) {
+// excludeCat: optional — don't compare savings to the same category being saved
+// e.g., saving on 速食 shouldn't say "= X 次麥當勞"
+function fmtComparisons(amount, stats, excludeCat) {
   const { brands, cats, months, totalAmount, totalDays } = stats;
   const lines = [];
 
   // ── Layer 1: 自我消費錨點 ─────────────────────────────────────────
-  // 「這筆錢 = 你去全聯 X 次大採購」— 用你已經在做的事來比
   const anchors = brands.filter((b) => b.visits >= 5 && !BILL_CATS.includes(b.cat) && b.cat !== "其他")
+    .filter((b) => !excludeCat || b.cat !== excludeCat) // exclude the category being saved
     .map((b) => ({ brand: b.brand, cat: b.cat, avg: Math.round(b.total / b.visits) }))
     .filter((b) => b.avg > 30);
   if (anchors.length > 0) {
-    // Pick one with medium avg (not too cheap, not too expensive) for relatable comparison
     const anchor = anchors.sort((a, b) => Math.abs(a.avg - 200) - Math.abs(b.avg - 200))[0];
     const times = Math.round(amount / anchor.avg);
     if (times >= 2) {
@@ -1906,17 +1912,42 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
             q: "具體可以怎麼省？省多少？",
             a: (() => {
               const strategies = [];
-              const convCatC = cats.find((c) => c.cat === "超商");
-              const marketBrandC = brandsReal.find((b) => ["超市"].includes(STORE_TYPE_MAP[b.brand]));
-              if (convCatC && convCatC.visits >= 10 && marketBrandC) {
-                strategies.push("🏪→🛒 超商品項改在「" + marketBrandC.brand + "」買：同品項省 20-30%，年省 ~$" + fmt(Math.round(convCatC.total / months.length * 12 * 0.25)));
+              // Category-specific advice
+              if (["速食餐點"].includes(tc.cat)) {
+                strategies.push("🍔 速食省法：注意套餐 vs 單點的差價，有時候單點組合比套餐便宜。App 優惠券和集點活動通常可省 10-15%");
+                const appSave = Math.round(tcYearlyC * 0.12);
+                strategies.push("💡 善用 App 優惠券：年省 ~$" + fmt(appSave));
+              } else if (["咖啡"].includes(tc.cat)) {
+                strategies.push("☕ 咖啡省法：同品牌不同店的價差可以到 $20/杯（如全家 vs 路易莎）。自備杯通常折 $3-5");
+                const switchSave = Math.round(tcYearlyC * 0.15);
+                strategies.push("💡 選較平價的品牌或自備杯：年省 ~$" + fmt(switchSave));
+              } else if (["零食/餅乾", "瓶裝飲料"].includes(tc.cat)) {
+                const convCatC = cats.find((c) => c.cat === "超商");
+                const marketBrandC = brandsReal.find((b) => ["超市"].includes(STORE_TYPE_MAP[b.brand]));
+                if (convCatC && marketBrandC) {
+                  strategies.push("🏪→🛒 超商的「" + tc.cat + "」改在「" + marketBrandC.brand + "」買：同品項省 20-30%");
+                }
+                strategies.push("💡 量販包 or 特價時囤貨：年省 ~$" + fmt(Math.round(tcYearlyC * 0.25)));
+              } else if (["乳製品"].includes(tc.cat)) {
+                strategies.push("🥛 乳製品省法：超商鮮奶比超市貴 15-25%。固定品牌可在超市或量販囤貨");
+                strategies.push("💡 改在超市固定採購：年省 ~$" + fmt(Math.round(tcYearlyC * 0.2)));
+              } else if (["美妝保養"].includes(tc.cat)) {
+                strategies.push("💄 美妝省法：注意週年慶和特價檔期，同品牌線上 vs 實體門市可能差 10-20%");
+                strategies.push("💡 集中在特價期採購：年省 ~$" + fmt(Math.round(tcYearlyC * 0.15)));
+              } else {
+                // Generic
+                const convCatC = cats.find((c) => c.cat === "超商");
+                const marketBrandC = brandsReal.find((b) => ["超市"].includes(STORE_TYPE_MAP[b.brand]));
+                if (convCatC && convCatC.visits >= 10 && marketBrandC) {
+                  strategies.push("🏪→🛒 超商品項改在「" + marketBrandC.brand + "」買：同品項省 20-30%");
+                }
+                strategies.push("💡 均價降 10%（$" + avgPerItem + "→$" + Math.round(avgPerItem * 0.9) + "）：年省 $" + fmt(tenPctSave));
               }
               if (tc.freqGrowth > 30) {
-                strategies.push("📉 控制「" + tc.cat + "」的成長（目前 +" + tc.freqGrowth + "%）：回到前期水準可省 ~$" + fmt(Math.round(tc.total * tc.freqGrowth / (100 + tc.freqGrowth) / months.length * 12)));
+                strategies.push("📉 控制成長趨勢（目前 +" + tc.freqGrowth + "%）：回到前期水準可省 ~$" + fmt(Math.round(tc.total * tc.freqGrowth / (100 + tc.freqGrowth) / months.length * 12)));
               }
-              strategies.push("💡 均價降 10%（$" + avgPerItem + "→$" + Math.round(avgPerItem * 0.9) + "）：年省 $" + fmt(tenPctSave));
-              const totalSave = tenPctSave + (convCatC ? Math.round(convCatC.total / months.length * 12 * 0.25) : 0);
-              return "針對你的消費，最有效的省法：\n\n" + strategies.join("\n\n") + "\n\n合理預估年省 $" + fmt(totalSave) + "。不是「少買」，是「換個方式買同一個東西」。\n\n" + fmtComparisons(totalSave, stats);
+              const totalSave = Math.round(tcYearlyC * 0.15); // conservative estimate
+              return "針對你的「" + tc.cat + "」消費：\n\n" + strategies.join("\n\n") + "\n\n保守估計年省 $" + fmt(totalSave) + "。\n\n" + fmtComparisons(totalSave, stats, tc.cat);
             })(),
           },
           {
@@ -1928,7 +1959,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                 let t = "「" + tc.cat + "」均價比較（" + bmC.scope + "）：\n\n• 你：$" + avgPerItem + "/次\n• 其他人平均：$" + bmC.groupAvg + "/次\n• 最精打細算：$" + bmC.groupMin + "/次\n\n";
                 if (diffPct > 10) {
                   const saveable = Math.round(diff * tc.count / months.length * 12);
-                  t += "你高了 " + diffPct + "%。模仿其他人的均價可年省 $" + fmt(saveable) + "。\n\n他們可能的做法：選更平價的品項、善用特價、在較便宜的通路買。\n\n" + fmtComparisons(saveable, stats);
+                  t += "你高了 " + diffPct + "%。模仿其他人的均價可年省 $" + fmt(saveable) + "。\n\n他們可能的做法：選更平價的品項、善用特價、在較便宜的通路買。\n\n" + fmtComparisons(saveable, stats, tc.cat);
                 } else if (diffPct < -10) {
                   t += "你比別人省 " + Math.abs(diffPct) + "%！你在這個品類已經是精打細算的消費者。\n\n可以把同樣的選購策略套到其他品類上。";
                 } else {
