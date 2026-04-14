@@ -1156,6 +1156,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // Dynamic category analysis — picks the most "interesting" category
   // using composite score: amount × frequency^0.3 × growth_boost
   let topCatResult = null;
+  let catScored = [];
+  let totalItemSpend = 0;
   if (hasItems) {
     const nonDeliveryInvoices = invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop));
     const itemCats = aggregateItemCategories(nonDeliveryInvoices);
@@ -1177,7 +1179,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
 
     // Score each category
-    const catScored = meaningfulCats.filter((c) => c.count >= 3).map((c) => {
+    catScored = meaningfulCats.filter((c) => c.count >= 3).map((c) => {
       const g = catGrowth[c.cat] || { first: 0, second: 0 };
       const freqGrowth = g.first > 0 ? Math.round(((g.second - g.first) / g.first) * 100) : (g.second > 0 ? 999 : 0);
       let boost = 1.0;
@@ -1189,7 +1191,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
     topCatResult = catScored[0];
     const topItem = topCatResult ? topCatResult.items[0] : null;
-    const totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
+    totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
     const score = 82 + Math.min(catScored.length, 10);
 
     if (topCatResult && topCatResult.count >= 5) {
