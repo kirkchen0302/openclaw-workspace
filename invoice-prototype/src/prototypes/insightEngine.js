@@ -1190,105 +1190,55 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
           tip: "「" + tc.cat + "」佔了 " + (totalItemSpend > 0 ? Math.round(tc.total / totalItemSpend * 100) : 0) + "% 的品項消費" + (tc.freqGrowth > 30 ? "，而且成長 " + tc.freqGrowth + "%——這個趨勢值得注意。" : "。") + (topItem ? " 你買最多的是「" + topItem.name.slice(0, 15) + "」（" + topItem.count + " 次）。" : ""),
           followups: [
             {
-              q: (() => {
-                // Find the store where this top category is bought most
-                const catShops = {};
-                nonDeliveryInvoices.forEach((inv) => {
-                  (inv.items || []).forEach((it) => {
-                    if (classifyItem(it.name) === tc.cat) {
-                      catShops[inv.shop] = (catShops[inv.shop] || 0) + (it.qty || 1);
-                    }
-                  });
-                });
-                const topCatShop = Object.entries(catShops).sort((a, b) => b[1] - a[1])[0];
-                return topCatShop ? "我在「" + topCatShop[0] + "」都買了哪些「" + tc.cat + "」？" : "我的「" + tc.cat + "」都在哪買的？";
-              })(),
+              q: "這個花費有在增加嗎？一年要花多少？",
               a: (() => {
-                // Find the store where this category is bought most
-                const catShops = {};
-                nonDeliveryInvoices.forEach((inv) => {
-                  (inv.items || []).forEach((it) => {
-                    if (classifyItem(it.name) === tc.cat) {
-                      catShops[inv.shop] = (catShops[inv.shop] || 0) + (it.qty || 1);
-                    }
-                  });
-                });
-                const topCatShop = Object.entries(catShops).sort((a, b) => b[1] - a[1])[0];
-                const topShop = topCatShop ? topCatShop[0] : brandsReal[0]?.brand;
-                if (!topShop) return "資料不足。";
-                const shopInvs = invoices.filter((inv) => inv.shop === topShop || resolveShop(inv.shop).brand === topShop);
-                const shopItems = {};
-                shopInvs.forEach((inv) => {
-                  (inv.items || []).forEach((item) => {
-                    const n = item.name;
-                    if (!shopItems[n]) shopItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
-                    shopItems[n].count += item.qty || 1;
-                    shopItems[n].total += item.price || 0;
-                  });
-                });
-                const sorted = Object.values(shopItems).sort((a, b) => b.count - a.count).slice(0, 8);
-                if (!sorted.length) return "這個通路的品項明細不夠多。";
-                return "你在「" + topShop + "」最常買的：\n\n" + sorted.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n");
+                const trendTxt = tc.freqGrowth > 30 ? "是的，成長了 +" + tc.freqGrowth + "%——頻率在明顯增加。" : tc.freqGrowth > 0 ? "有小幅增加（+" + tc.freqGrowth + "%），趨勢緩慢上升。" : tc.freqGrowth < -10 ? "其實在減少中（" + tc.freqGrowth + "%），你有在控制。" : "大致穩定，沒有明顯增減。";
+                const avgPerItem = tc.count > 0 ? Math.round(tc.total / tc.count) : 0;
+                return "「" + tc.cat + "」趨勢分析：\n\n" + trendTxt + "\n\n📊 " + tc.count + " 次消費，均 $" + avgPerItem + "/次\n📊 累計 $" + fmt(Math.round(tc.total)) + "\n📊 年化 $" + fmt(tcYearly) + "\n\n" + fmtComparisons(tcYearly, stats);
               })(),
               followups: [
                 {
-                  q: "有沒有每次都會買的「固定班底」？",
+                  q: "這樣的花費合理嗎？",
                   a: (() => {
-                    const allItems = {};
-                    invoices.forEach((inv) => {
-                      (inv.items || []).forEach((item) => {
-                        const n = item.name;
-                        if (!allItems[n]) allItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
-                        allItems[n].count += item.qty || 1;
-                        allItems[n].total += item.price || 0;
-                      });
-                    });
-                    const regulars = Object.values(allItems).filter((it) => it.count >= 5 && it.cat !== "其他" && it.cat !== "外送服務費").sort((a, b) => b.count - a.count).slice(0, 6);
-                    if (!regulars.length) return "沒有特別高頻的固定品項。";
-                    const yearTotal = regulars.reduce((s, it) => s + Math.round(it.total / months.length * 12), 0);
-                    return "你的「固定班底」——買超過 5 次的品項：\n\n" + regulars.map((it) => itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次，年化 $" + fmt(Math.round(it.total / months.length * 12)) + "）").join("\n") + "\n\n這些固定品項一年合計約 $" + fmt(yearTotal) + "。";
+                    const daily = Math.round(tc.total / totalDays);
+                    const monthlyAvg = Math.round(tc.total / months.length);
+                    const pctOfTotal = totalAmount > 0 ? Math.round(tc.total / totalAmount * 100) : 0;
+                    return "「" + tc.cat + "」佔你總消費的 " + pctOfTotal + "%。\n\n• 每月約 $" + fmt(monthlyAvg) + "\n• 每天約 $" + daily + "\n\n" + (pctOfTotal > 20 ? "佔比超過 20%——這是你消費的大頭，值得特別留意。" : pctOfTotal > 10 ? "佔比中等，屬於你的核心消費之一。" : "佔比不算高，在合理範圍內。") + (tc.freqGrowth > 50 ? "\n\n但成長速度偏快（+" + tc.freqGrowth + "%），如果不注意可能會持續膨脹。" : "");
                   })(),
                 },
                 {
-                  q: "哪些品項的錢花最多？",
+                  q: "跟其他品類比起來呢？",
                   a: (() => {
-                    const allItems = {};
-                    invoices.forEach((inv) => {
-                      (inv.items || []).forEach((item) => {
-                        const n = item.name;
-                        if (!allItems[n]) allItems[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
-                        allItems[n].count += item.qty || 1;
-                        allItems[n].total += item.price || 0;
-                      });
-                    });
-                    const bySpend = Object.values(allItems).filter((it) => it.cat !== "其他" && it.cat !== "外送服務費").sort((a, b) => b.total - a.total).slice(0, 6);
-                    return "花費最高的品項：\n\n" + bySpend.map((it, i) => (i + 1) + ". " + it.name + "：$" + fmt(Math.round(it.total)) + "（" + it.count + " 次，" + it.cat + "）").join("\n");
+                    return "你的品類花費排行：\n\n" + catScored.slice(0, 5).map((c, i) => {
+                      const pct = totalItemSpend > 0 ? Math.round(c.total / totalItemSpend * 100) : 0;
+                      const trend = c.freqGrowth > 30 ? " 📈+" + c.freqGrowth + "%" : c.freqGrowth < -10 ? " 📉" + c.freqGrowth + "%" : "";
+                      return (i + 1) + ". " + itemCatIcon(c.cat) + " " + c.cat + "：$" + fmt(Math.round(c.total)) + "（" + pct + "%）" + trend;
+                    }).join("\n") + "\n\n" + (catScored[0].cat === tc.cat ? "「" + tc.cat + "」是你花最多的品類。" : "");
                   })(),
                 },
               ],
             },
             {
-              q: (() => {
-                const second = catScored[1];
-                return second ? "那「" + second.cat + "」呢？花了多少？" : "其他品類花了多少？";
-              })(),
+              q: "跟別人比，我的「" + tc.cat + "」算多嗎？",
               a: (() => {
-                const second = catScored[1];
-                if (!second) return "其他品類的消費不多。";
-                const yearly = Math.round(second.total / months.length * 12);
-                const growthTxt = second.freqGrowth > 30 ? "（成長 +" + second.freqGrowth + "%）" : second.freqGrowth < -10 ? "（下降 " + second.freqGrowth + "%）" : "";
-                return "你的「" + second.cat + "」：\n\n" + itemCatIcon(second.cat) + " " + second.count + " 次 $" + fmt(Math.round(second.total)) + " " + growthTxt + "\n\n最常買的：\n" + second.items.slice(0, 5).map((it) => "• " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n") + "\n\n年化 $" + fmt(yearly) + "。";
+                // Find benchmark for this category
+                const bmKey = Object.keys(GROUP_BENCHMARKS).find((k) => GROUP_BENCHMARKS[k].cat === tc.cat);
+                const bm = bmKey ? GROUP_BENCHMARKS[bmKey] : null;
+                const avgPerItem = tc.count > 0 ? Math.round(tc.total / tc.count) : 0;
+                if (bm) {
+                  const diff = avgPerItem - bm.groupAvg;
+                  const diffPct = bm.groupAvg > 0 ? Math.round(diff / bm.groupAvg * 100) : 0;
+                  return "「" + tc.cat + "」均價比較（" + bm.scope + "）：\n\n• 你的均價：$" + avgPerItem + "/次\n• 其他人均價：$" + bm.groupAvg + "/次\n• " + (diffPct > 10 ? "你偏高 " + diffPct + "%——可能選了更貴的品項。" : diffPct < -10 ? "你比別人省 " + Math.abs(diffPct) + "%——買得精打細算！" : "跟別人差不多，在合理範圍。");
+                }
+                return "「" + tc.cat + "」你的均價是 $" + avgPerItem + "/次，共 " + tc.count + " 次。\n\n這個品類的花費因個人選擇差異大，不一定有標準答案——但知道自己花了多少是第一步。";
               })(),
               followups: [
                 {
-                  q: (() => {
-                    const third = catScored[2];
-                    return third ? "「" + third.cat + "」也不少？" : "還有什麼品類值得看？";
-                  })(),
+                  q: "有什麼方法可以在這個品類省錢？",
                   a: (() => {
-                    const third = catScored[2];
-                    if (!third) return "其他品類的消費比較分散。";
-                    return "「" + third.cat + "」：" + third.count + " 次 $" + fmt(Math.round(third.total)) + (third.freqGrowth > 30 ? "（成長 +" + third.freqGrowth + "%）" : "") + "\n\n常買：" + third.items.slice(0, 3).map((it) => it.name).join("、");
+                    const avgPerItem = tc.count > 0 ? Math.round(tc.total / tc.count) : 0;
+                    const tenPctSave = Math.round(tcYearly * 0.1);
+                    return "在「" + tc.cat + "」省錢的方式：\n\n1️⃣ 選擇同品類中較平價的替代品項\n2️⃣ 超商品改在超市買，通常省 20-30%\n3️⃣ 注意促銷或量販裝\n\n如果均價降低 10%：年省 $" + fmt(tenPctSave) + "\n\n" + fmtComparisons(tenPctSave, stats);
                   })(),
                 },
                 {
@@ -1296,7 +1246,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                   a: (() => {
                     const growing = catScored.filter((c) => c.freqGrowth > 20).sort((a, b) => b.freqGrowth - a.freqGrowth);
                     if (!growing.length) return "各品類的消費都相對穩定。";
-                    return "成長最快的品類：\n\n" + growing.slice(0, 3).map((c) => itemCatIcon(c.cat) + " " + c.cat + "：+" + c.freqGrowth + "%（" + c.count + " 次 $" + fmt(Math.round(c.total)) + "）").join("\n");
+                    return "成長最快的品類：\n\n" + growing.slice(0, 3).map((c) => itemCatIcon(c.cat) + " " + c.cat + "：+" + c.freqGrowth + "%（" + c.count + " 次 $" + fmt(Math.round(c.total)) + "）").join("\n") + "\n\n" + (growing[0].freqGrowth > 100 ? "「" + growing[0].cat + "」的成長速度驚人——這是一個正在快速養成的消費習慣。" : "");
                   })(),
                 },
               ],
