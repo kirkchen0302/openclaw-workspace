@@ -1800,97 +1800,91 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   }
 
   // ── COMBINED HOOKS (v2 — 3 fixed hooks) ──────────────────────────
-  // Hook A: 重複/訂閱花費 (merge autopay + subscription)
+  // Hook A: 訂閱 + 重複消費（分開呈現，追問各自獨立）
   if (hasItems && (habitItems.length >= 3 || userSubs.length >= 1)) {
-    const allRecurring = [];
-    // Add repeat purchase items
-    habitItems.slice(0, 8).forEach((it) => allRecurring.push({ type: "habit", name: it.name.slice(0, 18), count: it.count, total: Math.round(it.total), shop: it.shop, cat: it.cat }));
-    // Add formal subscriptions
-    userSubs.forEach((s) => allRecurring.push({ type: "sub", name: s.item.slice(0, 18), count: s.count, total: Math.round(s.price * months.length), shop: s.shop, cat: "訂閱" }));
-    const recurTotal = allRecurring.reduce((s, r) => s + r.total, 0);
-    const recurYearly = Math.round(recurTotal / months.length * 12);
+    const habitTotal = habitItems.reduce((s, it) => s + it.total, 0);
+    const habitYearlyH = Math.round(habitTotal / months.length * 12);
+    const subYearly = Math.round(userSubs.reduce((s, sub) => s + sub.price, 0) * 12);
+    const combinedYearly = habitYearlyH + subYearly;
+
+    // Build ranks: subscriptions first, then repeat items
+    const ranks = [];
+    userSubs.forEach((s) => ranks.push({ rank: "📱", name: s.shop.slice(0, 12), freq: "$" + fmt(Math.round(s.price)) + "/月", note: s.item.slice(0, 20) + "（訂閱）" }));
+    habitItems.slice(0, Math.max(6 - userSubs.length, 3)).forEach((it) => ranks.push({ rank: itemCatIcon(it.cat), name: it.name.slice(0, 15), freq: it.count + " 次", note: "共$" + fmt(Math.round(it.total)) + "（重複購買）" }));
 
     candidates.push({
       type: "recurring", score: 96,
       hook: {
         id: "recurring",
-        q: "我的重複消費和訂閱花了多少？",
-        big: "$" + fmt(recurYearly) + "/年",
-        bigSub: "你的重複購買品項 + 訂閱服務，一年累計這個數字",
-        body: "有些花費你每次不覺得多，但因為一直重複，累積起來很驚人：",
-        ranks: allRecurring.slice(0, 6).map((r) => ({
-          rank: r.type === "sub" ? "📱" : itemCatIcon(r.cat),
-          name: r.name,
-          freq: r.count + (r.type === "sub" ? "期" : "次"),
-          note: "共$" + fmt(r.total) + " @" + r.shop,
-        })),
-        tip: "這些「自動化消費」年化 $" + fmt(recurYearly) + "。每一筆看起來不多，但加在一起比你想的驚人。\n\n" + fmtComparisons(recurYearly, stats),
+        q: "我的訂閱和重複消費花了多少？",
+        big: "$" + fmt(combinedYearly) + "/年",
+        bigSub: (userSubs.length > 0 ? userSubs.length + " 個訂閱 + " : "") + habitItems.length + " 個重複品項，一年累計這個數字",
+        body: (() => {
+          let t = "";
+          if (userSubs.length > 0) t += "📱 訂閱服務：" + userSubs.length + " 個，年花 $" + fmt(subYearly) + "\n";
+          t += "🔄 重複購買：" + habitItems.length + " 個品項，年花 $" + fmt(habitYearlyH) + "\n\n";
+          t += "訂閱是你知道在付的，重複消費是你不知不覺在買的——兩者加起來：";
+          return t;
+        })(),
+        ranks,
+        tip: "訂閱 $" + fmt(subYearly) + "/年 + 重複消費 $" + fmt(habitYearlyH) + "/年 = $" + fmt(combinedYearly) + "/年。\n\n" + fmtComparisons(combinedYearly, stats),
         followups: [
           {
-            q: "哪些可以優化或調整？",
+            q: userSubs.length > 0 ? "我的 " + userSubs.length + " 個訂閱值得嗎？年花多少？" : "訂閱花費怎麼看？",
             a: (() => {
-              const optimizable = [];
-              // Subscriptions — check if worth keeping
-              userSubs.forEach((s) => optimizable.push({ icon: "📱", name: s.shop + " " + s.item.slice(0, 15), action: "問自己：上個月用了幾次？答不出來就值得暫停", yearly: Math.round(s.price * 12) }));
-              // Habit items in snack/drink — can switch to cheaper
-              habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "茶飲"].includes(it.cat)).slice(0, 3).forEach((it) => optimizable.push({ icon: itemCatIcon(it.cat), name: it.name.slice(0, 15), action: "超商改超市同款可省 20-30%", yearly: Math.round(it.total / months.length * 12 * 0.25) }));
-              // Coffee habit — self-brew option
-              const coffeeHabit = habitItems.find((it) => it.cat === "咖啡");
-              if (coffeeHabit) optimizable.push({ icon: "☕", name: coffeeHabit.name.slice(0, 15), action: "自備咖啡每次省 $30-50", yearly: Math.round(coffeeHabit.total / months.length * 12 * 0.4) });
-              if (!optimizable.length) return "你的重複消費大部分看起來是必要的日常需求。";
-              const totalSave = optimizable.reduce((s, o) => s + o.yearly, 0);
-              return "可以優化的項目：\n\n" + optimizable.slice(0, 5).map((o) => o.icon + " " + o.name + "\n  → " + o.action + "\n  → 年省 ~$" + fmt(o.yearly)).join("\n\n") + "\n\n全部優化可年省 ~$" + fmt(totalSave) + "。\n\n" + fmtComparisons(totalSave, stats);
+              if (userSubs.length === 0) return "你目前沒有偵測到正式的訂閱服務。如果你有 Netflix、Spotify 等訂閱但發票沒出現，可能是透過信用卡扣款，不會出現在載具發票中。";
+              return "你的訂閱年度帳單：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 = $" + fmt(Math.round(s.price * 12)) + "/年\n  " + s.item.slice(0, 30)).join("\n\n") + "\n\n訂閱合計：$" + fmt(subYearly) + "/年\n\n每個訂閱問自己：「上個月用了幾次？如果今天才看到這服務，我還會訂嗎？」";
             })(),
             followups: [
               {
-                q: "最無痛的第一步是什麼？",
+                q: "哪個訂閱最值得重新評估？",
                 a: (() => {
-                  if (userSubs.length > 0) return "最無痛的一步：檢視你的訂閱。\n\n每個訂閱問自己：「如果今天才看到這個服務，我還會訂嗎？」\n\n如果猶豫超過 3 秒，就先暫停一個月試試。沒影響的就不用恢復了。";
-                  return "從最高頻的超商消費開始——同樣的飲料零食，在超市買省 20-30%。你已經固定去超市了，多帶幾樣就好。";
+                  if (userSubs.length === 0) return "目前沒有偵測到訂閱。";
+                  const most = userSubs[0];
+                  return "最值得檢視的是「" + most.shop + "」$" + fmt(Math.round(most.price)) + "/月（年 $" + fmt(Math.round(most.price * 12)) + "）。\n\n因為它是你最貴的訂閱。\n\n如果暫停一個月沒有影響生活，就不用恢復了。省下的 $" + fmt(Math.round(most.price * 12)) + "/年可以：\n\n" + fmtComparisons(Math.round(most.price * 12), stats);
                 })(),
               },
               {
-                q: "不調整的話，未來會怎樣？",
+                q: "全部訂閱暫停能省多少？",
                 a: (() => {
-                  const twoYear = Math.round(recurYearly * 2.1); // slight growth
-                  return "如果維持目前的重複消費模式：\n\n• 一年：$" + fmt(recurYearly) + "\n• 兩年：~$" + fmt(twoYear) + "（考慮微幅成長）\n\n" + fmtComparisons(twoYear, stats) + "\n\n不是要你都不買——而是知道這個數字後，你可以有意識地決定哪些值得保留。";
+                  if (subYearly === 0) return "目前沒有偵測到訂閱費用。";
+                  return "全部暫停 = 年省 $" + fmt(subYearly) + "。\n\n" + fmtComparisons(subYearly, stats) + "\n\n當然不是全砍——但定期檢視確保每一筆都值得。";
                 })(),
               },
             ],
           },
           {
-            q: "一年下來都花在哪些上面？",
+            q: "我不知不覺重複在買的有哪些？",
             a: (() => {
-              const byCat = {};
-              allRecurring.forEach((r) => {
-                const cat = r.type === "sub" ? "📱 訂閱服務" : itemCatIcon(r.cat) + " " + r.cat;
-                if (!byCat[cat]) byCat[cat] = { total: 0, count: 0 };
-                byCat[cat].total += r.total;
-                byCat[cat].count++;
-              });
-              const sorted = Object.entries(byCat).sort((a, b) => b[1].total - a[1].total);
-              return "你的重複消費年度帳單：\n\n" + sorted.map(([cat, d]) => cat + "：$" + fmt(Math.round(d.total / months.length * 12)) + "/年（" + d.count + " 項）").join("\n") + "\n\n年度總計：$" + fmt(recurYearly) + "\n\n" + fmtComparisons(recurYearly, stats);
+              if (habitItems.length === 0) return "你的消費比較隨機，沒有明顯重複品項。";
+              const keep = habitItems.filter((it) => ["乳製品", "咖啡", "生鮮蔬果", "生鮮肉品"].includes(it.cat)).slice(0, 3);
+              const review = habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "速食餐點", "茶飲"].includes(it.cat)).slice(0, 3);
+              let t = "你有 " + habitItems.length + " 個品項買了 3 次以上，年花 $" + fmt(habitYearlyH) + "：\n\n";
+              t += habitItems.slice(0, 5).map((it) => itemCatIcon(it.cat) + " " + it.name.slice(0, 15) + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n") + "\n\n";
+              if (keep.length) t += "✅ 值得保留：" + keep.map((it) => it.name.slice(0, 10)).join("、") + "（健康/營養）\n";
+              if (review.length) t += "🤔 可以想想：" + review.map((it) => it.name.slice(0, 10)).join("、") + "（是真的想要還是順手買？）";
+              return t;
             })(),
             followups: [
               {
-                q: "哪一類佔最多？",
+                q: "這些重複消費可以怎麼優化？",
                 a: (() => {
-                  const topCatRecur = {};
-                  allRecurring.forEach((r) => {
-                    const cat = r.type === "sub" ? "訂閱服務" : r.cat;
-                    if (!topCatRecur[cat]) topCatRecur[cat] = 0;
-                    topCatRecur[cat] += r.total;
-                  });
-                  const top = Object.entries(topCatRecur).sort((a, b) => b[1] - a[1])[0];
-                  if (!top) return "各類別的重複消費分佈平均。";
-                  const yearly = Math.round(top[1] / months.length * 12);
-                  const pct = recurTotal > 0 ? Math.round(top[1] / recurTotal * 100) : 0;
-                  return "「" + top[0] + "」佔了你重複消費的 " + pct + "%，年花 $" + fmt(yearly) + "。\n\n這是你消費中最「自動化」的部分——不是壞事，但值得定期檢視。";
+                  const optimizable = [];
+                  habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "茶飲"].includes(it.cat)).slice(0, 3).forEach((it) => optimizable.push({ icon: itemCatIcon(it.cat), name: it.name.slice(0, 15), save: Math.round(it.total / months.length * 12 * 0.25) }));
+                  const coffeeH = habitItems.find((it) => it.cat === "咖啡");
+                  if (coffeeH) optimizable.push({ icon: "☕", name: coffeeH.name.slice(0, 15), save: Math.round(coffeeH.total / months.length * 12 * 0.3) });
+                  if (!optimizable.length) return "你的重複消費大多是日常需求，優化空間有限。";
+                  const totalSave = optimizable.reduce((s, o) => s + o.save, 0);
+                  return "可優化的重複消費：\n\n" + optimizable.map((o) => o.icon + " " + o.name + "：超商改超市或注意特價 → 年省 $" + fmt(o.save)).join("\n") + "\n\n合計年省 $" + fmt(totalSave) + "。不用少買，換個買法就好。";
                 })(),
               },
               {
-                q: "跟別人比，我的重複消費算多嗎？",
-                a: "每個人的生活方式不同，所以沒有絕對的「多或少」。\n\n但一個參考值：你的重複消費佔總消費的 " + (totalAmount > 0 ? Math.round(recurTotal / totalAmount * 100) : 0) + "%。\n\n" + (recurTotal / totalAmount > 0.3 ? "超過 30%——代表你的消費高度自動化，值得檢視哪些是「真的需要」vs「只是習慣」。" : "在合理範圍內。"),
+                q: "哪些是我沒意識到一直在買的？",
+                a: (() => {
+                  const hidden = habitItems.slice(3, 10);
+                  if (!hidden.length) return "你的重複品項不多，消費比較隨機。";
+                  return "你可能沒注意到自己一直在買：\n\n" + hidden.map((it) => itemCatIcon(it.cat) + " " + it.name.slice(0, 18) + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）@" + it.shop).join("\n") + "\n\n這些不是大筆消費，但因為太自動化了你根本不會注意到。";
+                })(),
               },
             ],
           },
