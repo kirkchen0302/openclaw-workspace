@@ -922,9 +922,22 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   let habitItems = [];
   let habitMonthly = 0;
   let habitYearly = 0;
+  // Stores where items are "per-plate/per-unit" — should count by VISIT not item count
+  const PER_PLATE_STORES = ["爭鮮", "藏壽司", "壽司郎", "くら寿司", "スシロー"];
+  function isPerPlateStore(shop) { return PER_PLATE_STORES.some((s) => (shop || "").includes(s)); }
+
   if (hasItems) {
     const repeatItems = {};
+    const perPlateVisits = {}; // track per-plate stores separately by visit
     invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
+      // Per-plate stores: count as one visit, not individual plates
+      if (isPerPlateStore(inv.shop)) {
+        const key = "_store_" + inv.shop;
+        if (!perPlateVisits[key]) perPlateVisits[key] = { name: inv.shop, count: 0, total: 0, cat: "餐飲", shop: inv.shop };
+        perPlateVisits[key].count++; // count by invoice = visit
+        perPlateVisits[key].total += inv.amount || 0;
+        return;
+      }
       (inv.items || []).forEach((it) => {
         const cat = classifyItem(it.name);
         if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費" || cat === "訂閱服務") return;
@@ -933,7 +946,10 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         repeatItems[it.name].total += it.price || 0;
       });
     });
-    habitItems = Object.values(repeatItems).filter((it) => it.count >= 3).sort((a, b) => b.total - a.total);
+    // Merge: regular repeat items + per-plate store visits
+    const allRepeat = Object.values(repeatItems).filter((it) => it.count >= 3);
+    const perPlateRepeat = Object.values(perPlateVisits).filter((it) => it.count >= 2);
+    habitItems = [...allRepeat, ...perPlateRepeat].sort((a, b) => b.total - a.total);
     habitMonthly = Math.round(habitItems.reduce((s, it) => s + it.total, 0) / Math.max(months.length, 1));
     habitYearly = habitMonthly * 12;
 
