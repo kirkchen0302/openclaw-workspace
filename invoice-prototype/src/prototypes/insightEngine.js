@@ -10,6 +10,22 @@ const fmt = (n) => n.toLocaleString();
 const catIcon = (cat) => ({ "外送": "🛵", "速食": "🍔", "超商": "🏪", "超市": "🛒", "咖啡": "☕", "飲料": "🧋", "餐飲": "🍽", "網購": "📦", "美妝": "💄", "訂閱": "📱", "加油": "⛽", "量販": "🛒", "百貨": "🏬", "停車": "🅿️", "電影娛樂": "🎬", "運動": "💪" }[cat] || "📌");
 const itemCatIcon = (cat) => ({ "咖啡": "☕", "茶飲": "🍵", "手搖飲": "🧋", "瓶裝飲料": "🥤", "乳製品": "🥛", "速食餐點": "🍔", "便當/正餐": "🍱", "麵包/烘焙": "🍞", "零食/餅乾": "🍪", "滷味/小食": "🥚", "生鮮蔬果": "🥬", "生鮮肉品": "🥩", "衛生紙/面紙": "🧻", "洗髮/沐浴": "🧴", "美妝保養": "💄", "生理用品": "🩹", "外送服務費": "🛵", "訂閱服務": "📱", "加油": "⛽" }[cat] || "📦");
 
+// Group benchmarks — average prices from 9 test users by category × store type
+const GROUP_BENCHMARKS = {
+  "咖啡@超商": { cat: "咖啡", storeType: "超商", groupAvg: 43, groupMin: 35, groupMax: 65, users: 9 },
+  "飲料@超商": { cat: "飲料", storeType: "超商", groupAvg: 30, groupMin: 24, groupMax: 36, users: 8 },
+  "飲料@超市": { cat: "飲料", storeType: "超市", groupAvg: 55, groupMin: 40, groupMax: 80, users: 8 },
+  "飲料@速食": { cat: "飲料", storeType: "速食", groupAvg: 38, groupMin: 29, groupMax: 47, users: 6 },
+  "零食@超商": { cat: "零食", storeType: "超商", groupAvg: 42, groupMin: 24, groupMax: 55, users: 5 },
+  "零食@超市": { cat: "零食", storeType: "超市", groupAvg: 51, groupMin: 40, groupMax: 65, users: 4 },
+  "鮮食@超商": { cat: "鮮食", storeType: "超商", groupAvg: 48, groupMin: 36, groupMax: 62, users: 8 },
+};
+const STORE_TYPE_MAP = {
+  "7-11": "超商", "全家": "超商", "萊爾富": "超商",
+  "全聯": "超市", "家樂福便利購": "超市", "美廉社": "超市",
+  "麥當勞": "速食", "肯德基": "速食", "摩斯漢堡": "速食",
+};
+
 // Exclude bill-type categories from "surprise" insights
 const BILL_CATS = ["電費", "水費", "瓦斯費", "電信費", "網路"];
 const PLATFORM_FEE_THRESHOLD = 50; // avg < $50 likely platform fee only
@@ -1337,6 +1353,141 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
   }
 
+  // ── Type: BENCHMARK ────────────────────────────────────────────────
+  // "Other users buy the same thing differently" — social comparison
+  let bmResults = [];
+  if (hasItems) {
+    const cofKw = ["咖啡","美式","拿鐵","摩卡","卡布"];
+    const drkKw = ["茶","奶茶","豆漿","優格","優酪","可樂","雪碧","氣泡水","鮮乳","LP33","果汁"];
+    const snkKw = ["餅乾","洋芋片","樂事","多力多滋","品客","口香糖","巧克力","糖果"];
+    const mealKw = ["飯糰","三明治","便當","涼麵","餐盒"];
+    function bmCat(name) {
+      const l = (name||"").toLowerCase();
+      for (const k of cofKw) if (l.includes(k)) return "咖啡";
+      for (const k of drkKw) if (l.includes(k)) return "飲料";
+      for (const k of snkKw) if (l.includes(k)) return "零食";
+      for (const k of mealKw) if (l.includes(k)) return "鮮食";
+      return null;
+    }
+
+    // Calculate user's own category averages by store type
+    const userCatStore = {};
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
+      const st = STORE_TYPE_MAP[inv.shop];
+      if (!st) return;
+      (inv.items || []).forEach((it) => {
+        const cat = bmCat(it.name);
+        if (!cat) return;
+        const key = cat + "@" + st;
+        if (!userCatStore[key]) userCatStore[key] = { count: 0, total: 0 };
+        userCatStore[key].count += it.qty || 1;
+        userCatStore[key].total += it.price || 0;
+      });
+    });
+
+    // Compare with group benchmarks
+    bmResults = [];
+    Object.entries(userCatStore).forEach(([key, ud]) => {
+      if (ud.count < 3) return;
+      const bm = GROUP_BENCHMARKS[key];
+      if (!bm) return;
+      const userAvg = Math.round(ud.total / ud.count);
+      const diff = userAvg - bm.groupAvg;
+      const diffPct = Math.round(diff / bm.groupAvg * 100);
+      bmResults.push({ key, cat: bm.cat, storeType: bm.storeType, userAvg, groupAvg: bm.groupAvg, groupMin: bm.groupMin, groupMax: bm.groupMax, diff, diffPct, count: ud.count, total: Math.round(ud.total), users: bm.users });
+    });
+    bmResults.sort((a, b) => Math.abs(b.diffPct) - Math.abs(a.diffPct));
+
+    const overpaying = bmResults.filter((b) => b.diffPct > 10);
+    const underpaying = bmResults.filter((b) => b.diffPct < -10);
+
+    if (bmResults.length >= 2) {
+      const topDiff = bmResults[0];
+      const score = 88 + Math.min(Math.abs(topDiff.diffPct), 10);
+
+      candidates.push({
+        type: "benchmark", score,
+        hook: {
+          id: "benchmark",
+          q: "同樣的東西，別人怎麼買？",
+          big: (topDiff.diffPct > 0 ? "+" : "") + topDiff.diffPct + "%",
+          bigSub: "你在" + topDiff.storeType + "買「" + topDiff.cat + "」均 $" + topDiff.userAvg + "，其他人均 $" + topDiff.groupAvg,
+          body: "我們比對了其他用戶在相同通路類型購買相同品類的價格。以下是你跟大家的差異：",
+          ranks: bmResults.slice(0, 5).map((b) => ({
+            rank: b.diffPct > 10 ? "⬆️" : b.diffPct < -10 ? "✅" : "➡️",
+            name: b.cat + "@" + b.storeType,
+            freq: "你 $" + b.userAvg + " vs 均 $" + b.groupAvg,
+            note: b.diffPct > 10 ? "你偏高 " + b.diffPct + "%" : b.diffPct < -10 ? "你更省 " + Math.abs(b.diffPct) + "%" : "差不多",
+          })),
+          tip: (() => {
+            if (overpaying.length > 0 && underpaying.length > 0) {
+              return "你在「" + underpaying[0].cat + "@" + underpaying[0].storeType + "」買得比別人精——但在「" + overpaying[0].cat + "@" + overpaying[0].storeType + "」花得比別人多。你已經會省了，只要把同樣的方法套到其他品類。";
+            } else if (overpaying.length > 0) {
+              return "你在幾個品類的花費高於其他人。不一定要改——但知道差距在哪，你可以自己決定。";
+            }
+            return "你的消費跟其他人相比大致合理，甚至在某些品類更精打細算。";
+          })(),
+          followups: [
+            {
+              q: overpaying.length > 0 ? "我在哪裡花得比別人多？" : "我跟別人比得怎麼樣？",
+              a: (() => {
+                if (overpaying.length === 0) return "你的各品類消費都在平均值附近或更低，整體買得很精打細算！";
+                return "你花得比別人多的品類：\n\n" + overpaying.map((b) => {
+                  const yearExtra = Math.round(b.diff * b.count / months.length * 12);
+                  return "⬆️ " + b.cat + " @ " + b.storeType + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（+" + b.diffPct + "%）\n  " + b.count + " 次買下來，一年多花 ~$" + fmt(yearExtra);
+                }).join("\n\n") + "\n\n這不是說你買錯了——可能你選了更好的品項。但差距值得知道。";
+              })(),
+              followups: [
+                {
+                  q: "怎麼做到跟別人一樣省？",
+                  a: (() => {
+                    if (overpaying.length === 0) return "你已經做得很好了！";
+                    const top = overpaying[0];
+                    const yearSave = Math.round(top.diff * top.count / months.length * 12);
+                    return "以「" + top.cat + " @ " + top.storeType + "」為例：\n\n你均 $" + top.userAvg + "，其他人均 $" + top.groupAvg + "。\n\n其他人可能：\n• 選擇了同品類中更平價的品項\n• 善用特價或會員優惠\n• 買較小容量/份量\n\n如果回到平均水準，一年可省 ~$" + fmt(yearSave) + "。\n\n" + fmtComparisons(yearSave, stats);
+                  })(),
+                },
+                {
+                  q: "差距最大的是什麼品項？",
+                  a: (() => {
+                    if (overpaying.length === 0) return "沒有明顯偏高的品類。";
+                    const top = overpaying[0];
+                    return "差距最大的是「" + top.cat + "」在「" + top.storeType + "」：\n\n• 你的均價：$" + top.userAvg + "\n• 其他人均價：$" + top.groupAvg + "\n• 最低的人只要：$" + top.groupMin + "\n\n差了 " + top.diffPct + "%。" + (top.count >= 10 ? "而且你買了 " + top.count + " 次，累積下來差距不小。" : "");
+                  })(),
+                },
+              ],
+            },
+            {
+              q: "我有比別人更會買的地方嗎？",
+              a: (() => {
+                if (underpaying.length === 0) return "你的各品類消費都在平均附近，沒有特別突出的省錢項目——但也沒有明顯偏高的。";
+                return "你比別人精的品類：\n\n" + underpaying.map((b) => "✅ " + b.cat + " @ " + b.storeType + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（你省 " + Math.abs(b.diffPct) + "%）").join("\n\n") + "\n\n" + (underpaying.length >= 2 ? "你在這些品類的消費精準度高於其他人——值得肯定！" : "在這個品類你確實比別人會挑。");
+              })(),
+              followups: [
+                {
+                  q: "我的省錢方法可以套用到哪？",
+                  a: (() => {
+                    if (underpaying.length === 0 || overpaying.length === 0) return "目前各品類都差不多，繼續保持。";
+                    return "你在「" + underpaying[0].cat + "」的選擇比別人精準（$" + underpaying[0].userAvg + " vs 均 $" + underpaying[0].groupAvg + "）。\n\n把同樣的選購方式——選平價品項、注意特價——套到「" + overpaying[0].cat + "」上（你目前 $" + overpaying[0].userAvg + " vs 均 $" + overpaying[0].groupAvg + "），就能把優勢擴大。";
+                  })(),
+                },
+                {
+                  q: "整體來看我算會買嗎？",
+                  a: (() => {
+                    const aboveAvg = bmResults.filter((b) => b.diffPct > 5).length;
+                    const belowAvg = bmResults.filter((b) => b.diffPct < -5).length;
+                    const neutral = bmResults.length - aboveAvg - belowAvg;
+                    return bmResults.length + " 個品類中：\n\n✅ " + belowAvg + " 個比別人省\n➡️ " + neutral + " 個跟別人差不多\n⬆️ " + aboveAvg + " 個比別人高\n\n" + (belowAvg >= aboveAvg ? "整體來看你算會買的——多數品類都在平均或更低。" : "有一些品類可以優化，但也有做得好的地方。");
+                  })(),
+                },
+              ],
+            },
+          ],
+        },
+      });
+    }
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -1484,7 +1635,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     const subCandidate = candidates.find((c) => c.type === "subscription");
     const hasManySubscriptions = subCandidate && userSubs.length >= 2;
     // autopay + items + save are core, 4th slot filled by best-scoring remaining insight
-    const preferred = ["autopay", "items", "save"];
+    const preferred = ["autopay", "items", "benchmark", "save"];
     if (hasManySubscriptions) preferred.push("subscription");
     const maxHooks = preferred.length; // 4 or 5
     const preferredPicked = [];
@@ -1603,6 +1754,13 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       "items→subscription": "知道了你買什麼。另外你有幾筆訂閱正在自動扣款——",
       "pricegap→subscription": "看了價差。另外你的訂閱月費也值得看一下——",
       "save→subscription": "有了省錢方案。另外看看你的訂閱——這些也是每月自動扣款。",
+      "benchmark→save": "知道了跟別人的差距。接下來看看怎麼省最有感——",
+      "benchmark→autopay": "看了跟別人的比較。另外你有些品項一直在重複買——",
+      "benchmark→items": "知道了跟別人的差異。來看看你都在買什麼品項——",
+      "benchmark→subscription": "看了消費比較。另外你的訂閱也值得看一下——",
+      "autopay→benchmark": "看了你的重複消費。想知道同樣的東西，別人都怎麼買嗎？",
+      "items→benchmark": "知道了你買什麼。那同樣的東西，別人花多少？",
+      "save→benchmark": "有了省錢方案。也看看跟別人比，你的消費在什麼水平——",
       "subscription→autopay": "看了訂閱費。另外你的消費模式也很有趣——你有一筆「隱形月費」——習慣幫你扣的。",
       "subscription→items": "檢視了訂閱。來看看你日常都在買什麼——",
       "subscription→pricegap": "看了訂閱。同一個東西在不同地方的價差也很驚人——",
@@ -1649,7 +1807,11 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     openerOptions.push({ type: "autopay", score: Math.min(habitItems.length * 2, 70), text: "你有 " + habitItems.length + " 個品項你反覆在買——累計花了 $" + fmt(Math.round(habitTotal)) + "，你可能沒注意到。" });
   }
 
-  // (PRICE_GAP removed — cross-store price comparison not meaningful due to different store positioning)
+  // Benchmark — "Others buy differently"
+  if (bmResults && bmResults.length >= 2) {
+    const topBm = bmResults[0];
+    openerOptions.push({ type: "benchmark", score: Math.min(Math.abs(topBm.diffPct), 65), text: "同樣在" + topBm.storeType + "買「" + topBm.cat + "」，你花 $" + topBm.userAvg + "，其他人平均只花 $" + topBm.groupAvg + "。" });
+  }
 
   // Subscription
   if (userSubs.length >= 2) {
