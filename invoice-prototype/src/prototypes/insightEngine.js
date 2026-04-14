@@ -42,38 +42,63 @@ function isDeliveryPlatform(shopName) {
 const ONLINE_BULK = ["momo", "蝦皮", "shopee", "酷澎", "coupang", "好市多", "costco", "pchome", "yahoo"];
 function isOnlineBulk(shop) { return ONLINE_BULK.some((k) => (shop || "").toLowerCase().includes(k)); }
 
-// Subscription detection — strict keyword match for real subscriptions only
-const SUB_KEYWORDS = ["訂閱", "月費", "會員訂閱", "uber one", "pandapro", "panda pro", "蝦皮vip"];
-const SUB_EXCLUDE = ["apple store", "momo", "shopee蝦皮購物"]; // one-time purchases, not subscriptions
+// Subscription detection — two methods:
+// Method 1: Item keyword match (品項明細中包含訂閱相關關鍵字)
+// Method 2: Store + specific item match (特定通路的特定品項 = 訂閱)
+const SUB_ITEM_KEYWORDS = [
+  "月費", "月訂閱", "季訂閱", "年訂閱", "訂閱費", "premium",
+  "訂閱制", "訂閱方案", "訂閱服務", "訂閱月費", "訂閱年費",
+  "uber one", "pandapro", "panda pro", "蝦皮vip", "wow 會員",
+];
+// Store → item keyword pairs (this store + this item keyword = subscription)
+const SUB_STORE_ITEMS = [
+  { store: ["ubereats", "uber eats", "優食台灣", "uber"], items: ["uber one", "訂閱"] },
+  { store: ["foodpanda", "富胖達"], items: ["pandapro", "panda pro", "訂閱"] },
+  { store: ["酷澎", "coupang"], items: ["wow", "會員", "訂閱"] },
+  { store: ["spotify"], items: ["premium", "訂閱"] },
+  { store: ["netflix"], items: ["訂閱", "月費"] },
+  { store: ["disney", "迪士尼"], items: ["訂閱", "月費"] },
+  { store: ["apple", "itunes"], items: ["icloud", "訂閱", "月費"] },
+  { store: ["google"], items: ["訂閱", "月費", "youtube"] },
+  { store: ["kkbox"], items: ["訂閱", "月費"] },
+  { store: ["蝦皮", "shopee"], items: ["vip", "訂閱"] },
+];
+const SUB_EXCLUDE = ["apple store", "momo購物"]; // one-time hardware purchases
+
 function detectSubscriptions(invoices) {
   const subs = {};
   invoices.forEach((inv) => {
     (inv.items || []).forEach((it) => {
       const itemLower = (it.name || "").toLowerCase();
       const shopLower = (inv.shop || "").toLowerCase();
-      // Skip excluded stores (unless the item itself says 訂閱/月費)
+
+      // Skip excluded stores for one-time purchases (unless item explicitly says 訂閱)
       const isExcludedShop = SUB_EXCLUDE.some((ex) => shopLower.includes(ex));
-      const isSubItem = SUB_KEYWORDS.some((kw) => itemLower.includes(kw));
-      if (!isSubItem) return;
       if (isExcludedShop && !itemLower.includes("訂閱") && !itemLower.includes("月費")) return;
-      // Deduplicate by service name
+
+      let matched = false;
+
+      // Method 1: Item keyword match
+      if (SUB_ITEM_KEYWORDS.some((kw) => itemLower.includes(kw))) {
+        matched = true;
+      }
+
+      // Method 2: Store + specific item match
+      if (!matched) {
+        for (const rule of SUB_STORE_ITEMS) {
+          const storeMatch = rule.store.some((s) => shopLower.includes(s));
+          const itemMatch = rule.items.some((kw) => itemLower.includes(kw));
+          if (storeMatch && itemMatch) { matched = true; break; }
+        }
+      }
+
+      if (!matched) return;
+
+      // Deduplicate by store + rounded price
       const key = inv.shop + "_" + Math.round(it.price);
       if (!subs[key]) subs[key] = { shop: inv.shop, item: it.name, price: it.price, count: 0, dates: [] };
       subs[key].count++;
       subs[key].dates.push(inv.issued_at || inv.yearMonth || "");
-    });
-  });
-  // Also detect delivery platform subscription fees specifically
-  invoices.forEach((inv) => {
-    if (!isDeliveryPlatform(inv.shop)) return;
-    (inv.items || []).forEach((it) => {
-      const itemLower = (it.name || "").toLowerCase();
-      if (itemLower.includes("訂閱") || itemLower.includes("月費") || itemLower.includes("uber one") || itemLower.includes("pandapro")) {
-        const key = inv.shop + "_sub";
-        if (!subs[key]) subs[key] = { shop: inv.shop, item: it.name, price: it.price, count: 0, dates: [] };
-        subs[key].count++;
-        subs[key].dates.push(inv.issued_at || "");
-      }
     });
   });
   return Object.values(subs).sort((a, b) => b.price - a.price);
