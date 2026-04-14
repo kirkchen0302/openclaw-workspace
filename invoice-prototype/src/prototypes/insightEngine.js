@@ -1190,9 +1190,31 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
           tip: "「" + tc.cat + "」佔了 " + (totalItemSpend > 0 ? Math.round(tc.total / totalItemSpend * 100) : 0) + "% 的品項消費" + (tc.freqGrowth > 30 ? "，而且成長 " + tc.freqGrowth + "%——這個趨勢值得注意。" : "。") + (topItem ? " 你買最多的是「" + topItem.name.slice(0, 15) + "」（" + topItem.count + " 次）。" : ""),
           followups: [
             {
-              q: "我在「" + (brands[0]?.brand || "最常去的店") + "」都買什麼？",
+              q: (() => {
+                // Find the store where this top category is bought most
+                const catShops = {};
+                nonDeliveryInvoices.forEach((inv) => {
+                  (inv.items || []).forEach((it) => {
+                    if (classifyItem(it.name) === tc.cat) {
+                      catShops[inv.shop] = (catShops[inv.shop] || 0) + (it.qty || 1);
+                    }
+                  });
+                });
+                const topCatShop = Object.entries(catShops).sort((a, b) => b[1] - a[1])[0];
+                return topCatShop ? "我在「" + topCatShop[0] + "」都買了哪些「" + tc.cat + "」？" : "我的「" + tc.cat + "」都在哪買的？";
+              })(),
               a: (() => {
-                const topShop = brands[0]?.brand;
+                // Find the store where this category is bought most
+                const catShops = {};
+                nonDeliveryInvoices.forEach((inv) => {
+                  (inv.items || []).forEach((it) => {
+                    if (classifyItem(it.name) === tc.cat) {
+                      catShops[inv.shop] = (catShops[inv.shop] || 0) + (it.qty || 1);
+                    }
+                  });
+                });
+                const topCatShop = Object.entries(catShops).sort((a, b) => b[1] - a[1])[0];
+                const topShop = topCatShop ? topCatShop[0] : brandsReal[0]?.brand;
                 if (!topShop) return "資料不足。";
                 const shopInvs = invoices.filter((inv) => inv.shop === topShop || resolveShop(inv.shop).brand === topShop);
                 const shopItems = {};
@@ -1246,43 +1268,35 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
               ],
             },
             {
-              q: "飲料類花了多少？",
+              q: (() => {
+                const second = catScored[1];
+                return second ? "那「" + second.cat + "」呢？花了多少？" : "其他品類花了多少？";
+              })(),
               a: (() => {
-                const drinkCats = itemCats.filter((c) => ["咖啡", "茶飲", "手搖飲", "瓶裝飲料"].includes(c.cat));
-                const drinkTotal = drinkCats.reduce((s, c) => s + c.total, 0);
-                const drinkCount = drinkCats.reduce((s, c) => s + c.count, 0);
-                const yearly = Math.round(drinkTotal / months.length * 12);
-                if (drinkCount === 0) return "你的發票品項中沒有明顯的飲料消費。";
-                return "你的飲料消費：\n\n" + drinkCats.map((c) => itemCatIcon(c.cat) + " " + c.cat + "：" + c.count + " 杯/瓶 $" + fmt(Math.round(c.total))).join("\n") + "\n\n合計 " + drinkCount + " 杯/瓶 $" + fmt(Math.round(drinkTotal)) + "，年化 $" + fmt(yearly) + "。\n\n" + fmtComparisons(yearly, stats);
+                const second = catScored[1];
+                if (!second) return "其他品類的消費不多。";
+                const yearly = Math.round(second.total / months.length * 12);
+                const growthTxt = second.freqGrowth > 30 ? "（成長 +" + second.freqGrowth + "%）" : second.freqGrowth < -10 ? "（下降 " + second.freqGrowth + "%）" : "";
+                return "你的「" + second.cat + "」：\n\n" + itemCatIcon(second.cat) + " " + second.count + " 次 $" + fmt(Math.round(second.total)) + " " + growthTxt + "\n\n最常買的：\n" + second.items.slice(0, 5).map((it) => "• " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n") + "\n\n年化 $" + fmt(yearly) + "。";
               })(),
               followups: [
                 {
-                  q: "我最常喝的飲料是什麼？",
+                  q: (() => {
+                    const third = catScored[2];
+                    return third ? "「" + third.cat + "」也不少？" : "還有什麼品類值得看？";
+                  })(),
                   a: (() => {
-                    const drinkItems = {};
-                    invoices.forEach((inv) => {
-                      (inv.items || []).forEach((item) => {
-                        const cat = classifyItem(item.name);
-                        if (["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"].includes(cat)) {
-                          const n = item.name;
-                          if (!drinkItems[n]) drinkItems[n] = { name: n, count: 0, total: 0, cat };
-                          drinkItems[n].count += item.qty || 1;
-                          drinkItems[n].total += item.price || 0;
-                        }
-                      });
-                    });
-                    const sorted = Object.values(drinkItems).sort((a, b) => b.count - a.count).slice(0, 6);
-                    if (!sorted.length) return "沒有足夠的飲料品項資料。";
-                    return "你的飲料排行榜：\n\n" + sorted.map((it, i) => (i + 1) + ". " + itemCatIcon(it.cat) + " " + it.name + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n");
+                    const third = catScored[2];
+                    if (!third) return "其他品類的消費比較分散。";
+                    return "「" + third.cat + "」：" + third.count + " 次 $" + fmt(Math.round(third.total)) + (third.freqGrowth > 30 ? "（成長 +" + third.freqGrowth + "%）" : "") + "\n\n常買：" + third.items.slice(0, 3).map((it) => it.name).join("、");
                   })(),
                 },
                 {
-                  q: "零食花了多少？",
+                  q: "哪個品類成長最快？",
                   a: (() => {
-                    const snackCat = itemCats.find((c) => c.cat === "零食/餅乾");
-                    if (!snackCat || snackCat.count < 2) return "你的零食消費不多，或品項明細中沒有明顯的零食記錄。";
-                    const yearly = Math.round(snackCat.total / months.length * 12);
-                    return "零食/餅乾：" + snackCat.count + " 次 $" + fmt(Math.round(snackCat.total)) + "\n\n最常買的：\n" + snackCat.items.slice(0, 5).map((it) => "• " + it.name + "（" + it.count + " 次）").join("\n") + "\n\n年化 $" + fmt(yearly) + "。" + (yearly > 3000 ? "\n\n" + fmtComparisons(yearly, stats) : "");
+                    const growing = catScored.filter((c) => c.freqGrowth > 20).sort((a, b) => b.freqGrowth - a.freqGrowth);
+                    if (!growing.length) return "各品類的消費都相對穩定。";
+                    return "成長最快的品類：\n\n" + growing.slice(0, 3).map((c) => itemCatIcon(c.cat) + " " + c.cat + "：+" + c.freqGrowth + "%（" + c.count + " 次 $" + fmt(Math.round(c.total)) + "）").join("\n");
                   })(),
                 },
               ],
