@@ -10,15 +10,17 @@ const fmt = (n) => n.toLocaleString();
 const catIcon = (cat) => ({ "外送": "🛵", "速食": "🍔", "超商": "🏪", "超市": "🛒", "咖啡": "☕", "飲料": "🧋", "餐飲": "🍽", "網購": "📦", "美妝": "💄", "訂閱": "📱", "加油": "⛽", "量販": "🛒", "百貨": "🏬", "停車": "🅿️", "電影娛樂": "🎬", "運動": "💪" }[cat] || "📌");
 const itemCatIcon = (cat) => ({ "咖啡": "☕", "茶飲": "🍵", "手搖飲": "🧋", "瓶裝飲料": "🥤", "乳製品": "🥛", "速食餐點": "🍔", "便當/正餐": "🍱", "麵包/烘焙": "🍞", "零食/餅乾": "🍪", "滷味/小食": "🥚", "生鮮蔬果": "🥬", "生鮮肉品": "🥩", "衛生紙/面紙": "🧻", "洗髮/沐浴": "🧴", "美妝保養": "💄", "生理用品": "🩹", "外送服務費": "🛵", "訂閱服務": "📱", "加油": "⛽" }[cat] || "📦");
 
-// Group benchmarks — average prices from 9 test users by category × store type
+// Group benchmarks — average prices from 9 test users
+// FMCG: compared across 超商+超市 together (same product, different store)
+// Store-specific: only compared within same store type
 const GROUP_BENCHMARKS = {
-  "咖啡@超商": { cat: "咖啡", storeType: "超商", groupAvg: 43, groupMin: 35, groupMax: 65, users: 9 },
-  "飲料@超商": { cat: "飲料", storeType: "超商", groupAvg: 30, groupMin: 24, groupMax: 36, users: 8 },
-  "飲料@超市": { cat: "飲料", storeType: "超市", groupAvg: 55, groupMin: 40, groupMax: 80, users: 8 },
-  "飲料@速食": { cat: "飲料", storeType: "速食", groupAvg: 38, groupMin: 29, groupMax: 47, users: 6 },
-  "零食@超商": { cat: "零食", storeType: "超商", groupAvg: 42, groupMin: 24, groupMax: 55, users: 5 },
-  "零食@超市": { cat: "零食", storeType: "超市", groupAvg: 51, groupMin: 40, groupMax: 65, users: 4 },
-  "鮮食@超商": { cat: "鮮食", storeType: "超商", groupAvg: 48, groupMin: 36, groupMax: 62, users: 8 },
+  // FMCG — cross 超商/超市 (same products exist in both)
+  "瓶裝飲料@零售": { cat: "瓶裝飲料", scope: "超商+超市", groupAvg: 29, groupMin: 22, groupMax: 39, users: 9, isFmcg: true },
+  "乳製品@零售": { cat: "乳製品", scope: "超商+超市", groupAvg: 52, groupMin: 32, groupMax: 80, users: 9, isFmcg: true },
+  "零食@零售": { cat: "零食", scope: "超商+超市", groupAvg: 46, groupMin: 30, groupMax: 53, users: 6, isFmcg: true },
+  // Store-specific — within same type only
+  "咖啡@超商": { cat: "咖啡", scope: "超商", groupAvg: 55, groupMin: 35, groupMax: 68, users: 6, isFmcg: false },
+  "鮮食@超商": { cat: "鮮食", scope: "超商", groupAvg: 48, groupMin: 36, groupMax: 62, users: 8, isFmcg: false },
 };
 const STORE_TYPE_MAP = {
   "7-11": "超商", "全家": "超商", "萊爾富": "超商",
@@ -1355,46 +1357,57 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
 
   // ── Type: BENCHMARK ────────────────────────────────────────────────
   // "Other users buy the same thing differently" — social comparison
+  // FMCG (瓶裝飲料/乳製品/零食): compare across 超商+超市 (same products exist in both)
+  // Store-specific (咖啡/鮮食): only compare within same store type
   let bmResults = [];
   if (hasItems) {
-    const cofKw = ["咖啡","美式","拿鐵","摩卡","卡布"];
-    const drkKw = ["茶","奶茶","豆漿","優格","優酪","可樂","雪碧","氣泡水","鮮乳","LP33","果汁"];
-    const snkKw = ["餅乾","洋芋片","樂事","多力多滋","品客","口香糖","巧克力","糖果"];
-    const mealKw = ["飯糰","三明治","便當","涼麵","餐盒"];
-    function bmCat(name) {
-      const l = (name||"").toLowerCase();
-      for (const k of cofKw) if (l.includes(k)) return "咖啡";
-      for (const k of drkKw) if (l.includes(k)) return "飲料";
-      for (const k of snkKw) if (l.includes(k)) return "零食";
-      for (const k of mealKw) if (l.includes(k)) return "鮮食";
+    const fmcgKw = {
+      "瓶裝飲料": ["可樂","雪碧","氣泡水","PET","鋁罐","多喝水","台鹽","礦泉水","美粒果","每朝","御茶園","茉莉茶園"],
+      "乳製品": ["鮮乳","鮮奶","牛奶","豆漿","豆奶","優格","優酪","養樂多","LP33","光泉","林鳳營","瑞穗","六甲","AB+"],
+      "零食": ["餅乾","洋芋片","樂事","多力多滋","品客","口香糖","巧克力","糖果","軟糖","士力架","波的多","卡辣姆久"],
+    };
+    const storeSpecKw = {
+      "咖啡": ["咖啡","美式","拿鐵","摩卡","卡布"],
+      "鮮食": ["飯糰","三明治","便當","涼麵","餐盒"],
+    };
+    function bmClassify(name) {
+      const l = (name || "").toLowerCase();
+      for (const [cat, kws] of Object.entries(fmcgKw)) { for (const k of kws) if (l.includes(k)) return { cat, isFmcg: true }; }
+      for (const [cat, kws] of Object.entries(storeSpecKw)) { for (const k of kws) if (l.includes(k)) return { cat, isFmcg: false }; }
       return null;
     }
 
-    // Calculate user's own category averages by store type
-    const userCatStore = {};
+    const RETAIL_STORES = new Set(Object.keys(STORE_TYPE_MAP).filter((s) => ["超商", "超市"].includes(STORE_TYPE_MAP[s])));
+
+    // Calculate user's own averages per benchmark key
+    const userBmData = {};
     invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
       const st = STORE_TYPE_MAP[inv.shop];
       if (!st) return;
       (inv.items || []).forEach((it) => {
-        const cat = bmCat(it.name);
-        if (!cat) return;
-        const key = cat + "@" + st;
-        if (!userCatStore[key]) userCatStore[key] = { count: 0, total: 0 };
-        userCatStore[key].count += it.qty || 1;
-        userCatStore[key].total += it.price || 0;
+        const cls = bmClassify(it.name);
+        if (!cls) return;
+        // FMCG: combine 超商+超市 into "零售"
+        // Store-specific: keep store type separate
+        const key = cls.isFmcg ? cls.cat + "@零售" : cls.cat + "@" + st;
+        // Only count if store is in retail set (for FMCG) or matching type
+        if (cls.isFmcg && !RETAIL_STORES.has(inv.shop)) return;
+        if (!userBmData[key]) userBmData[key] = { count: 0, total: 0 };
+        userBmData[key].count += it.qty || 1;
+        userBmData[key].total += it.price || 0;
       });
     });
 
     // Compare with group benchmarks
     bmResults = [];
-    Object.entries(userCatStore).forEach(([key, ud]) => {
+    Object.entries(userBmData).forEach(([key, ud]) => {
       if (ud.count < 3) return;
       const bm = GROUP_BENCHMARKS[key];
       if (!bm) return;
       const userAvg = Math.round(ud.total / ud.count);
       const diff = userAvg - bm.groupAvg;
       const diffPct = Math.round(diff / bm.groupAvg * 100);
-      bmResults.push({ key, cat: bm.cat, storeType: bm.storeType, userAvg, groupAvg: bm.groupAvg, groupMin: bm.groupMin, groupMax: bm.groupMax, diff, diffPct, count: ud.count, total: Math.round(ud.total), users: bm.users });
+      bmResults.push({ key, cat: bm.cat, scope: bm.scope, userAvg, groupAvg: bm.groupAvg, groupMin: bm.groupMin, groupMax: bm.groupMax, diff, diffPct, count: ud.count, total: Math.round(ud.total), users: bm.users, isFmcg: bm.isFmcg });
     });
     bmResults.sort((a, b) => Math.abs(b.diffPct) - Math.abs(a.diffPct));
 
@@ -1411,17 +1424,17 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
           id: "benchmark",
           q: "同樣的東西，別人怎麼買？",
           big: (topDiff.diffPct > 0 ? "+" : "") + topDiff.diffPct + "%",
-          bigSub: "你在" + topDiff.storeType + "買「" + topDiff.cat + "」均 $" + topDiff.userAvg + "，其他人均 $" + topDiff.groupAvg,
+          bigSub: "你在" + topDiff.scope + "買「" + topDiff.cat + "」均 $" + topDiff.userAvg + "，其他人均 $" + topDiff.groupAvg,
           body: "我們比對了其他用戶在相同通路類型購買相同品類的價格。以下是你跟大家的差異：",
           ranks: bmResults.slice(0, 5).map((b) => ({
             rank: b.diffPct > 10 ? "⬆️" : b.diffPct < -10 ? "✅" : "➡️",
-            name: b.cat + "@" + b.storeType,
+            name: b.cat + "@" + b.scope,
             freq: "你 $" + b.userAvg + " vs 均 $" + b.groupAvg,
             note: b.diffPct > 10 ? "你偏高 " + b.diffPct + "%" : b.diffPct < -10 ? "你更省 " + Math.abs(b.diffPct) + "%" : "差不多",
           })),
           tip: (() => {
             if (overpaying.length > 0 && underpaying.length > 0) {
-              return "你在「" + underpaying[0].cat + "@" + underpaying[0].storeType + "」買得比別人精——但在「" + overpaying[0].cat + "@" + overpaying[0].storeType + "」花得比別人多。你已經會省了，只要把同樣的方法套到其他品類。";
+              return "你在「" + underpaying[0].cat + "@" + underpaying[0].scope + "」買得比別人精——但在「" + overpaying[0].cat + "@" + overpaying[0].scope + "」花得比別人多。你已經會省了，只要把同樣的方法套到其他品類。";
             } else if (overpaying.length > 0) {
               return "你在幾個品類的花費高於其他人。不一定要改——但知道差距在哪，你可以自己決定。";
             }
@@ -1434,7 +1447,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                 if (overpaying.length === 0) return "你的各品類消費都在平均值附近或更低，整體買得很精打細算！";
                 return "你花得比別人多的品類：\n\n" + overpaying.map((b) => {
                   const yearExtra = Math.round(b.diff * b.count / months.length * 12);
-                  return "⬆️ " + b.cat + " @ " + b.storeType + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（+" + b.diffPct + "%）\n  " + b.count + " 次買下來，一年多花 ~$" + fmt(yearExtra);
+                  return "⬆️ " + b.cat + " @ " + b.scope + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（+" + b.diffPct + "%）\n  " + b.count + " 次買下來，一年多花 ~$" + fmt(yearExtra);
                 }).join("\n\n") + "\n\n這不是說你買錯了——可能你選了更好的品項。但差距值得知道。";
               })(),
               followups: [
@@ -1444,7 +1457,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                     if (overpaying.length === 0) return "你已經做得很好了！";
                     const top = overpaying[0];
                     const yearSave = Math.round(top.diff * top.count / months.length * 12);
-                    return "以「" + top.cat + " @ " + top.storeType + "」為例：\n\n你均 $" + top.userAvg + "，其他人均 $" + top.groupAvg + "。\n\n其他人可能：\n• 選擇了同品類中更平價的品項\n• 善用特價或會員優惠\n• 買較小容量/份量\n\n如果回到平均水準，一年可省 ~$" + fmt(yearSave) + "。\n\n" + fmtComparisons(yearSave, stats);
+                    return "以「" + top.cat + " @ " + top.scope + "」為例：\n\n你均 $" + top.userAvg + "，其他人均 $" + top.groupAvg + "。\n\n其他人可能：\n• 選擇了同品類中更平價的品項\n• 善用特價或會員優惠\n• 買較小容量/份量\n\n如果回到平均水準，一年可省 ~$" + fmt(yearSave) + "。\n\n" + fmtComparisons(yearSave, stats);
                   })(),
                 },
                 {
@@ -1452,7 +1465,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                   a: (() => {
                     if (overpaying.length === 0) return "沒有明顯偏高的品類。";
                     const top = overpaying[0];
-                    return "差距最大的是「" + top.cat + "」在「" + top.storeType + "」：\n\n• 你的均價：$" + top.userAvg + "\n• 其他人均價：$" + top.groupAvg + "\n• 最低的人只要：$" + top.groupMin + "\n\n差了 " + top.diffPct + "%。" + (top.count >= 10 ? "而且你買了 " + top.count + " 次，累積下來差距不小。" : "");
+                    return "差距最大的是「" + top.cat + "」在「" + top.scope + "」：\n\n• 你的均價：$" + top.userAvg + "\n• 其他人均價：$" + top.groupAvg + "\n• 最低的人只要：$" + top.groupMin + "\n\n差了 " + top.diffPct + "%。" + (top.count >= 10 ? "而且你買了 " + top.count + " 次，累積下來差距不小。" : "");
                   })(),
                 },
               ],
@@ -1461,7 +1474,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
               q: "我有比別人更會買的地方嗎？",
               a: (() => {
                 if (underpaying.length === 0) return "你的各品類消費都在平均附近，沒有特別突出的省錢項目——但也沒有明顯偏高的。";
-                return "你比別人精的品類：\n\n" + underpaying.map((b) => "✅ " + b.cat + " @ " + b.storeType + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（你省 " + Math.abs(b.diffPct) + "%）").join("\n\n") + "\n\n" + (underpaying.length >= 2 ? "你在這些品類的消費精準度高於其他人——值得肯定！" : "在這個品類你確實比別人會挑。");
+                return "你比別人精的品類：\n\n" + underpaying.map((b) => "✅ " + b.cat + " @ " + b.scope + "\n  你均 $" + b.userAvg + " vs 其他人均 $" + b.groupAvg + "（你省 " + Math.abs(b.diffPct) + "%）").join("\n\n") + "\n\n" + (underpaying.length >= 2 ? "你在這些品類的消費精準度高於其他人——值得肯定！" : "在這個品類你確實比別人會挑。");
               })(),
               followups: [
                 {
@@ -1810,7 +1823,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // Benchmark — "Others buy differently"
   if (bmResults && bmResults.length >= 2) {
     const topBm = bmResults[0];
-    openerOptions.push({ type: "benchmark", score: Math.min(Math.abs(topBm.diffPct), 65), text: "同樣在" + topBm.storeType + "買「" + topBm.cat + "」，你花 $" + topBm.userAvg + "，其他人平均只花 $" + topBm.groupAvg + "。" });
+    openerOptions.push({ type: "benchmark", score: Math.min(Math.abs(topBm.diffPct), 65), text: "同樣在" + topBm.scope + "買「" + topBm.cat + "」，你花 $" + topBm.userAvg + "，其他人平均只花 $" + topBm.groupAvg + "。" });
   }
 
   // Subscription
