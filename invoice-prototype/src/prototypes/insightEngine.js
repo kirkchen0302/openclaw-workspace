@@ -928,20 +928,21 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   let habitItems = [];
   let habitMonthly = 0;
   let habitYearly = 0;
-  // Stores where items are "per-plate/per-unit" — should count by VISIT not item count
-  const PER_PLATE_STORES = ["爭鮮", "藏壽司", "壽司郎", "くら寿司", "スシロー"];
-  function isPerPlateStore(shop) { return PER_PLATE_STORES.some((s) => (shop || "").includes(s)); }
+  // Stores where items are part of a SET/MEAL — count by VISIT not individual items
+  // Includes: sushi (per-plate), fast food (套餐/配餐 are one meal)
+  const PER_VISIT_STORES = ["爭鮮", "藏壽司", "壽司郎", "くら寿司", "スシロー", "麥當勞", "肯德基", "摩斯漢堡", "漢堡王", "Subway"];
+  function isPerVisitStore(shop) { return PER_VISIT_STORES.some((s) => (shop || "").includes(s)); }
 
   if (hasItems) {
     const repeatItems = {};
-    const perPlateVisits = {}; // track per-plate stores separately by visit
+    const perVisitShops = {}; // track set-meal/per-plate stores by visit
     invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop)).forEach((inv) => {
-      // Per-plate stores: count as one visit, not individual plates
-      if (isPerPlateStore(inv.shop)) {
+      // Set-meal / per-plate stores: count as one visit, not individual items
+      if (isPerVisitStore(inv.shop)) {
         const key = "_store_" + inv.shop;
-        if (!perPlateVisits[key]) perPlateVisits[key] = { name: inv.shop, count: 0, total: 0, cat: "餐飲", shop: inv.shop };
-        perPlateVisits[key].count++; // count by invoice = visit
-        perPlateVisits[key].total += inv.amount || 0;
+        if (!perVisitShops[key]) perVisitShops[key] = { name: inv.shop, count: 0, total: 0, cat: "餐飲", shop: inv.shop };
+        perVisitShops[key].count++;
+        perVisitShops[key].total += inv.amount || 0;
         return;
       }
       (inv.items || []).forEach((it) => {
@@ -952,10 +953,11 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         repeatItems[it.name].total += it.price || 0;
       });
     });
-    // Merge: regular repeat items + per-plate store visits
-    const allRepeat = Object.values(repeatItems).filter((it) => it.count >= 3);
-    const perPlateRepeat = Object.values(perPlateVisits).filter((it) => it.count >= 2);
-    habitItems = [...allRepeat, ...perPlateRepeat].sort((a, b) => b.total - a.total);
+    // Merge: regular repeat items (≥5 times) + per-visit stores (≥5 visits)
+    // Threshold raised: ≥5 = real habit, not just occasional
+    const allRepeat = Object.values(repeatItems).filter((it) => it.count >= 5);
+    const perVisitRepeat = Object.values(perVisitShops).filter((it) => it.count >= 5);
+    habitItems = [...allRepeat, ...perVisitRepeat].sort((a, b) => b.total - a.total);
     habitMonthly = Math.round(habitItems.reduce((s, it) => s + it.total, 0) / Math.max(months.length, 1));
     habitYearly = habitMonthly * 12;
 
