@@ -1477,6 +1477,164 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     }
   }
 
+  // ── Type: HIDDEN_PATTERN ────────────────────────────────────────────
+  // Discover behavioral patterns the user doesn't know about
+  if (hasItems && invoices.length >= 30) {
+    // 1. Weekday spending pattern
+    const wkStats = {};
+    const wkNames = ["週一","週二","週三","週四","週五","週六","週日"];
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop) && inv.issued_at).forEach((inv) => {
+      const dt = new Date(inv.issued_at);
+      if (isNaN(dt)) return;
+      const wk = wkNames[dt.getDay() === 0 ? 6 : dt.getDay() - 1];
+      if (!wkStats[wk]) wkStats[wk] = { total: 0, count: 0, days: new Set() };
+      wkStats[wk].total += inv.amount || 0;
+      wkStats[wk].count++;
+      wkStats[wk].days.add(inv.issued_at?.slice(0, 10));
+    });
+    const wkAvgs = wkNames.map((wk) => {
+      const s = wkStats[wk];
+      return s && s.days.size > 0 ? { wk, avg: Math.round(s.total / s.days.size), days: s.days.size, count: s.count } : { wk, avg: 0, days: 0, count: 0 };
+    }).filter((w) => w.days > 0);
+    const maxWk = wkAvgs.reduce((a, b) => a.avg > b.avg ? a : b, wkAvgs[0]);
+    const minWk = wkAvgs.reduce((a, b) => a.avg < b.avg ? a : b, wkAvgs[0]);
+    const wkRatio = minWk && minWk.avg > 0 ? (maxWk.avg / minWk.avg).toFixed(1) : 0;
+
+    // 2. Item combos — pairs that appear together frequently
+    const invoiceItemSets = {};
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => {
+      const key = (inv.issued_at || "") + "_" + (inv.shop || "");
+      if (!invoiceItemSets[key]) invoiceItemSets[key] = new Set();
+      (inv.items || []).forEach((it) => {
+        if (it.name && classifyItem(it.name) !== "外送服務費" && classifyItem(it.name) !== "其他") {
+          invoiceItemSets[key].add(it.name.slice(0, 20));
+        }
+      });
+    });
+    const pairCount = {};
+    Object.values(invoiceItemSets).forEach((items) => {
+      const arr = [...items];
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          const pair = [arr[i], arr[j]].sort().join(" + ");
+          pairCount[pair] = (pairCount[pair] || 0) + 1;
+        }
+      }
+    });
+    const topPairs = Object.entries(pairCount).filter(([, c]) => c >= 3).sort((a, b) => b[1] - a[1]);
+    const bestPair = topPairs[0];
+
+    // 3. Time-of-day pattern for top category
+    const hourBuckets = { "早上(6-11)": 0, "中午(12-14)": 0, "下午(15-17)": 0, "晚上(18-21)": 0, "深夜(22-5)": 0 };
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && inv.issued_at).forEach((inv) => {
+      const h = parseInt((inv.issued_at || "").slice(11, 13));
+      if (isNaN(h)) return;
+      const bucket = h >= 6 && h < 12 ? "早上(6-11)" : h >= 12 && h < 15 ? "中午(12-14)" : h >= 15 && h < 18 ? "下午(15-17)" : h >= 18 && h < 22 ? "晚上(18-21)" : "深夜(22-5)";
+      hourBuckets[bucket] += inv.amount || 0;
+    });
+    const topTimeBucket = Object.entries(hourBuckets).sort((a, b) => b[1] - a[1])[0];
+
+    if (wkRatio >= 2 || (bestPair && bestPair[1] >= 5)) {
+      const score = 86 + Math.min(parseFloat(wkRatio) || 0, 8);
+
+      candidates.push({
+        type: "pattern", score,
+        hook: {
+          id: "pattern",
+          q: "我的消費有什麼隱藏規律？",
+          big: wkRatio + " 倍",
+          bigSub: maxWk.wk + " 的消費是 " + minWk.wk + " 的 " + wkRatio + " 倍——你可能沒注意到",
+          body: "AI 從你的消費時間、品項和通路中找到了一些你可能沒發現的行為模式：",
+          ranks: [
+            { rank: "📅", name: "最花錢的日子", freq: maxWk.wk + " 日均$" + fmt(maxWk.avg), note: "是" + minWk.wk + "的" + wkRatio + "倍" },
+            { rank: "📅", name: "最省的日子", freq: minWk.wk + " 日均$" + fmt(minWk.avg), note: "" },
+            ...(bestPair ? [{ rank: "🔗", name: "固定組合", freq: bestPair[1] + "次", note: bestPair[0] }] : []),
+            { rank: "⏰", name: "花最多的時段", freq: topTimeBucket[0], note: "$" + fmt(Math.round(topTimeBucket[1])) },
+          ],
+          tip: (() => {
+            let t = maxWk.wk + " 是你的「高消費日」（日均 $" + fmt(maxWk.avg) + "），" + minWk.wk + " 最省（$" + fmt(minWk.avg) + "）。";
+            if (bestPair && bestPair[1] >= 5) t += "\n\n你還有一個「隱藏套餐」——「" + bestPair[0] + "」出現了 " + bestPair[1] + " 次，這個組合已經是你的自動消費。";
+            return t;
+          })(),
+          followups: [
+            {
+              q: "為什麼" + maxWk.wk + "花特別多？",
+              a: (() => {
+                // Analyze what's bought on the expensive day
+                const dayItems = {};
+                invoices.filter((inv) => {
+                  if (!inv.issued_at) return false;
+                  const dt = new Date(inv.issued_at);
+                  const wk = wkNames[dt.getDay() === 0 ? 6 : dt.getDay() - 1];
+                  return wk === maxWk.wk && !isDeliveryPlatform(inv.shop);
+                }).forEach((inv) => {
+                  (inv.items || []).forEach((it) => {
+                    const cat = classifyItem(it.name);
+                    if (cat === "其他" || cat === "外送服務費") return;
+                    if (!dayItems[cat]) dayItems[cat] = { count: 0, total: 0 };
+                    dayItems[cat].count += it.qty || 1;
+                    dayItems[cat].total += it.price || 0;
+                  });
+                });
+                const sorted = Object.entries(dayItems).sort((a, b) => b[1].total - a[1].total).slice(0, 4);
+                return maxWk.wk + " 你主要花在：\n\n" + sorted.map(([cat, d]) => itemCatIcon(cat) + " " + cat + "：$" + fmt(Math.round(d.total)) + "（" + d.count + " 次）").join("\n") + "\n\n" + (maxWk.wk === "週六" || maxWk.wk === "週日" ? "週末通常是採購日和外出日，花費自然偏高。" : "這天可能是你固定的採購或外食日。");
+              })(),
+              followups: [
+                {
+                  q: "如果" + maxWk.wk + "消費降到平均，能省多少？",
+                  a: (() => {
+                    const allAvg = Math.round(wkAvgs.reduce((s, w) => s + w.avg, 0) / wkAvgs.length);
+                    const savePerWeek = maxWk.avg - allAvg;
+                    const saveYearly = savePerWeek * 52;
+                    return "如果" + maxWk.wk + "從 $" + fmt(maxWk.avg) + " 降到日均 $" + fmt(allAvg) + "：\n\n每週省 $" + fmt(savePerWeek) + "，一年省 $" + fmt(saveYearly) + "。\n\n" + fmtComparisons(saveYearly, stats) + "\n\n不是要你不花，而是在" + maxWk.wk + "消費前多想一下。";
+                  })(),
+                },
+                {
+                  q: "我有沒有「衝動消費日」？",
+                  a: (() => {
+                    const allAvg = Math.round(wkAvgs.reduce((s, w) => s + w.avg, 0) / wkAvgs.length);
+                    const burstDays = wkAvgs.filter((w) => w.avg > allAvg * 2);
+                    if (!burstDays.length) return "沒有特別明顯的衝動消費日——你的消費分佈還算平均。";
+                    return "超過日均 2 倍的日子：\n\n" + burstDays.map((w) => "📈 " + w.wk + "：日均 $" + fmt(w.avg) + "（是平均的 " + (w.avg / allAvg).toFixed(1) + " 倍）").join("\n") + "\n\n這些日子的消費明顯偏高，值得留意是計劃性的還是衝動性的。";
+                  })(),
+                },
+              ],
+            },
+            {
+              q: bestPair ? "「" + bestPair[0].split(" + ")[0] + "」和「" + bestPair[0].split(" + ")[1] + "」為什麼總是一起出現？" : "我有什麼固定的消費組合嗎？",
+              a: (() => {
+                if (!bestPair || bestPair[1] < 3) return "目前沒有明顯的固定組合——你的消費組合比較隨機。";
+                const pairItems = bestPair[0].split(" + ");
+                const count = bestPair[1];
+                let t = "「" + pairItems[0] + "」和「" + pairItems[1] + "」一起出現了 " + count + " 次。\n\n這代表每次買其中一個，你幾乎都會順手買另一個——這是一個自動化的消費組合。";
+                if (topPairs.length > 1) {
+                  t += "\n\n其他常見組合：\n" + topPairs.slice(1, 4).map(([pair, c]) => "🔗 " + pair + "（" + c + " 次）").join("\n");
+                }
+                return t;
+              })(),
+              followups: [
+                {
+                  q: "這些組合一年花多少？",
+                  a: (() => {
+                    const comboTotal = topPairs.slice(0, 3).reduce((s, [, c]) => s + c, 0);
+                    // rough estimate: each combo appearance = ~$100 avg
+                    const avgComboSpend = 100;
+                    const yearly = Math.round(comboTotal * avgComboSpend / months.length * 12);
+                    return "你的前 3 個固定組合大約每年出現 " + Math.round(comboTotal / months.length * 12) + " 次。\n\n這些「自動搭配」的消費是習慣驅動的——不一定要改，但意識到它的存在就是第一步。";
+                  })(),
+                },
+                {
+                  q: "打破這些組合有什麼好處？",
+                  a: "不是要你不買——而是把「自動搭配」變成「有意識的選擇」。\n\n比如每次買 A 都會順手買 B：\n• 下次買 A 時，問自己「我真的想要 B 嗎？」\n• 如果答案是 yes，那就買——但這是你的決定，不是習慣的決定\n\n光是這個意識，就能減少 20-30% 的「順手消費」。",
+                },
+              ],
+            },
+          ],
+        },
+      });
+    }
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -1624,7 +1782,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     const subCandidate = candidates.find((c) => c.type === "subscription");
     const hasManySubscriptions = subCandidate && userSubs.length >= 2;
     // autopay + items + save are core, 4th slot filled by best-scoring remaining insight
-    const preferred = ["autopay", "items", "benchmark", "save"];
+    const preferred = ["autopay", "items", "benchmark", "pattern", "save"];
     if (hasManySubscriptions) preferred.push("subscription");
     const maxHooks = preferred.length; // 4 or 5
     const preferredPicked = [];
@@ -1743,6 +1901,14 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
       "items→subscription": "知道了你買什麼。另外你有幾筆訂閱正在自動扣款——",
       "pricegap→subscription": "看了價差。另外你的訂閱月費也值得看一下——",
       "save→subscription": "有了省錢方案。另外看看你的訂閱——這些也是每月自動扣款。",
+      "pattern→save": "發現了隱藏規律。接下來看看怎麼省最有感——",
+      "pattern→autopay": "看到了你的消費規律。另外你有些品項一直在重複買——",
+      "pattern→items": "發現了隱藏模式。來看看你的品類消費——",
+      "pattern→benchmark": "看到了你的消費規律。跟別人比起來呢？",
+      "autopay→pattern": "看了重複消費。另外你的消費還有一些隱藏規律——",
+      "items→pattern": "知道了品類花費。你的消費時間和組合也有一些有趣的規律——",
+      "benchmark→pattern": "跟別人比完了。你的消費還有一些隱藏的行為模式——",
+      "save→pattern": "有了省錢方案。另外你的消費也有一些有趣的隱藏規律——",
       "benchmark→save": "知道了跟別人的差距。接下來看看怎麼省最有感——",
       "benchmark→autopay": "看了跟別人的比較。另外你有些品項一直在重複買——",
       "benchmark→items": "知道了跟別人的差異。來看看你都在買什麼品項——",
