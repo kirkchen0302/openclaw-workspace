@@ -1128,54 +1128,66 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   }
 
   // ── Type: ITEM_INSIGHT ─────────────────────────────────────────────
-  // Item-level analysis — what you actually buy, not just where
+  // Dynamic category analysis — picks the most "interesting" category
+  // using composite score: amount × frequency^0.3 × growth_boost
+  let topCatResult = null;
   if (hasItems) {
-    const nonDeliveryInvoices = invoices.filter((inv) => !isDeliveryPlatform(inv.shop));
+    const nonDeliveryInvoices = invoices.filter((inv) => !isDeliveryPlatform(inv.shop) && !isOnlineBulk(inv.shop));
     const itemCats = aggregateItemCategories(nonDeliveryInvoices);
-    const meaningfulCats = itemCats.filter((c) => c.cat !== "其他" && c.cat !== "外送服務費" && c.cat !== "餐飲消費");
-    const topItemCat = meaningfulCats[0];
+    const meaningfulCats = itemCats.filter((c) => c.cat !== "其他" && c.cat !== "外送服務費" && c.cat !== "餐飲消費" && c.cat !== "訂閱服務" && c.cat !== "加油" && c.cat !== "停車");
 
-    if (topItemCat && topItemCat.count >= 5) {
-      const topItem = topItemCat.items[0];
-      const totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
-      const score = 82 + Math.min(meaningfulCats.length, 10);
+    // Calculate growth per category (first half vs second half)
+    const catGrowth = {};
+    nonDeliveryInvoices.forEach((inv) => {
+      const ym = inv.yearMonth || "";
+      const isFirst = firstKeys.includes(ym);
+      const isSecond = secondKeys.includes(ym);
+      (inv.items || []).forEach((it) => {
+        const cat = classifyItem(it.name);
+        if (!cat || cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
+        if (!catGrowth[cat]) catGrowth[cat] = { first: 0, second: 0 };
+        if (isFirst) catGrowth[cat].first += it.qty || 1;
+        if (isSecond) catGrowth[cat].second += it.qty || 1;
+      });
+    });
 
-      // Check if drinks dominate — if so, make this a drinks-focused hook
-      const drinkCatsCheck = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-      const drinkMeaningful = meaningfulCats.filter((c) => drinkCatsCheck.includes(c.cat));
-      const drinkTotalCount = drinkMeaningful.reduce((s, c) => s + c.count, 0);
-      const drinkTotalSpend = drinkMeaningful.reduce((s, c) => s + c.total, 0);
-      const isDrinkFocused = drinkTotalCount >= 20;
+    // Score each category
+    const catScored = meaningfulCats.filter((c) => c.count >= 3).map((c) => {
+      const g = catGrowth[c.cat] || { first: 0, second: 0 };
+      const freqGrowth = g.first > 0 ? Math.round(((g.second - g.first) / g.first) * 100) : (g.second > 0 ? 999 : 0);
+      let boost = 1.0;
+      if (freqGrowth > 30) boost += 0.5;
+      if (freqGrowth > 100) boost += 0.5;
+      const composite = c.total * Math.pow(c.count, 0.3) * boost;
+      return { ...c, freqGrowth, boost, composite: Math.round(composite) };
+    }).sort((a, b) => b.composite - a.composite);
 
-      // Top drink item
-      const topDrinkItem = drinkMeaningful.flatMap((c) => c.items).sort((a, b) => b.count - a.count)[0];
+    topCatResult = catScored[0];
+    const topItem = topCatResult ? topCatResult.items[0] : null;
+    const totalItemSpend = meaningfulCats.reduce((s, c) => s + c.total, 0);
+    const score = 82 + Math.min(catScored.length, 10);
+
+    if (topCatResult && topCatResult.count >= 5) {
+
+      const tc = topCatResult;
+      const tcYearly = Math.round(tc.total / months.length * 12);
+      const growthLabel = tc.freqGrowth > 30 ? "（而且還在增加中 +" + tc.freqGrowth + "%）" : tc.freqGrowth < -10 ? "（不過有在減少 " + tc.freqGrowth + "%）" : "";
 
       candidates.push({
         type: "items", score,
         hook: {
           id: "items",
-          q: isDrinkFocused ? "這 " + drinkTotalCount + " 杯飲料都花在哪？" : "我的錢都花在買什麼？",
-          big: isDrinkFocused ? drinkTotalCount + " 杯" : (topItem ? topItem.count + " 次" : topItemCat.count + " 次"),
-          bigSub: isDrinkFocused
-            ? "你喝了這麼多飲料，花了 $" + fmt(Math.round(drinkTotalSpend)) + "——年化 $" + fmt(Math.round(drinkTotalSpend / months.length * 12))
-            : (topItem ? "「" + topItem.name + "」是你的最愛——買了 " + topItem.count + " 次" : "「" + topItemCat.cat + "」類品項你買最多"),
-          body: isDrinkFocused ? "你的飲料消費分佈：" : "從你的發票品項明細來看，你的消費分佈在這些品類：",
-          ranks: isDrinkFocused
-            ? drinkMeaningful.map((c) => ({
-                rank: itemCatIcon(c.cat),
-                name: c.cat,
-                freq: c.count + " 杯 $" + fmt(Math.round(c.total)),
-                note: c.items[0] ? "最常喝：" + c.items[0].name : "",
-              }))
-            : meaningfulCats.slice(0, 6).map((c) => ({
-                rank: itemCatIcon(c.cat),
-                name: c.cat,
-                freq: c.count + " 項 $" + fmt(Math.round(c.total)),
-                note: c.items[0] ? "常買：" + c.items[0].name : "",
-              })),
-          tip: isDrinkFocused
-            ? "每杯平均 $" + (drinkTotalCount > 0 ? Math.round(drinkTotalSpend / drinkTotalCount) : 0) + "，看起來不多，但 " + drinkTotalCount + " 杯加起來是 $" + fmt(Math.round(drinkTotalSpend)) + "。" + (topDrinkItem ? "你喝最多的是「" + topDrinkItem.name + "」（" + topDrinkItem.count + " 次）。" : "")
-            : "「" + topItemCat.cat + "」佔了你品項消費的 " + (totalItemSpend > 0 ? Math.round(topItemCat.total / totalItemSpend * 100) : 0) + "%。了解你買什麼，比只看去哪裡更能反映真實的消費習慣。",
+          q: "我的「" + tc.cat + "」花了多少？",
+          big: "$" + fmt(Math.round(tc.total)),
+          bigSub: "你在「" + tc.cat + "」買了 " + tc.count + " 次，年化 $" + fmt(tcYearly) + growthLabel,
+          body: "「" + tc.cat + "」是你最值得關注的品類——不只是金額最高，消費頻率和趨勢都顯示這是你的核心消費：",
+          ranks: catScored.slice(0, 6).map((c) => ({
+            rank: itemCatIcon(c.cat),
+            name: c.cat,
+            freq: c.count + " 次 $" + fmt(Math.round(c.total)),
+            note: (c.freqGrowth > 30 ? "📈+" + c.freqGrowth + "% " : c.freqGrowth < -10 ? "📉" + c.freqGrowth + "% " : "") + (c.items[0] ? "常買：" + c.items[0].name.slice(0, 12) : ""),
+          })),
+          tip: "「" + tc.cat + "」佔了 " + (totalItemSpend > 0 ? Math.round(tc.total / totalItemSpend * 100) : 0) + "% 的品項消費" + (tc.freqGrowth > 30 ? "，而且成長 " + tc.freqGrowth + "%——這個趨勢值得注意。" : "。") + (topItem ? " 你買最多的是「" + topItem.name.slice(0, 15) + "」（" + topItem.count + " 次）。" : ""),
           followups: [
             {
               q: "我在「" + (brands[0]?.brand || "最常去的店") + "」都買什麼？",
@@ -1799,14 +1811,12 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   // Score each potential opener by "shock factor" — the bigger the contrast with expectations, the better
   const openerOptions = [];
 
-  // Drinks count — "你喝了 X 杯" is universally shocking
-  if (hasItems) {
-    const drinkCatsO = ["咖啡", "茶飲", "手搖飲", "瓶裝飲料", "乳製品"];
-    let dc = 0, dt = 0;
-    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => (inv.items || []).forEach((it) => { if (drinkCatsO.includes(classifyItem(it.name))) { dc += it.qty || 1; dt += it.price || 0; } }));
-    if (dc >= 20) {
-      openerOptions.push({ type: "items", score: dc, text: "你在這段期間喝了 " + dc + " 杯飲料——平均每天 " + (dc / totalDays).toFixed(1) + " 杯。你可能沒意識到累積的速度有多快。" });
-    }
+  // Top category — dynamic based on composite score
+  if (topCatResult) {
+    const tcO = topCatResult;
+    const tcYearlyO = Math.round(tcO.total / months.length * 12);
+    const growthO = tcO.freqGrowth > 30 ? "，而且還在增加中" : "";
+    openerOptions.push({ type: "items", score: Math.min(tcO.count, 85), text: "你的「" + tcO.cat + "」花了 $" + fmt(Math.round(tcO.total)) + "——" + tcO.count + " 次消費" + growthO + "，年化 $" + fmt(tcYearlyO) + "。" });
   }
 
   // Savings — "每年可省 $X" — big number is shocking
