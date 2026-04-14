@@ -919,7 +919,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         type: "autopay", score,
         hook: {
           id: "autopay",
-          q: "這 $" + fmt(Math.round(habitItems.reduce((s, it) => s + it.total, 0))) + " 都花在哪些品項？",
+          q: "我有哪些東西一直在重複買？",
           big: habitItems.length + " 個",
           bigSub: "你有 " + habitItems.length + " 個品項反覆在買——累計 $" + fmt(Math.round(habitItems.reduce((s, it) => s + it.total, 0))),
           body: "這些品項你買了 3 次以上，不是你每次都「決定」要買的，是習慣自動在下單：",
