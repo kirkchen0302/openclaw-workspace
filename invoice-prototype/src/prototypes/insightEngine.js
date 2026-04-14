@@ -1815,18 +1815,46 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     });
   }
 
-  // ── COMBINED HOOKS (v2 — 3 fixed hooks) ──────────────────────────
-  // Hook A: 訂閱 + 重複消費（分開呈現，追問各自獨立）
+  // ── COMBINED HOOKS (v2 — 3 fixed hooks, 2 layers only) ────────────
+
+  // Hook A: 訂閱 + 重複消費
   if (hasItems && (habitItems.length >= 3 || userSubs.length >= 1)) {
     const habitTotal = habitItems.reduce((s, it) => s + it.total, 0);
     const habitYearlyH = Math.round(habitTotal / months.length * 12);
     const subYearly = Math.round(userSubs.reduce((s, sub) => s + sub.price, 0) * 12);
     const combinedYearly = habitYearlyH + subYearly;
 
-    // Build ranks: subscriptions first, then repeat items
     const ranks = [];
     userSubs.forEach((s) => ranks.push({ rank: "📱", name: s.shop.slice(0, 12), freq: "$" + fmt(Math.round(s.price)) + "/月", note: s.item.slice(0, 20) + "（訂閱）" }));
     habitItems.slice(0, Math.max(6 - userSubs.length, 3)).forEach((it) => ranks.push({ rank: itemCatIcon(it.cat), name: it.name.slice(0, 15), freq: it.count + " 次", note: "共$" + fmt(Math.round(it.total)) + "（重複購買）" }));
+
+    // Build dynamic followups based on data
+    const hookAFollowups = [];
+
+    // Followup: subscription (only if ≥2, otherwise same as Hook level)
+    if (userSubs.length >= 2) {
+      hookAFollowups.push({
+        q: "我的 " + userSubs.length + " 個訂閱，一年花多少？哪個該留？",
+        a: (() => {
+          return "你的訂閱年度帳單：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 = $" + fmt(Math.round(s.price * 12)) + "/年\n  " + s.item.slice(0, 30)).join("\n\n") + "\n\n年度訂閱合計：$" + fmt(subYearly) + "\n\n" + fmtComparisons(subYearly, stats) + "\n\n💡 每個訂閱問自己：「如果今天才看到這服務，我還會訂嗎？」猶豫超過 3 秒的，先暫停一個月試試。";
+        })(),
+      });
+    }
+
+    // Followup: repeat items — how to buy smarter
+    hookAFollowups.push({
+      q: "這些重複消費可以怎麼買更聰明？",
+      a: (() => {
+        const optimizable = [];
+        habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "茶飲"].includes(it.cat)).slice(0, 3).forEach((it) => optimizable.push({ icon: itemCatIcon(it.cat), name: it.name.slice(0, 15), save: Math.round(it.total / months.length * 12 * 0.25), tip: "超商同款在超市省 20-30%" }));
+        const coffeeH = habitItems.find((it) => it.cat === "咖啡");
+        if (coffeeH) optimizable.push({ icon: "☕", name: coffeeH.name.slice(0, 15), save: Math.round(coffeeH.total / months.length * 12 * 0.3), tip: "自備或選平價品牌" });
+        habitItems.filter((it) => it.cat === "速食餐點").slice(0, 1).forEach((it) => optimizable.push({ icon: "🍔", name: it.name.slice(0, 15), save: Math.round(it.total / months.length * 12 * 0.15), tip: "注意套餐 vs 單點的差價" }));
+        if (!optimizable.length) return "你的重複消費大多是日常需求。不用少買——但可以留意通路和時機：\n\n• 超商的固定品項在超市買同款，省 20-30%\n• 注意特價和量販包\n• 高頻品項集中在同通路累積回饋";
+        const totalSave = optimizable.reduce((s, o) => s + o.save, 0);
+        return "你的重複品項聰明買法：\n\n" + optimizable.map((o) => o.icon + " " + o.name + "\n  → " + o.tip + "，年省 ~$" + fmt(o.save)).join("\n\n") + "\n\n不用少買，換個買法年省 $" + fmt(totalSave) + "。\n\n" + fmtComparisons(totalSave, stats);
+      })(),
+    });
 
     candidates.push({
       type: "recurring", score: 96,
@@ -1843,79 +1871,18 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
           return t;
         })(),
         ranks,
-        tip: "訂閱 $" + fmt(subYearly) + "/年 + 重複消費 $" + fmt(habitYearlyH) + "/年 = $" + fmt(combinedYearly) + "/年。\n\n" + fmtComparisons(combinedYearly, stats),
-        followups: [
-          {
-            q: userSubs.length > 0 ? "我的 " + userSubs.length + " 個訂閱值得嗎？年花多少？" : "訂閱花費怎麼看？",
-            a: (() => {
-              if (userSubs.length === 0) return "你目前沒有偵測到正式的訂閱服務。如果你有 Netflix、Spotify 等訂閱但發票沒出現，可能是透過信用卡扣款，不會出現在載具發票中。";
-              return "你的訂閱年度帳單：\n\n" + userSubs.map((s) => "📱 " + s.shop + "：$" + fmt(Math.round(s.price)) + "/月 = $" + fmt(Math.round(s.price * 12)) + "/年\n  " + s.item.slice(0, 30)).join("\n\n") + "\n\n訂閱合計：$" + fmt(subYearly) + "/年\n\n每個訂閱問自己：「上個月用了幾次？如果今天才看到這服務，我還會訂嗎？」";
-            })(),
-            followups: [
-              {
-                q: "哪個訂閱最值得重新評估？",
-                a: (() => {
-                  if (userSubs.length === 0) return "目前沒有偵測到訂閱。";
-                  const most = userSubs[0];
-                  return "最值得檢視的是「" + most.shop + "」$" + fmt(Math.round(most.price)) + "/月（年 $" + fmt(Math.round(most.price * 12)) + "）。\n\n因為它是你最貴的訂閱。\n\n如果暫停一個月沒有影響生活，就不用恢復了。省下的 $" + fmt(Math.round(most.price * 12)) + "/年可以：\n\n" + fmtComparisons(Math.round(most.price * 12), stats);
-                })(),
-              },
-              {
-                q: "全部訂閱暫停能省多少？",
-                a: (() => {
-                  if (subYearly === 0) return "目前沒有偵測到訂閱費用。";
-                  return "全部暫停 = 年省 $" + fmt(subYearly) + "。\n\n" + fmtComparisons(subYearly, stats) + "\n\n當然不是全砍——但定期檢視確保每一筆都值得。";
-                })(),
-              },
-            ],
-          },
-          {
-            q: "我不知不覺重複在買的有哪些？",
-            a: (() => {
-              if (habitItems.length === 0) return "你的消費比較隨機，沒有明顯重複品項。";
-              const keep = habitItems.filter((it) => ["乳製品", "咖啡", "生鮮蔬果", "生鮮肉品"].includes(it.cat)).slice(0, 3);
-              const review = habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "速食餐點", "茶飲"].includes(it.cat)).slice(0, 3);
-              let t = "你有 " + habitItems.length + " 個品項買了 3 次以上，年花 $" + fmt(habitYearlyH) + "：\n\n";
-              t += habitItems.slice(0, 5).map((it) => itemCatIcon(it.cat) + " " + it.name.slice(0, 15) + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）").join("\n") + "\n\n";
-              if (keep.length) t += "✅ 值得保留：" + keep.map((it) => it.name.slice(0, 10)).join("、") + "（健康/營養）\n";
-              if (review.length) t += "🤔 可以想想：" + review.map((it) => it.name.slice(0, 10)).join("、") + "（是真的想要還是順手買？）";
-              return t;
-            })(),
-            followups: [
-              {
-                q: "這些重複消費可以怎麼優化？",
-                a: (() => {
-                  const optimizable = [];
-                  habitItems.filter((it) => ["零食/餅乾", "瓶裝飲料", "茶飲"].includes(it.cat)).slice(0, 3).forEach((it) => optimizable.push({ icon: itemCatIcon(it.cat), name: it.name.slice(0, 15), save: Math.round(it.total / months.length * 12 * 0.25) }));
-                  const coffeeH = habitItems.find((it) => it.cat === "咖啡");
-                  if (coffeeH) optimizable.push({ icon: "☕", name: coffeeH.name.slice(0, 15), save: Math.round(coffeeH.total / months.length * 12 * 0.3) });
-                  if (!optimizable.length) return "你的重複消費大多是日常需求，優化空間有限。";
-                  const totalSave = optimizable.reduce((s, o) => s + o.save, 0);
-                  return "可優化的重複消費：\n\n" + optimizable.map((o) => o.icon + " " + o.name + "：超商改超市或注意特價 → 年省 $" + fmt(o.save)).join("\n") + "\n\n合計年省 $" + fmt(totalSave) + "。不用少買，換個買法就好。";
-                })(),
-              },
-              {
-                q: "哪些是我沒意識到一直在買的？",
-                a: (() => {
-                  const hidden = habitItems.slice(3, 10);
-                  if (!hidden.length) return "你的重複品項不多，消費比較隨機。";
-                  return "你可能沒注意到自己一直在買：\n\n" + hidden.map((it) => itemCatIcon(it.cat) + " " + it.name.slice(0, 18) + "（" + it.count + " 次 $" + fmt(Math.round(it.total)) + "）@" + it.shop).join("\n") + "\n\n這些不是大筆消費，但因為太自動化了你根本不會注意到。";
-                })(),
-              },
-            ],
-          },
-        ],
+        tip: (userSubs.length > 0 ? "訂閱 $" + fmt(subYearly) + " + " : "") + "重複消費 $" + fmt(habitYearlyH) + " = $" + fmt(combinedYearly) + "/年。\n\n" + fmtComparisons(combinedYearly, stats),
+        followups: hookAFollowups,
       },
     });
   }
 
-  // Hook C: 最大品類 + 省錢 + 跟別人比 (merge items + save + benchmark)
+  // Hook C: 最大品類 + 省錢 + 跟別人比
   if (hasItems && topCatResult) {
     const tc = topCatResult;
     const tcYearlyC = Math.round(tc.total / months.length * 12);
     const avgPerItem = tc.count > 0 ? Math.round(tc.total / tc.count) : 0;
     const tenPctSave = Math.round(tcYearlyC * 0.1);
-    // Find benchmark for this category
     const bmKeyC = Object.keys(GROUP_BENCHMARKS).find((k) => GROUP_BENCHMARKS[k].cat === tc.cat);
     const bmC = bmKeyC ? GROUP_BENCHMARKS[bmKeyC] : null;
 
@@ -1936,77 +1903,45 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         tip: "「" + tc.cat + "」佔品項消費的 " + (totalItemSpend > 0 ? Math.round(tc.total / totalItemSpend * 100) : 0) + "%。" + (tc.freqGrowth > 30 ? "成長 " + tc.freqGrowth + "% 代表這個花費正在擴大。" : "") + " 如果能省 10%，一年就差 $" + fmt(tenPctSave) + "。",
         followups: [
           {
-            q: "這些花費可以怎麼省？能省多少？",
+            q: "具體可以怎麼省？省多少？",
             a: (() => {
               const strategies = [];
-              // Strategy 1: switch store
               const convCatC = cats.find((c) => c.cat === "超商");
               const marketBrandC = brandsReal.find((b) => ["超市"].includes(STORE_TYPE_MAP[b.brand]));
               if (convCatC && convCatC.visits >= 10 && marketBrandC) {
                 strategies.push("🏪→🛒 超商品項改在「" + marketBrandC.brand + "」買：同品項省 20-30%，年省 ~$" + fmt(Math.round(convCatC.total / months.length * 12 * 0.25)));
               }
-              // Strategy 2: reduce frequency if growing
               if (tc.freqGrowth > 30) {
-                strategies.push("📉 控制「" + tc.cat + "」的成長趨勢：目前 +" + tc.freqGrowth + "%，如果回到前期水準可省 ~$" + fmt(Math.round(tc.total * tc.freqGrowth / (100 + tc.freqGrowth) / months.length * 12)));
+                strategies.push("📉 控制「" + tc.cat + "」的成長（目前 +" + tc.freqGrowth + "%）：回到前期水準可省 ~$" + fmt(Math.round(tc.total * tc.freqGrowth / (100 + tc.freqGrowth) / months.length * 12)));
               }
-              // Strategy 3: lower avg price by 10%
-              strategies.push("💡 「" + tc.cat + "」均價降 10%（$" + avgPerItem + "→$" + Math.round(avgPerItem * 0.9) + "）：年省 $" + fmt(tenPctSave));
-              const totalStrategySave = tenPctSave + (convCatC ? Math.round(convCatC.total / months.length * 12 * 0.25) : 0);
-              return "針對你的消費，最有效的省法：\n\n" + strategies.join("\n\n") + "\n\n合理預估年省 $" + fmt(totalStrategySave) + "。\n\n" + fmtComparisons(totalStrategySave, stats);
+              strategies.push("💡 均價降 10%（$" + avgPerItem + "→$" + Math.round(avgPerItem * 0.9) + "）：年省 $" + fmt(tenPctSave));
+              const totalSave = tenPctSave + (convCatC ? Math.round(convCatC.total / months.length * 12 * 0.25) : 0);
+              return "針對你的消費，最有效的省法：\n\n" + strategies.join("\n\n") + "\n\n合理預估年省 $" + fmt(totalSave) + "。不是「少買」，是「換個方式買同一個東西」。\n\n" + fmtComparisons(totalSave, stats);
             })(),
-            followups: [
-              {
-                q: "如果都做到，生活會有什麼改變？",
-                a: "這些省法的核心不是「少買」，而是「換個方式買同一個東西」：\n\n• 超商飲料 → 超市同款（一樣喝，省 20%）\n• 高頻品項 → 注意特價或量販包（一樣用，省 10%）\n• 成長中的品類 → 每次消費前多想 3 秒\n\n生活品質不變，但錢花得更聰明。",
-              },
-              {
-                q: "哪個品類最容易省？",
-                a: (() => {
-                  const easiest = catScored.filter((c) => c.count >= 10).sort((a, b) => b.total - a.total)[0];
-                  if (!easiest) return "從最高頻的品類開始，效果最快。";
-                  return "「" + easiest.cat + "」最容易省——" + easiest.count + " 次消費，是你最高頻的品類。\n\n高頻 = 每次小改就能累積大效果。均價降 10% 就能年省 $" + fmt(Math.round(easiest.total / months.length * 12 * 0.1)) + "。";
-                })(),
-              },
-            ],
           },
           {
-            q: "別人的「" + tc.cat + "」都怎麼買？",
+            q: "別人在「" + tc.cat + "」都怎麼買？我可以學嗎？",
             a: (() => {
               if (bmC) {
                 const diff = avgPerItem - bmC.groupAvg;
                 const diffPct = bmC.groupAvg > 0 ? Math.round(diff / bmC.groupAvg * 100) : 0;
-                let t = "「" + tc.cat + "」均價比較（" + bmC.scope + "）：\n\n• 你的均價：$" + avgPerItem + "/次\n• 其他人均價：$" + bmC.groupAvg + "/次\n• 最低的人：$" + bmC.groupMin + "/次\n\n";
+                let t = "「" + tc.cat + "」均價比較（" + bmC.scope + "）：\n\n• 你：$" + avgPerItem + "/次\n• 其他人平均：$" + bmC.groupAvg + "/次\n• 最精打細算：$" + bmC.groupMin + "/次\n\n";
                 if (diffPct > 10) {
                   const saveable = Math.round(diff * tc.count / months.length * 12);
-                  t += "你比其他人高 " + diffPct + "%。如果買到跟別人一樣的均價，年省 $" + fmt(saveable) + "。\n\n";
-                  t += "其他人可能的做法：\n• 選擇同品類中更平價的品項\n• 善用特價和會員優惠\n• 在比較便宜的通路購買";
+                  t += "你高了 " + diffPct + "%。模仿其他人的均價可年省 $" + fmt(saveable) + "。\n\n他們可能的做法：選更平價的品項、善用特價、在較便宜的通路買。\n\n" + fmtComparisons(saveable, stats);
                 } else if (diffPct < -10) {
-                  t += "你比其他人省 " + Math.abs(diffPct) + "%——你在這個品類買得很精準！可以把同樣的方法套用到其他品類。";
+                  t += "你比別人省 " + Math.abs(diffPct) + "%！你在這個品類已經是精打細算的消費者。\n\n可以把同樣的選購策略套到其他品類上。";
                 } else {
-                  t += "跟其他人差不多，在合理範圍。";
+                  t += "跟其他人差不多，在合理範圍。你的消費水平是健康的。";
+                }
+                // Add other categories comparison
+                if (bmResults.length > 1) {
+                  t += "\n\n其他品類 vs 別人：\n" + bmResults.slice(0, 3).map((b) => (b.diffPct > 10 ? "⬆️" : b.diffPct < -10 ? "✅" : "➡️") + " " + b.cat + "：你$" + b.userAvg + " vs 均$" + b.groupAvg).join("\n");
                 }
                 return t;
               }
-              return "「" + tc.cat + "」你的均價是 $" + avgPerItem + "/次。因個人選擇差異大，重要的是你自己覺得值不值。";
+              return "「" + tc.cat + "」均價 $" + avgPerItem + "/次。這個品類因個人喜好差異大，重點是：你覺得每次花 $" + avgPerItem + " 值不值。";
             })(),
-            followups: [
-              {
-                q: "我可以模仿別人的消費方式嗎？",
-                a: (() => {
-                  if (bmC && avgPerItem > bmC.groupAvg) {
-                    return "別人在「" + tc.cat + "」的均價是 $" + bmC.groupAvg + "，最精打細算的人只要 $" + bmC.groupMin + "。\n\n你可以嘗試：\n1️⃣ 下次買之前看看有沒有更平價的同類選擇\n2️⃣ 注意有沒有你沒試過的品牌\n3️⃣ 超商品項改在超市看看\n\n不需要每次都選最便宜，但偶爾嘗試就能慢慢降低均價。";
-                  }
-                  return "你在「" + tc.cat + "」已經買得不錯了。如果想更好，可以關注促銷時機和量販包——同一個東西在對的時候買，價差可以到 20%。";
-                })(),
-              },
-              {
-                q: "其他品類跟別人比呢？",
-                a: (() => {
-                  if (bmResults.length === 0) return "其他品類的比較資料不足。";
-                  return "你的各品類 vs 其他人：\n\n" + bmResults.slice(0, 4).map((b) => (b.diffPct > 10 ? "⬆️" : b.diffPct < -10 ? "✅" : "➡️") + " " + b.cat + "（" + b.scope + "）：你 $" + b.userAvg + " vs 均 $" + b.groupAvg + (b.diffPct > 10 ? " 偏高" + b.diffPct + "%" : b.diffPct < -10 ? " 你更省" + Math.abs(b.diffPct) + "%" : " 差不多")).join("\n") + "\n\n把你「更省」的品類方法，套到「偏高」的品類上——這是最聰明的省法。";
-                })(),
-              },
-            ],
           },
         ],
       },
