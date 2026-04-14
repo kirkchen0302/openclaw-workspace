@@ -28,35 +28,73 @@ const STORE_TYPE_MAP = {
   "麥當勞": "速食", "肯德基": "速食", "摩斯漢堡": "速食",
 };
 
-// Audience segments — pre-computed from user consumption proportions
-const AUDIENCE_SEGMENTS = {
-  "外食族": { monthlyAvg: 19589, catBenchmarks: { "咖啡": 66, "飲料": 52, "零食": 47, "鮮食": 45 } },
-  "超商族": { monthlyAvg: 12592, catBenchmarks: { "咖啡": 57, "飲料": 38, "零食": 64, "鮮食": 49 } },
-  "網購族": { monthlyAvg: 14485, catBenchmarks: { "咖啡": 55, "飲料": 31, "鮮食": 51 } },
+// Audience segments — pre-computed benchmarks per segment
+const AUDIENCE_BENCHMARKS = {
+  "外食族": { monthlyAvg: 19589, catBm: { "咖啡": 66, "飲料": 52, "零食": 47, "鮮食": 45 } },
+  "超商族": { monthlyAvg: 12592, catBm: { "咖啡": 57, "飲料": 38, "零食": 64, "鮮食": 49 } },
+  "咖啡族": { monthlyAvg: 15000, catBm: { "咖啡": 80, "飲料": 40, "鮮食": 48 } },
+  "超市採購族": { monthlyAvg: 16000, catBm: { "飲料": 45, "零食": 42, "鮮食": 50 } },
+  "網購族": { monthlyAvg: 14485, catBm: { "咖啡": 55, "飲料": 31, "鮮食": 51 } },
 };
 
-// Detect user's audience segment from their consumption proportions
+// Audience detection rules — uses BOTH store patterns AND item keywords
+const AUDIENCE_RULES = [
+  { name: "外食族", storeKw: ["ubereats","uber eats","foodpanda","麥當勞","肯德基","摩斯漢堡","爭鮮","藏壽司"], itemKw: [], type: "store_pct", threshold: 20 },
+  { name: "超商族", storeKw: ["7-11","全家","萊爾富"], itemKw: [], type: "store_pct", threshold: 25 },
+  { name: "超市採購族", storeKw: ["全聯","家樂福","美廉社"], itemKw: [], type: "store_pct", threshold: 15 },
+  { name: "咖啡族", storeKw: [], itemKw: ["咖啡","美式","拿鐵","摩卡","卡布","冷萃"], type: "item_pct", threshold: 5 },
+  { name: "健身/健康族", storeKw: ["健身工廠"], itemKw: ["雞胸","蛋白","優格","優酪","沙拉","燕麥","豆漿","豆奶","無加糖","LP33","益生菌","機能"], type: "item_count", threshold: 15 },
+  { name: "飲料族", storeKw: [], itemKw: ["氣泡水","可樂","雪碧","奶茶","果汁","紅茶","綠茶"], type: "item_pct", threshold: 8 },
+  { name: "零食控", storeKw: [], itemKw: ["餅乾","洋芋片","樂事","多力多滋","品客","口香糖","巧克力","糖果","軟糖"], type: "item_pct", threshold: 4 },
+  { name: "新手爸媽", storeKw: [], itemKw: ["尿布","奶粉","副食品","嬰兒","寶寶","兒童","奶瓶","紙尿褲","pampers","幫寶適","妙而舒","滿意寶寶","哺乳"], type: "item_count", threshold: 3 },
+  { name: "美妝保養族", storeKw: ["寶雅","屈臣氏","康是美"], itemKw: ["面膜","卸妝","防曬","乳液","保濕","精華","洗面","粉底"], type: "item_count", threshold: 5 },
+  { name: "網購族", storeKw: ["momo","蝦皮","shopee","酷澎","coupang","pchome"], itemKw: [], type: "store_pct", threshold: 10 },
+  { name: "開車族", storeKw: ["台灣中油","北基加油站","停車場"], itemKw: ["無鉛汽油","柴油","95無鉛","92無鉛"], type: "item_count", threshold: 5 },
+  // 毛小孩：exclude food items containing "狗" (like 熱狗)
+  { name: "毛小孩家長", storeKw: [], itemKw: ["飼料","貓砂","寵物","倉鼠"], type: "item_count", threshold: 3 },
+];
+
 function detectAudience(invoices, brands) {
   const total = invoices.length || 1;
-  const deliveryPct = invoices.filter((inv) => isDeliveryPlatform(inv.shop)).length / total * 100;
-  const fastPct = invoices.filter((inv) => ["麥當勞","肯德基","摩斯漢堡"].includes(inv.shop)).length / total * 100;
-  const convPct = invoices.filter((inv) => ["7-11","全家","萊爾富"].includes(inv.shop)).length / total * 100;
-  const onlinePct = invoices.filter((inv) => isOnlineBulk(inv.shop)).length / total * 100;
+  const tags = [];
 
-  const traits = [
-    { name: "外食族", pct: deliveryPct + fastPct },
-    { name: "超商族", pct: convPct },
-    { name: "網購族", pct: onlinePct },
-  ].sort((a, b) => b.pct - a.pct);
+  AUDIENCE_RULES.forEach((rule) => {
+    let storeHits = 0;
+    let itemHits = 0;
+    invoices.forEach((inv) => {
+      const shopLower = (inv.shop || "").toLowerCase();
+      if (rule.storeKw.some((kw) => shopLower.includes(kw.toLowerCase()))) storeHits++;
+      (inv.items || []).forEach((it) => {
+        const itemLower = (it.name || "").toLowerCase();
+        if (rule.itemKw.some((kw) => itemLower.includes(kw.toLowerCase()))) itemHits += it.qty || 1;
+      });
+    });
 
-  const primary = traits[0];
-  const secondary = traits[1] && traits[1].pct > 10 ? traits[1] : null;
+    let hit = false;
+    let score = 0;
+    if (rule.type === "store_pct") {
+      const pct = storeHits / total * 100;
+      if (pct >= rule.threshold) { hit = true; score = pct; }
+    } else if (rule.type === "item_pct") {
+      const pct = itemHits / total * 100;
+      if (pct >= rule.threshold) { hit = true; score = pct; }
+    } else if (rule.type === "item_count") {
+      if (storeHits + itemHits >= rule.threshold) { hit = true; score = storeHits + itemHits; }
+    }
+    if (hit) tags.push({ name: rule.name, score });
+  });
+
+  tags.sort((a, b) => b.score - a.score);
+  const primary = tags[0] || { name: "一般消費者", score: 0 };
+  const secondary = tags[1] && tags[1].score > 5 ? tags[1] : null;
+
   return {
+    tags: tags.map((t) => t.name),
     primary: primary.name,
-    primaryPct: Math.round(primary.pct),
+    primaryPct: Math.round(primary.score),
     secondary: secondary ? secondary.name : null,
     label: primary.name + (secondary ? " + " + secondary.name : ""),
-    segment: AUDIENCE_SEGMENTS[primary.name] || null,
+    segment: AUDIENCE_BENCHMARKS[primary.name] || null,
   };
 }
 
@@ -1988,7 +2026,9 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
           {
             q: "跟同類型的人比，我花得算多嗎？",
             a: (() => {
-              let t = "你的消費者定位：「" + audience.label + "」\n\n";
+              // Show all audience tags
+              let t = "根據你的消費品項和通路，你的消費者標籤：\n\n";
+              t += audience.tags.slice(0, 4).map((tag) => "🏷️ " + tag).join("  ") + "\n\n";
 
               // Segment-level comparison
               if (audience.segment) {
@@ -1999,7 +2039,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                 t += "跟同為「" + audience.primary + "」的人比：\n• 你的月均消費：$" + fmt(monthlyAvg) + "\n• 「" + audience.primary + "」平均：$" + fmt(seg.monthlyAvg) + "\n• " + (diffPct > 10 ? "你高了 " + diffPct + "%。" : diffPct < -10 ? "你比同族群省 " + Math.abs(diffPct) + "%！" : "差不多，在合理範圍。") + "\n\n";
 
                 // Category benchmark within segment
-                const segBm = seg.catBenchmarks || {};
+                const segBm = seg.catBm || {};
                 const catComps = [];
                 Object.entries(segBm).forEach(([cat, segAvg]) => {
                   const userCatData = bmResults.find((b) => b.cat === cat);
