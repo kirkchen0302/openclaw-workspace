@@ -1821,6 +1821,50 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
     }
   }
 
+  // ── Package size optimization detection ────────────────────────────
+  // Find same product bought in different package sizes → savings if always buying bulk
+  // Example: illuma奶粉 1罐 $4,034 vs 6罐裝 $1,630/unit → save 60%
+  let pkgSizeOptimizations = [];
+  if (hasItems) {
+    const storeItemVariants = {};
+    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => {
+      (inv.items || []).forEach((it) => {
+        if (!it.name || !it.price || it.price <= 0) return;
+        const shop = inv.shop || "";
+        const normalized = it.name.replace(/\s*\d+\s*(罐|入|組|盒|包|袋|瓶|片|個)\s*$/g, "").trim();
+        if (normalized.length < 2) return;
+        const key = shop + "::" + normalized;
+        if (!storeItemVariants[key]) storeItemVariants[key] = { shop, baseName: normalized, variants: {} };
+        const priceKey = Math.round(it.price);
+        if (!storeItemVariants[key].variants[priceKey]) storeItemVariants[key].variants[priceKey] = { price: it.price, count: 0, name: it.name };
+        storeItemVariants[key].variants[priceKey].count += it.qty || 1;
+      });
+    });
+    Object.values(storeItemVariants).forEach((group) => {
+      const variants = Object.values(group.variants).filter((v) => v.count >= 1);
+      if (variants.length < 2) return;
+      variants.sort((a, b) => a.price - b.price);
+      const cheapest = variants[0];
+      const most = variants[variants.length - 1];
+      if (most.price <= cheapest.price * 1.3) return;
+      if (most.price < 100) return;
+      const premiumPct = Math.round((most.price - cheapest.price) / cheapest.price * 100);
+      const totalBought = variants.reduce((s, v) => s + v.count, 0);
+      const currentSpend = variants.reduce((s, v) => s + v.price * v.count, 0);
+      const ifCheapest = totalBought * cheapest.price;
+      const saveable = currentSpend - ifCheapest;
+      if (saveable < 500) return;
+      pkgSizeOptimizations.push({
+        shop: group.shop, baseName: group.baseName,
+        cheapest, most, premiumPct,
+        totalBought, currentSpend, ifCheapest, saveable,
+        yearlySave: Math.round(saveable / Math.max(months.length, 1) * 12),
+        variants,
+      });
+    });
+    pkgSizeOptimizations.sort((a, b) => b.yearlySave - a.yearlySave);
+  }
+
   // ── Type: SAVE_PLAN ────────────────────────────────────────────────
   // Concrete, ranked saving strategies based on user's actual data
   const savePlans = [];
@@ -1976,54 +2020,6 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
   }
 
   // ── COMBINED HOOKS (v2 — 3 fixed hooks, 2 layers only) ────────────
-
-  // ── Package size optimization detection ────────────────────────────
-  // Find same product bought in different package sizes → savings if always buying bulk
-  // Example: illuma奶粉 1罐 $4,034 vs 6罐裝 $1,630/unit → save 60%
-  let pkgSizeOptimizations = [];
-  if (hasItems) {
-    // Group items by normalized name (strip quantity/size suffixes) within same store
-    const storeItemVariants = {};
-    invoices.filter((inv) => !isDeliveryPlatform(inv.shop)).forEach((inv) => {
-      (inv.items || []).forEach((it) => {
-        if (!it.name || !it.price || it.price <= 0) return;
-        const shop = inv.shop || "";
-        // Normalize: strip trailing quantity patterns like "1罐", "3罐", "6罐", "1入", "3入", "6入", "1組", "3組"
-        const normalized = it.name.replace(/\s*\d+\s*(罐|入|組|盒|包|袋|瓶|片|個)\s*$/g, "").trim();
-        if (normalized.length < 2) return;
-        const key = shop + "::" + normalized;
-        if (!storeItemVariants[key]) storeItemVariants[key] = { shop, baseName: normalized, variants: {} };
-        const priceKey = Math.round(it.price);
-        if (!storeItemVariants[key].variants[priceKey]) storeItemVariants[key].variants[priceKey] = { price: it.price, count: 0, name: it.name };
-        storeItemVariants[key].variants[priceKey].count += it.qty || 1;
-      });
-    });
-
-    Object.values(storeItemVariants).forEach((group) => {
-      const variants = Object.values(group.variants).filter((v) => v.count >= 1);
-      if (variants.length < 2) return;
-      variants.sort((a, b) => a.price - b.price);
-      const cheapest = variants[0];
-      const most = variants[variants.length - 1];
-      // Must have significant price difference (>30%) and both bought at least once
-      if (most.price <= cheapest.price * 1.3) return;
-      if (most.price < 100) return; // skip trivial items
-      const premiumPct = Math.round((most.price - cheapest.price) / cheapest.price * 100);
-      const totalBought = variants.reduce((s, v) => s + v.count, 0);
-      const currentSpend = variants.reduce((s, v) => s + v.price * v.count, 0);
-      const ifCheapest = totalBought * cheapest.price;
-      const saveable = currentSpend - ifCheapest;
-      if (saveable < 500) return; // only meaningful savings
-      pkgSizeOptimizations.push({
-        shop: group.shop, baseName: group.baseName,
-        cheapest, most, premiumPct,
-        totalBought, currentSpend, ifCheapest, saveable,
-        yearlySave: Math.round(saveable / Math.max(months.length, 1) * 12),
-        variants,
-      });
-    });
-    pkgSizeOptimizations.sort((a, b) => b.yearlySave - a.yearlySave);
-  }
 
   // Hook A: 訂閱 + 重複消費
   if (hasItems && (habitItems.length >= 3 || userSubs.length >= 1)) {
