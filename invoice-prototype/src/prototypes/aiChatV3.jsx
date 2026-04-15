@@ -137,14 +137,14 @@ function AlertCard({ icon, title, children }) {
   );
 }
 
-function CtaButton({ primary, label, done, onClick }) {
+function CtaButton({ primary, label, done, onClick, flex }) {
   if (done) {
     return (
       <button
         disabled
         style={{
-          display: "inline-block",
-          padding: "10px 20px",
+          flex: flex ? 1 : undefined,
+          padding: "10px 14px",
           borderRadius: 20,
           border: `1px solid ${T.border}`,
           background: T.bgSunken,
@@ -152,8 +152,7 @@ function CtaButton({ primary, label, done, onClick }) {
           fontSize: 13,
           fontWeight: 600,
           cursor: "default",
-          marginTop: 6,
-          marginRight: 8,
+          marginTop: flex ? 0 : 6,
         }}
       >
         {label}
@@ -164,8 +163,8 @@ function CtaButton({ primary, label, done, onClick }) {
     <button
       onClick={onClick}
       style={{
-        display: "inline-block",
-        padding: "10px 20px",
+        flex: flex ? 1 : undefined,
+        padding: "10px 14px",
         borderRadius: 20,
         border: primary ? "none" : `1.5px solid ${T.brand}`,
         background: primary ? T.brand : T.bg,
@@ -173,8 +172,7 @@ function CtaButton({ primary, label, done, onClick }) {
         fontSize: 13,
         fontWeight: 600,
         cursor: "pointer",
-        marginTop: 6,
-        marginRight: 8,
+        marginTop: flex ? 0 : 6,
       }}
     >
       {label}
@@ -543,11 +541,11 @@ export default function AIChatV3({
         ],
       });
       subBubble.push({ type: "text", content: "每個訂閱問自己：「上個月我用了幾次？」想不出來的，先暫停一個月試試。" });
-      subBubble.push({ type: "cta", label: "📋 加入待辦：歸戶更多訂閱服務", primary: false, todoText: "到 App 載具歸戶頁面，確認所有訂閱服務都已歸戶（Netflix / Spotify / iCloud 等）" });
+      subBubble.push({ type: "cta", label: "📋 歸戶更多訂閱發票", primary: false, todoText: "到 App 載具歸戶頁面，確認所有訂閱服務都已歸戶（Netflix / Spotify / iCloud 等）" });
     } else {
       subBubble.push({ type: "text", content: "📱 目前沒有偵測到訂閱服務的發票。但你可能有 Netflix、Spotify、YouTube Premium、iCloud、外送平台會員等服務正在扣款。\n\n這些服務如果沒有歸戶到載具，就不會出現在發票裡。" });
-      subBubble.push({ type: "cta", label: "📋 加入待辦：歸戶訂閱服務載具", primary: true, todoText: "到 App 載具歸戶頁面，把 Netflix / Spotify / iCloud 等訂閱服務歸戶" });
-      subBubble.push({ type: "cta", label: "📱 加入待辦：檢查手機訂閱項目", primary: false, todoText: "打開手機設定 → 訂閱，檢查有哪些正在扣款" });
+      subBubble.push({ type: "cta", label: "📋 歸戶更多訂閱發票", primary: true, todoText: "到 App 載具歸戶頁面，把 Netflix / Spotify / iCloud 等訂閱服務歸戶" });
+      subBubble.push({ type: "cta", label: "📱 檢查手機訂閱項目", primary: false, todoText: "打開手機設定 → 訂閱，檢查有哪些正在扣款" });
     }
     bubbles.push(subBubble);
 
@@ -572,11 +570,11 @@ export default function AIChatV3({
       if (utils.tips && utils.tips.length > 0) {
         utilBubble.push({ type: "text", content: "💡 " + utils.tips.join("\n💡 ") });
       }
-      utilBubble.push({ type: "cta", label: "🔔 加入待辦：設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" });
+      utilBubble.push({ type: "cta", label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" });
     } else {
       utilBubble.push({ type: "text", content: "🏠 你的發票中沒有出現電費、水費、瓦斯費。這些帳單可能還沒歸戶到載具。" });
-      utilBubble.push({ type: "cta", label: "📋 加入待辦：歸戶電費、水費、瓦斯費", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" });
-      utilBubble.push({ type: "cta", label: "🔔 加入待辦：設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" });
+      utilBubble.push({ type: "cta", label: "📋 歸戶更多公共事業發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" });
+      utilBubble.push({ type: "cta", label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" });
     }
     bubbles.push(utilBubble);
 
@@ -597,18 +595,22 @@ export default function AIChatV3({
         }),
       });
       repeatBubble.push({ type: "text", content: `重複消費合計：$${fmt(annualRepeat)}/年` });
-      repeatBubble.push({ type: "cta", label: "📋 建立下次購買清單", primary: true, todoText: "建立購買清單：" + repeatItems.slice(0, 5).map((it) => it.name.slice(0, 10)).join("、") + "（設定購買週期提醒）" });
-      repeatBubble.push({ type: "cta", label: "🔔 有更便宜的通知我", primary: false, todoText: "開啟比價通知：當重複購買品項有更便宜的選擇時推播提醒" });
+      repeatBubble.push({ type: "cta-row", buttons: [
+        { label: "📋 建立購買清單", primary: true, todoText: "建立購買清單：" + repeatItems.slice(0, 5).map((it) => it.name.slice(0, 10)).join("、") + "（設定購買週期提醒）" },
+        { label: "🔔 有便宜通知我", primary: false, todoText: "開啟比價通知：當重複購買品項有更便宜的選擇時推播提醒" },
+      ] });
       bubbles.push(repeatBubble);
     }
 
-    // Savings bubble
-    const saves = data.saves || [];
-    let totalSaveable = 0;
+    // Savings bubble — smart tips for repeat items
     const saveBubble = [];
+    const tipLines = [];
+    let totalSaveable = 0;
+
+    // Package size optimization
     if (data.smartBuy && data.smartBuy.length > 0 && data.smartBuy[0].currentPrice > 0) {
       saveBubble.push({
-        type: "datacard", title: "💡 聰明採購",
+        type: "datacard", title: "💡 買更省的方式",
         rows: data.smartBuy.map((s) => ({
           label: s.item.length > 15 ? s.item.slice(0, 15) + "…" : s.item,
           value: `$${fmt(s.currentPrice)} → $${fmt(s.betterPrice)}`,
@@ -616,12 +618,44 @@ export default function AIChatV3({
         })),
       });
     }
-    if (saves.length > 0) {
-      const tipLines = saves.map((s) => { totalSaveable += s.save || 0; return `${s.icon} ${s.item}：${s.action}，可省 $${fmt(s.save)}/年`; });
+
+    // Per-item smart tips based on category
+    for (const item of repeatItems) {
+      const cat = item.cat || "";
+      const monthly = Math.round(item.total / Math.max(spanMonths, 1));
+      const yearly = monthly * 12;
+      if (cat === "咖啡" && yearly > 1000) {
+        const save = Math.round(yearly * 0.3);
+        tipLines.push("☕ " + item.name.slice(0, 12) + "：自備杯折 $3-5 + 考慮平價品牌，年省 ~$" + fmt(save));
+        totalSaveable += save;
+      } else if (["零食/餅乾", "瓶裝飲料"].includes(cat) && yearly > 800) {
+        const save = Math.round(yearly * 0.25);
+        tipLines.push("🏪 " + item.name.slice(0, 12) + "：超商同款在超市省 20-30%，年省 ~$" + fmt(save));
+        totalSaveable += save;
+      } else if (["乳製品"].includes(cat) && yearly > 1000) {
+        const save = Math.round(yearly * 0.2);
+        tipLines.push("🥛 " + item.name.slice(0, 12) + "：固定在超市採購，比超商便宜 15-25%，年省 ~$" + fmt(save));
+        totalSaveable += save;
+      } else if (cat === "餐飲" && item.count >= 8) {
+        tipLines.push("🍔 " + item.name.slice(0, 12) + "：善用 App 優惠券和集點，每次省 10-15%");
+        totalSaveable += Math.round(yearly * 0.12);
+      }
+    }
+
+    // Generic saves from engine
+    const saves = data.saves || [];
+    for (const s of saves) {
+      if (!tipLines.some((t) => t.includes(s.item.slice(0, 8)))) {
+        tipLines.push(s.icon + " " + s.item + "：" + s.action + "，可省 $" + fmt(s.save) + "/年");
+        totalSaveable += s.save || 0;
+      }
+    }
+
+    if (tipLines.length > 0) {
       saveBubble.push({ type: "text", content: tipLines.join("\n") });
     }
     if (totalSaveable > 0) {
-      saveBubble.push({ type: "text", content: `合計可省 $${fmt(totalSaveable)}/年` });
+      saveBubble.push({ type: "text", content: "合計可省 $" + fmt(totalSaveable) + "/年" });
       if (data.fmtComparisons) {
         const ct = data.fmtComparisons(totalSaveable);
         if (ct) saveBubble.push({ type: "text", content: ct });
@@ -815,6 +849,24 @@ export default function AIChatV3({
           />
         );
       }
+      case "cta-row":
+        return (
+          <div key={idx} style={{ display: "flex", gap: 8, marginTop: 6 }}>
+            {(part.buttons || []).map((btn, bi) => {
+              const isDone = todos.includes(btn.todoText);
+              return (
+                <CtaButton
+                  key={bi}
+                  primary={btn.primary}
+                  label={btn.label}
+                  done={isDone}
+                  flex
+                  onClick={() => { if (!isDone) addTodo(btn.todoText); }}
+                />
+              );
+            })}
+          </div>
+        );
       default:
         return null;
     }
