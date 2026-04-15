@@ -427,7 +427,7 @@ export default function AIChatV2({
         rows: tier2.map((t) => ({
           label: t.store,
           value: `$${fmt(t.amount)}`,
-          sub: t.items ? t.items.join("、") : undefined,
+          sub: Array.isArray(t.items) ? t.items.join("、") : t.items || undefined,
         })),
       });
     }
