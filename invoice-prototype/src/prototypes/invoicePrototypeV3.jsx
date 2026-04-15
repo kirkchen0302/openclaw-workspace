@@ -4,6 +4,7 @@ import { resolveShop } from "./shopMapping";
 import { classifyItem } from "./itemClassifier";
 import AIChat from "./aiChatV1";
 import AIChatV2 from "./aiChatV2";
+import AIChatV3 from "./aiChatV3";
 
 const fmt = (n) => n.toLocaleString();
 
@@ -403,7 +404,9 @@ export default function InvoicePrototypeV3() {
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
       <div style={S.root}>
         {tab === "ai" ? (
-          window.location.pathname.includes("0415_v3")
+          window.location.pathname.includes("0415_v4")
+            ? <AIChatV3 invoices={invoices} totalAmount={totalAmount} invoiceCount={invoiceCount} monthlyTrend={data.monthlyTrend} />
+            : window.location.pathname.includes("0415_v3")
             ? <AIChatV2 invoices={invoices} totalAmount={totalAmount} invoiceCount={invoiceCount} monthlyTrend={data.monthlyTrend} />
             : <AIChat invoices={invoices} totalAmount={totalAmount} invoiceCount={invoiceCount} monthlyTrend={data.monthlyTrend} deliverySubs={data.deliverySubs} flatSubs={data.flatSubs} />
         ) : (

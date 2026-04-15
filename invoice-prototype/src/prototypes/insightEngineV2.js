@@ -1112,6 +1112,126 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
       : "你的各項消費單價跟其他人差不多，沒有明顯買貴的項目 👍",
   };
 
+  // ── Store × Category Cross-Analysis (for v4 Hook 1) ──────────────────
+
+  const storeCatMap = {};
+  for (const inv of invoices) {
+    const shop = inv.shop || "其他";
+    if (isDeliveryPlatform(shop)) continue;
+    for (const it of inv.items || []) {
+      const cat = classifyItem(it.name);
+      if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") continue;
+      if (!storeCatMap[shop]) storeCatMap[shop] = { shop, total: 0, cats: {} };
+      storeCatMap[shop].total += (it.price || 0) * (it.qty || 1);
+      if (!storeCatMap[shop].cats[cat]) storeCatMap[shop].cats[cat] = 0;
+      storeCatMap[shop].cats[cat] += (it.price || 0) * (it.qty || 1);
+    }
+  }
+  const storeCategoryMatrix = Object.values(storeCatMap)
+    .filter((s) => s.total > 500)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8)
+    .map((s) => {
+      const topCats = Object.entries(s.cats)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([cat, amt]) => ({ cat, amount: Math.round(amt), pct: Math.round(amt / s.total * 100) }));
+      return { shop: s.shop, total: Math.round(s.total), topCats };
+    });
+
+  // Category → stores (reverse view)
+  const catStoreMap = {};
+  for (const s of storeCategoryMatrix) {
+    for (const c of s.topCats) {
+      if (!catStoreMap[c.cat]) catStoreMap[c.cat] = { cat: c.cat, total: 0, stores: [] };
+      catStoreMap[c.cat].total += c.amount;
+      catStoreMap[c.cat].stores.push({ shop: s.shop, amount: c.amount });
+    }
+  }
+  const categoryStoreMatrix = Object.values(catStoreMap)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 6)
+    .map((c) => ({ ...c, stores: c.stores.sort((a, b) => b.amount - a.amount).slice(0, 4) }));
+
+  // ── Hidden Spending Thieves (for v4 Hook 2) ─────────────────────────
+
+  const hiddenThieves = [];
+
+  // 1. Frequency surges — spending expanding without awareness
+  for (const surge of frequencySurges.slice(0, 3)) {
+    hiddenThieves.push({
+      type: "surge", icon: "🚀", label: "頻率暴增",
+      title: `「${surge.brand}」頻率暴增 ${surge.ratio} 倍`,
+      detail: `從每月 ${surge.before} 次 → ${surge.after} 次`,
+      severity: surge.ratio >= 3 ? "high" : "medium",
+    });
+  }
+
+  // 2. Late night impulse
+  if (lateNight.pct >= 10) {
+    hiddenThieves.push({
+      type: "latenight", icon: "🌙", label: "深夜消費",
+      title: `${lateNight.pct}% 消費在深夜（22:00-06:00）`,
+      detail: `共 $${fmt(lateNight.total)}，減少 30% 可年省 $${fmt(lateNight.saveable)}`,
+      severity: lateNight.pct >= 20 ? "high" : "medium",
+    });
+  }
+
+  // 3. Weekend premium
+  if (weekendPremium.pct >= 20) {
+    hiddenThieves.push({
+      type: "weekend", icon: "📆", label: "週末溢價",
+      title: `週末每筆消費比平日貴 ${weekendPremium.pct}%`,
+      detail: `平日均 $${fmt(weekendPremium.weekdayAvg)} vs 週末 $${fmt(weekendPremium.weekendAvg)}`,
+      severity: weekendPremium.pct >= 40 ? "high" : "medium",
+    });
+  }
+
+  // 4. Small-but-frequent items (convenience store habit)
+  const smallFrequent = repeatItems
+    .filter((it) => it.count >= 8 && it.total / it.count < 100)
+    .slice(0, 3);
+  for (const sf of smallFrequent) {
+    const yearly = annualise(sf.total, span);
+    hiddenThieves.push({
+      type: "smallfreq", icon: "🏪", label: "小額高頻",
+      title: `「${sf.name}」${sf.count} 次，每次 $${Math.round(sf.total / sf.count)}`,
+      detail: `看似不多但年化 $${fmt(yearly)}`,
+      severity: yearly >= 3000 ? "medium" : "low",
+    });
+  }
+
+  // 5. Growing categories — items whose spend is increasing
+  const monthSetArr = [...new Set(invoices.map((i) => i.yearMonth).filter(Boolean))].sort();
+  const midIdx = Math.floor(monthSetArr.length / 2);
+  const firstHalf = new Set(monthSetArr.slice(0, midIdx));
+  const secondHalf = new Set(monthSetArr.slice(midIdx));
+  const catGrowth = {};
+  for (const inv of invoices) {
+    if (isDeliveryPlatform(inv.shop)) continue;
+    for (const it of inv.items || []) {
+      const cat = classifyItem(it.name);
+      if (cat === "其他" || cat === "外送服務費") continue;
+      if (!catGrowth[cat]) catGrowth[cat] = { first: 0, second: 0 };
+      const amt = (it.price || 0) * (it.qty || 1);
+      if (firstHalf.has(inv.yearMonth)) catGrowth[cat].first += amt;
+      else if (secondHalf.has(inv.yearMonth)) catGrowth[cat].second += amt;
+    }
+  }
+  for (const [cat, g] of Object.entries(catGrowth)) {
+    if (g.first < 500) continue;
+    const growthPct = Math.round(((g.second - g.first) / g.first) * 100);
+    if (growthPct >= 50) {
+      hiddenThieves.push({
+        type: "catgrowth", icon: "📈", label: "品類膨脹",
+        title: `「${cat}」消費成長 ${growthPct}%`,
+        detail: `前期 $${fmt(Math.round(g.first))} → 近期 $${fmt(Math.round(g.second))}`,
+        severity: growthPct >= 100 ? "high" : "medium",
+      });
+    }
+  }
+  hiddenThieves.sort((a, b) => (a.severity === "high" ? 0 : a.severity === "medium" ? 1 : 2) - (b.severity === "high" ? 0 : b.severity === "medium" ? 1 : 2));
+
   // ── Return full data object ──────────────────────────────────────────
 
   return {
@@ -1137,5 +1257,11 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
     weekendPremium,
     frequencySurges,
     fmtComparisons,
+    saves,
+
+    // v4 Hook data
+    storeCategoryMatrix,
+    categoryStoreMatrix,
+    hiddenThieves,
   };
 }
