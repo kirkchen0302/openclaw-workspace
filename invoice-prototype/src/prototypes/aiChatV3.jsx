@@ -442,14 +442,6 @@ export default function AIChatV3({
       });
     }
 
-    // Audience tags
-    if (data.audience && data.audience.tags && data.audience.tags.length > 0) {
-      parts.push({
-        type: "text",
-        content: `根據你的消費模式，你是：${data.audience.tags.join("、")}`,
-      });
-    }
-
     return parts;
   }
 
@@ -526,50 +518,134 @@ export default function AIChatV3({
     const parts = [];
     const spanMonths = Math.max(data.total / (data.monthly || 1), 1);
 
-    // ── Section 1: Subscriptions ──────────────────────────────────────
+    parts.push({
+      type: "text",
+      content: "我幫你整理了所有重複性支出，分成三個部分來看：",
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // Section 1: 訂閱服務
+    // ══════════════════════════════════════════════════════════════════
     if (data.subscriptions && data.subscriptions.length > 0) {
       const annualSub = data.subscriptions.reduce((s, sub) => s + (sub.monthlyAmount || 0) * 12, 0);
       parts.push({
         type: "datacard",
-        title: "偵測到的訂閱服務",
-        rows: data.subscriptions.map((sub) => ({
-          label: `📱 ${sub.name}`,
-          value: `$${fmt(sub.monthlyAmount)}/月`,
-          sub: sub.note || undefined,
-        })),
+        title: "📱 訂閱服務",
+        rows: [
+          ...data.subscriptions.map((sub) => ({
+            label: sub.name,
+            value: `$${fmt(sub.monthlyAmount)}/月`,
+            sub: sub.note || undefined,
+          })),
+          {
+            label: "年度合計",
+            value: `$${fmt(annualSub)}/年`,
+            valueColor: T.danger,
+          },
+        ],
       });
       parts.push({
         type: "text",
-        content: `訂閱服務年度合計：$${fmt(annualSub)}/年`,
+        content: "每個訂閱問自己：「上個月我用了幾次？」想不出來的，先暫停一個月試試。",
       });
     } else {
       parts.push({
         type: "text",
-        content: "未偵測到訂閱服務。如果你有使用串流、外送等月費服務，可能尚未歸戶該載具。",
+        content: "📱 目前沒有偵測到訂閱服務的發票。但你可能有以下服務正在扣款：Netflix、Spotify、YouTube Premium、iCloud、外送平台會員等。",
+      });
+      parts.push({
+        type: "text",
+        content: "這些服務如果沒有歸戶到載具，就不會出現在發票裡。",
       });
       parts.push({
         type: "cta",
-        label: "去手機設定檢查訂閱",
+        label: "📋 加入待辦：歸戶訂閱服務載具",
         primary: true,
-        todoText: "檢查手機設定中的訂閱服務",
+        todoText: "到 App 載具歸戶頁面，把 Netflix / Spotify / iCloud 等訂閱服務歸戶",
+      });
+      parts.push({
+        type: "cta",
+        label: "📱 加入待辦：檢查手機訂閱項目",
+        primary: false,
+        todoText: "打開手機設定 → 訂閱，檢查有哪些正在扣款",
       });
     }
 
-    // ── Section 2: Repeat Purchase Items ──────────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    // Section 2: 公共事業費
+    // ══════════════════════════════════════════════════════════════════
+    const utils = data.utilities || {};
+    const bills = utils.bills || [];
+    if (bills.length > 0) {
+      const annualUtil = bills.reduce((s, b) => s + (b.amount || 0) * 12, 0);
+      parts.push({
+        type: "datacard",
+        title: "🏠 公共事業費",
+        rows: [
+          ...bills.map((b) => ({
+            label: b.name,
+            value: `$${fmt(b.amount)}/月均`,
+            sub: `年度 $${fmt(b.amount * 12)}`,
+          })),
+          {
+            label: "年度合計",
+            value: `$${fmt(annualUtil)}/年`,
+          },
+        ],
+      });
+      // Penalties
+      if (utils.penalties && utils.penalties.length > 0) {
+        parts.push({
+          type: "alert",
+          icon: "⚠️",
+          title: `發現 $${fmt(utils.penalties.reduce((s, p) => s + p.amount, 0))} 滯納金`,
+          body: "逾期繳費被收了違約金。建議開啟繳費到期推播提醒，或設定自動扣繳。",
+        });
+        parts.push({
+          type: "cta",
+          label: "🔔 加入待辦：開啟繳費提醒",
+          primary: true,
+          todoText: "開啟繳費到期推播提醒（電費、水費、瓦斯費到期前 3 天通知）",
+        });
+      }
+      // Tips
+      if (utils.tips && utils.tips.length > 0) {
+        parts.push({
+          type: "text",
+          content: "💡 " + utils.tips.join("\n💡 "),
+        });
+      }
+    } else {
+      const commonBills = ["電費", "水費", "瓦斯費"];
+      parts.push({
+        type: "text",
+        content: `🏠 你的發票中沒有出現${commonBills.join("、")}。這些帳單可能還沒歸戶到載具。`,
+      });
+      parts.push({
+        type: "cta",
+        label: "📋 加入待辦：歸戶電費、水費、瓦斯費",
+        primary: true,
+        todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具",
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Section 3: 重複購買品項
+    // ══════════════════════════════════════════════════════════════════
     const repeatItems = (data.repeatItems || []).slice(0, 8);
     if (repeatItems.length > 0) {
       const repeatTotal = repeatItems.reduce((s, it) => s + (it.total || 0), 0);
       const annualRepeat = Math.round((repeatTotal / spanMonths) * 12);
       parts.push({
         type: "datacard",
-        title: "重複購買品項",
+        title: "🔄 重複購買品項",
         rows: repeatItems.map((item) => {
-          const displayName = item.name.length > 15 ? item.name.slice(0, 15) + "..." : item.name;
+          const displayName = item.name.length > 15 ? item.name.slice(0, 15) + "…" : item.name;
           const monthly = Math.round(item.total / Math.max(spanMonths, 1));
           return {
             label: displayName,
             value: `${item.count} 次`,
-            sub: `共 $${fmt(item.total)}，月均 $${fmt(monthly)}（在 ${item.shop}）`,
+            sub: `共 $${fmt(item.total)}，月均 $${fmt(monthly)}（${item.shop}）`,
           };
         }),
       });
@@ -577,12 +653,43 @@ export default function AIChatV3({
         type: "text",
         content: `重複消費合計：$${fmt(annualRepeat)}/年`,
       });
+      // Action CTAs for repeat items
+      parts.push({
+        type: "cta",
+        label: "📋 建立下次購買清單",
+        primary: true,
+        todoText: "建立購買清單：" + repeatItems.slice(0, 5).map((it) => it.name.slice(0, 10)).join("、") + "（設定購買週期提醒）",
+      });
+      parts.push({
+        type: "cta",
+        label: "🔔 有更便宜的通知我",
+        primary: false,
+        todoText: "開啟比價通知：當重複購買品項有更便宜的選擇時推播提醒",
+      });
     }
 
-    // ── Section 3: Savings Tips ──────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    // Section 4: 省錢建議
+    // ══════════════════════════════════════════════════════════════════
     const saves = data.saves || [];
+    let totalSaveable = 0;
+
+    // Smart buy (package size — already filtered out restaurant food in engine)
+    if (data.smartBuy && data.smartBuy.length > 0 && data.smartBuy[0].currentPrice > 0) {
+      parts.push({
+        type: "datacard",
+        title: "💡 聰明採購",
+        rows: data.smartBuy.map((s) => ({
+          label: s.item.length > 15 ? s.item.slice(0, 15) + "…" : s.item,
+          value: `$${fmt(s.currentPrice)} → $${fmt(s.betterPrice)}`,
+          sub: s.tip,
+          valueColor: T.success,
+        })),
+      });
+    }
+
+    // Category-specific tips
     if (saves.length > 0) {
-      let totalSaveable = 0;
       const tipLines = saves.map((s) => {
         totalSaveable += s.save || 0;
         return `${s.icon} ${s.item}：${s.action}，可省 $${fmt(s.save)}/年`;
@@ -591,47 +698,20 @@ export default function AIChatV3({
         type: "text",
         content: tipLines.join("\n"),
       });
+    }
 
-      // Smart buy suggestions
-      if (data.smartBuy && data.smartBuy.length > 0) {
-        parts.push({
-          type: "datacard",
-          title: "聰明採購",
-          rows: data.smartBuy.map((s) => ({
-            label: s.item,
-            value: s.currentPrice && s.betterPrice
-              ? `$${fmt(s.currentPrice)} → $${fmt(s.betterPrice)}`
-              : "",
-            sub: s.tip,
-            valueColor: s.currentPrice && s.betterPrice ? T.success : undefined,
-          })),
-        });
-      }
-
-      // Total saveable with comparisons
-      if (totalSaveable > 0) {
-        parts.push({
-          type: "text",
-          content: `合計可省 $${fmt(totalSaveable)}/年`,
-        });
-        if (data.fmtComparisons) {
-          const comparisonText = data.fmtComparisons(totalSaveable);
-          if (comparisonText) {
-            parts.push({
-              type: "text",
-              content: comparisonText,
-            });
-          }
+    // Total saveable with psychology comparisons
+    if (totalSaveable > 0) {
+      parts.push({
+        type: "text",
+        content: `合計可省 $${fmt(totalSaveable)}/年`,
+      });
+      if (data.fmtComparisons) {
+        const comparisonText = data.fmtComparisons(totalSaveable);
+        if (comparisonText) {
+          parts.push({ type: "text", content: comparisonText });
         }
       }
-
-      // CTA
-      parts.push({
-        type: "cta",
-        label: "記住省錢計畫",
-        primary: true,
-        todoText: "執行省錢計畫：" + saves.map((s) => s.action).join("、"),
-      });
     }
 
     return parts;

@@ -480,12 +480,20 @@ function computeSaves(tier1, span) {
 // ── Smart Buy: Package Size Optimisation ────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Categories where "buy in bulk" makes no sense (restaurant meals, prepared food)
+const NO_BULK_CATS = ["速食餐點", "便當/正餐", "餐飲消費", "壽司/迴轉", "滷味/小食", "麵包/烘焙", "手搖飲"];
+
 function computeSmartBuy(invoices, span) {
   const storeItemVariants = {};
 
   for (const inv of invoices) {
+    // Skip per-visit stores entirely (sushi/fast food — no package concept)
+    if (isPerVisitStore(inv.shop)) continue;
     for (const it of inv.items || []) {
       if (!it.name || !it.price || it.price <= 0) continue;
+      // Skip restaurant/prepared food categories
+      const cat = classifyItem(it.name);
+      if (NO_BULK_CATS.includes(cat)) continue;
       const normalized = normaliseItemName(it.name);
       if (normalized.length < 2) continue;
 
