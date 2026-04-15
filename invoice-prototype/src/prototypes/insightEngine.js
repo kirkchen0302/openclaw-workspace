@@ -66,7 +66,7 @@ function detectAudience(invoices, brands) {
       if (rule.storeKw.some((kw) => shopLower.includes(kw.toLowerCase()))) storeHits++;
       (inv.items || []).forEach((it) => {
         const itemLower = (it.name || "").toLowerCase();
-        if (rule.itemKw.some((kw) => itemLower.includes(kw.toLowerCase()))) itemHits += it.qty || 1;
+        if (rule.itemKw.some((kw) => itemLower.includes(kw.toLowerCase()))) itemHits += 1;
       });
     });
 
@@ -340,7 +340,7 @@ function getTopItemsForBrand(invoices, brandName, limit) {
       const n = it.name;
       if (!n) return;
       if (!items[n]) items[n] = { name: n, count: 0, total: 0, cat: classifyItem(n) };
-      items[n].count += it.qty || 1;
+      items[n].count += 1;
       items[n].total += it.price || 0;
     });
   });
@@ -621,7 +621,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
               const cat = classifyItem(it.name);
               if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
               if (!allItems[it.name]) allItems[it.name] = 0;
-              allItems[it.name] += it.qty || 1;
+              allItems[it.name] += 1;
             }));
             const topAllItem = Object.entries(allItems).sort((a, b) => b[1] - a[1])[0];
             if (topAllItem) t += " 你所有消費中買最多的品項是「" + topAllItem[0] + "」（" + topAllItem[1] + " 次）。";
@@ -1020,7 +1020,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         const cat = classifyItem(it.name);
         if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費" || cat === "訂閱服務") return;
         if (!repeatItems[it.name]) repeatItems[it.name] = { name: it.name, count: 0, total: 0, cat, shop: inv.shop };
-        repeatItems[it.name].count += it.qty || 1;
+        repeatItems[it.name].count += 1;
         repeatItems[it.name].total += it.price || 0;
       });
     });
@@ -1130,7 +1130,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         if (!catByStore[cat]) catByStore[cat] = {};
         const shop = inv.shop || "";
         if (!catByStore[cat][shop]) catByStore[cat][shop] = { count: 0, total: 0 };
-        catByStore[cat][shop].count += it.qty || 1;
+        catByStore[cat][shop].count += 1;
         catByStore[cat][shop].total += it.price || 0;
       });
     });
@@ -1268,8 +1268,8 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         const cat = classifyItem(it.name);
         if (!cat || cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") return;
         if (!catGrowth[cat]) catGrowth[cat] = { first: 0, second: 0 };
-        if (isFirst) catGrowth[cat].first += it.qty || 1;
-        if (isSecond) catGrowth[cat].second += it.qty || 1;
+        if (isFirst) catGrowth[cat].first += 1;
+        if (isSecond) catGrowth[cat].second += 1;
       });
     });
 
@@ -1491,7 +1491,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         // Only count if store is in retail set (for FMCG) or matching type
         if (cls.isFmcg && !RETAIL_STORES.has(inv.shop)) return;
         if (!userBmData[key]) userBmData[key] = { count: 0, total: 0 };
-        userBmData[key].count += it.qty || 1;
+        userBmData[key].count += 1;
         userBmData[key].total += it.price || 0;
       });
     });
@@ -1774,7 +1774,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
                       const cat = classifyItem(it.name);
                       if (cat === "其他" || cat === "外送服務費") return;
                       if (!dayItems[cat]) dayItems[cat] = { count: 0, total: 0 };
-                      dayItems[cat].count += it.qty || 1;
+                      dayItems[cat].count += 1;
                       dayItems[cat].total += it.price || 0;
                     });
                   });
@@ -1837,7 +1837,7 @@ function detectInsights(stats, invoiceCount, totalAmount, monthlyTrend, invoices
         if (!storeItemVariants[key]) storeItemVariants[key] = { shop, baseName: normalized, variants: {} };
         const priceKey = Math.round(it.price);
         if (!storeItemVariants[key].variants[priceKey]) storeItemVariants[key].variants[priceKey] = { price: it.price, count: 0, name: it.name };
-        storeItemVariants[key].variants[priceKey].count += it.qty || 1;
+        storeItemVariants[key].variants[priceKey].count += 1;
       });
     });
     Object.values(storeItemVariants).forEach((group) => {

@@ -138,7 +138,7 @@ function detectSignals(invoices, allItems, span) {
       const shopMatch = rule.shopKw.some((kw) => shopLower.includes(kw.toLowerCase()));
 
       if (itemMatch || shopMatch) {
-        sum += (it.price || 0) * (it.qty || 1);
+        sum += (it.price || 0);
       }
     }
     if (sum > 0) {
@@ -222,7 +222,7 @@ function detectPenalties(allItems) {
   for (const it of allItems) {
     const nameLower = (it.name || "").toLowerCase();
     if (PENALTY_KW.some((kw) => nameLower.includes(kw))) {
-      sum += (it.price || 0) * (it.qty || 1);
+      sum += (it.price || 0);
     }
   }
   return Math.round(sum);
@@ -351,8 +351,8 @@ function computeTier1(invoices, allItems, totalAmount, span) {
       const norm = normaliseItemName(it.name);
       if (!norm || norm.length < 2) continue;
       if (!groups[norm]) groups[norm] = { name: norm, amount: 0, count: 0, shops: new Set() };
-      groups[norm].amount += (it.price || 0) * (it.qty || 1);
-      groups[norm].count += it.qty || 1;
+      groups[norm].amount += (it.price || 0);
+      groups[norm].count += 1;
       if (inv.shop) groups[norm].shops.add(inv.shop);
     }
   }
@@ -397,7 +397,7 @@ function computeTier2(invoices, tier1, totalAmount) {
 
     for (const it of inv.items || []) {
       const name = it.name || "品項";
-      const price = (it.price || 0) * (it.qty || 1);
+      const price = (it.price || 0);
       if (!storeMap[shop].itemMap[name]) {
         storeMap[shop].itemMap[name] = { name, price: 0 };
       }
@@ -498,7 +498,7 @@ function computeSmartBuy(invoices, span) {
       if (!storeItemVariants[key].variants[priceKey]) {
         storeItemVariants[key].variants[priceKey] = { price: it.price, count: 0, name: it.name };
       }
-      storeItemVariants[key].variants[priceKey].count += it.qty || 1;
+      storeItemVariants[key].variants[priceKey].count += 1;
     }
   }
 
@@ -767,7 +767,7 @@ function detectAudience(invoices) {
       for (const it of inv.items || []) {
         const itemLower = (it.name || "").toLowerCase();
         if (rule.itemKw.some((kw) => itemLower.includes(kw.toLowerCase()))) {
-          itemHits += it.qty || 1;
+          itemHits += 1;
         }
       }
     }
@@ -958,7 +958,7 @@ function computeRepeatItems(invoices) {
       if (!repeatItems[it.name]) {
         repeatItems[it.name] = { name: it.name, count: 0, total: 0, cat, shop: inv.shop };
       }
-      repeatItems[it.name].count += it.qty || 1;
+      repeatItems[it.name].count += 1;
       repeatItems[it.name].total += it.price || 0;
     }
   }
@@ -1122,9 +1122,9 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
       const cat = classifyItem(it.name);
       if (cat === "其他" || cat === "外送服務費" || cat === "餐飲消費") continue;
       if (!storeCatMap[shop]) storeCatMap[shop] = { shop, total: 0, cats: {} };
-      storeCatMap[shop].total += (it.price || 0) * (it.qty || 1);
+      storeCatMap[shop].total += (it.price || 0);
       if (!storeCatMap[shop].cats[cat]) storeCatMap[shop].cats[cat] = 0;
-      storeCatMap[shop].cats[cat] += (it.price || 0) * (it.qty || 1);
+      storeCatMap[shop].cats[cat] += (it.price || 0);
     }
   }
   const storeCategoryMatrix = Object.values(storeCatMap)
@@ -1213,7 +1213,7 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
       const cat = classifyItem(it.name);
       if (cat === "其他" || cat === "外送服務費") continue;
       if (!catGrowth[cat]) catGrowth[cat] = { first: 0, second: 0 };
-      const amt = (it.price || 0) * (it.qty || 1);
+      const amt = (it.price || 0);
       if (firstHalf.has(inv.yearMonth)) catGrowth[cat].first += amt;
       else if (secondHalf.has(inv.yearMonth)) catGrowth[cat].second += amt;
     }
