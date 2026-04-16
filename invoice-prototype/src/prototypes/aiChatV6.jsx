@@ -991,6 +991,7 @@ export default function AIChatV6({
         );
       }
       case "start-cta":
+        if (phase !== "declined") return null;
         return (
           <button
             key={idx}
