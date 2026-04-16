@@ -101,8 +101,10 @@ def fetch_invoices_for_phones(client, phones):
     ), invoices AS (
       SELECT lt.phone_number,
              lt.member_id,
+             hi.invoice_hk,
              hi.invoice_number,
              hi.period,
+             si.issued_at,
              CAST(si.issued_at AS DATE) AS issued_date,
              CAST(si.total_price AS INT64) AS amount,
              ss.name AS seller_name,
@@ -114,9 +116,10 @@ def fetch_invoices_for_phones(client, phones):
       JOIN `{BQ_PROJECT}.intermediate.sat__invoice` si USING(invoice_hk)
       LEFT JOIN `{BQ_PROJECT}.intermediate.link__seller_invoice` lsi USING(invoice_hk)
       LEFT JOIN `{BQ_PROJECT}.intermediate.sat__seller` ss USING(seller_hk)
-      WHERE CAST(si.issued_at AS DATE) >= DATE_SUB(CURRENT_DATE('Asia/Taipei'), INTERVAL 6 MONTH)
+      WHERE CAST(si.issued_at AS DATE) >= DATE_SUB(CURRENT_DATE('Asia/Taipei'), INTERVAL 12 MONTH)
     )
-    SELECT phone_number, member_id, invoice_number, period, issued_date, amount,
+    SELECT phone_number, member_id, invoice_hk, invoice_number, period,
+           issued_at, issued_date, amount,
            COALESCE(seller_name, '未知通路') AS seller_name
     FROM invoices
     WHERE rn_invoice = 1 AND rn_seller = 1
@@ -125,12 +128,42 @@ def fetch_invoices_for_phones(client, phones):
     return list(client.query(q).result())
 
 
+def fetch_items_for_invoices(client, invoice_hks):
+    """Fetch item details for a batch of invoice_hk values."""
+    if not invoice_hks:
+        return {}
+    # Process in batches of 500 to avoid query size limits
+    items_by_hk = defaultdict(list)
+    for i in range(0, len(invoice_hks), 500):
+        batch = invoice_hks[i:i+500]
+        hk_literals = ','.join(f"FROM_BASE64('{hk}')" for hk in batch)
+        q = f'''
+        SELECT
+          lii.invoice_hk,
+          sit.item_name,
+          CAST(sit.item_price AS INT64) AS item_price,
+          CAST(sit.item_quantity AS INT64) AS item_quantity
+        FROM `{BQ_PROJECT}.intermediate.link__invoice_invoice_item` lii
+        JOIN `{BQ_PROJECT}.intermediate.sat__invoice_item` sit
+          ON lii.invoice_item_hk = sit.invoice_item_hk
+        WHERE lii.invoice_hk IN ({hk_literals})
+        '''
+        for row in client.query(q).result():
+            hk = row['invoice_hk']
+            items_by_hk[hk].append({
+                'name': row['item_name'] or '',
+                'price': int(row['item_price'] or 0),
+                'qty': int(row['item_quantity'] or 1),
+            })
+    return items_by_hk
+
+
 def month_label(ym: str):
     y, m = ym.split('-')
     return f'{int(m):02d}月'
 
 
-def build_user_payload(rows, classification):
+def build_user_payload(rows, classification, items_by_hk):
     invoices = []
     total_amount = 0
     category_amount = defaultdict(int)
@@ -138,13 +171,27 @@ def build_user_payload(rows, classification):
 
     for r in rows:
         issued = r['issued_date']
+        issued_at = r.get('issued_at')
         seller_name = r['seller_name'] or '未知通路'
         meta = classification.get(seller_name, {})
         brand = (meta.get('brand') or '').strip() or seller_name
         category_lv1 = (meta.get('category_lv1') or '').strip() or '其他'
         amount = int(r['amount'] or 0)
         ym = issued.strftime('%Y-%m')
-        invoices.append({
+
+        # Format issued_at as ISO string with time
+        issued_at_str = None
+        if issued_at:
+            if hasattr(issued_at, 'isoformat'):
+                issued_at_str = issued_at.isoformat()
+            else:
+                issued_at_str = str(issued_at)
+
+        # Get items for this invoice
+        invoice_hk = r.get('invoice_hk')
+        inv_items = items_by_hk.get(invoice_hk, []) if invoice_hk else []
+
+        inv = {
             'amount': amount,
             'day': f'{issued.day:02d}',
             'week': WEEKDAY_MAP[issued.weekday()],
@@ -155,7 +202,13 @@ def build_user_payload(rows, classification):
             'issuedDate': issued.isoformat(),
             'category_lv1': category_lv1,
             'rawShop': seller_name,
-        })
+        }
+        if issued_at_str:
+            inv['issued_at'] = issued_at_str
+        if inv_items:
+            inv['items'] = inv_items
+
+        invoices.append(inv)
         total_amount += amount
         category_amount[category_lv1] += amount
         month_amount[ym] += amount
@@ -179,10 +232,11 @@ def build_user_payload(rows, classification):
     elif not pie_rows:
         pie_rows = [{'label': '其他', 'pct': 100, 'color': PIE_COLORS[-1]}]
 
+    total_items = sum(len(inv.get('items', [])) for inv in invoices)
     return {
         'invoiceCount': len(invoices),
         'invoiceCount_v2': len(invoices),
-        'itemCount_v2': len(invoices),
+        'itemCount_v2': total_items,
         'invoices': invoices,
         'invoices_v2': invoices,
         'totalAmount': total_amount,
@@ -206,6 +260,7 @@ def main():
     print(f'test users: {len(phones)}')
 
     client = get_bq_client()
+    print('fetching invoices...')
     rows = fetch_invoices_for_phones(client, phones)
     grouped = defaultdict(list)
     member_ids = {}
@@ -213,10 +268,27 @@ def main():
         grouped[r['phone_number']].append(dict(r))
         member_ids[r['phone_number']] = r['member_id']
 
+    # Collect all invoice_hk for item fetching (BQ returns bytes, encode to base64 for SQL)
+    import base64
+    all_hk_b64 = []
+    seen_hk = set()
+    for r in rows:
+        hk = r.get('invoice_hk')
+        if hk is None:
+            continue
+        hk_key = hk if isinstance(hk, bytes) else str(hk).encode()
+        if hk_key not in seen_hk:
+            seen_hk.add(hk_key)
+            b64 = base64.b64encode(hk_key).decode('utf-8') if isinstance(hk, bytes) else base64.b64encode(str(hk).encode()).decode('utf-8')
+            all_hk_b64.append(b64)
+    print(f'fetching items for {len(all_hk_b64)} invoices...')
+    # fetch_items_for_invoices returns {bytes_hk: [items]}
+    items_by_hk = fetch_items_for_invoices(client, all_hk_b64)
+
     token = None if args.dry_run else get_rtdb_token()
     updated = 0
     for phone in phones:
-        payload = build_user_payload(grouped.get(phone, []), classification)
+        payload = build_user_payload(grouped.get(phone, []), classification, items_by_hk)
         merged = dict(current_users.get(phone) or {})
         merged.update(payload)
         merged['memberId'] = member_ids.get(phone)
