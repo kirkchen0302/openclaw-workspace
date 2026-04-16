@@ -205,6 +205,8 @@ function detectFixed(invoices, span) {
         name: rule.name,
         amount: annual,
         period: `每期 $${fmt(perPeriod)}`,
+        perPeriod,
+        count,
       });
     }
   }
@@ -1145,9 +1147,12 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
   // ── Shape output for aiChatV2 UI ─────────────────────────────────────
 
   // Utilities: bills + penalties + tips
+  // Use per-period average (total / count), not total / 12
   const utilBills = fixed.map((f) => ({
     name: f.name,
-    amount: Math.round(f.amount / (span > 6 ? 12 : span)),
+    perPeriod: f.perPeriod || 0,   // average per bill
+    annual: f.amount,               // annualized total
+    count: f.count || 0,            // number of bills seen
   }));
   const utilPenalties = penaltiesRaw > 0
     ? [{ name: "滯納金/違約金", amount: penaltiesRaw }]
