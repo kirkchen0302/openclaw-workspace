@@ -1081,6 +1081,7 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
       weekendPremium: { pct: 0, weekdayAvg: 0, weekendAvg: 0 },
       frequencySurges: [],
       fmtComparisons: () => "",
+      timePatterns: { peakHour: null, peakMonth: null, dayOfWeek: [], maxDay: null, minDay: null, dayRatio: 0, timeBuckets: [] },
     };
   }
 

@@ -278,18 +278,8 @@ export default function AIChatV4({
     return () => clearTimeout(t);
   }, [messages, typing]);
 
-  // ── Opening message on mount (Step 1: Authorization request) ──────────
-  useEffect(() => {
-    if (!D) return;
-    setTyping(true);
-    const delay = 600 + Math.random() * 800;
-    typingTimerRef.current = setTimeout(() => {
-      setTyping(false);
-      setMessages([{ role: "bot", parts: buildAuthMessage() }]);
-    }, delay);
-    return () => clearTimeout(typingTimerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [D]);
+  // ── Opening: auth phase shows bottom dialog, not a chat message ───────
+  // No chat messages on mount — the dialog handles authorization.
 
   // ── No-data guard ─────────────────────────────────────────────────────
   if (!invoiceCount || !invoices || invoices.length === 0 || !D) {
@@ -796,8 +786,8 @@ export default function AIChatV4({
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: q }]);
 
-    // If phase is "auth", treat any text as starting analysis
-    if (phase === "auth") {
+    // If phase is "loading" or "auth", ignore free text
+    if (phase === "auth" || phase === "loading") {
       setTyping(true);
       const delay = 1000 + Math.random() * 1000;
       typingTimerRef.current = setTimeout(() => {
@@ -947,20 +937,14 @@ export default function AIChatV4({
 
   // ── Determine which chips to show ─────────────────────────────────────
   let chips = [];
-  if (phase === "auth") {
-    chips = AUTH_CHIPS;
-  } else if (phase === "ready") {
+  if (phase === "ready") {
     chips = remainingChips();
   }
-  // phase === "done" → no chips
+  // auth/loading/done → no chips shown (auth uses dialog)
 
   // ── Chip tap dispatcher ───────────────────────────────────────────────
   function handleAnyChipTap(chip) {
-    if (chip.key === "auth-yes" || chip.key === "auth-no") {
-      handleAuthChipTap(chip);
-    } else {
-      handleChipTap(chip);
-    }
+    handleChipTap(chip);
   }
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -973,8 +957,79 @@ export default function AIChatV4({
         background: T.bg,
         fontFamily: T.font,
         overflow: "hidden",
+        position: "relative",
       }}
     >
+      {/* ── Bottom Sheet Dialog (auth phase) ─────────────────────────── */}
+      {phase === "auth" && (
+        <>
+          <div
+            onClick={() => {}}
+            style={{
+              position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)",
+              zIndex: 50, transition: "opacity 0.3s",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 51,
+              background: T.bg, borderRadius: "20px 20px 0 0",
+              padding: "28px 20px 36px",
+              boxShadow: "0 -4px 20px rgba(0,0,0,0.15)",
+              animation: "aichat4-slideUp 0.3s ease",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 22,
+                background: "linear-gradient(135deg, #3560FF, #00D4FF)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22, color: "#fff",
+              }}>✨</div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.textBold }}>消費小幫手</div>
+                <div style={{ fontSize: 13, color: T.textSubtle }}>AI 發票分析助手</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 15, color: T.textDefault, lineHeight: 1.7, marginBottom: 20 }}>
+              嗨！我是你的消費小幫手 👋
+              <br /><br />
+              接下來我會分析你過去 12 個月的 <strong>{fmt(invoiceCount)}</strong> 張發票資料，幫你找出隱藏的消費模式和省錢機會。
+            </div>
+            <button
+              onClick={() => {
+                setPhase("loading");
+                setTyping(true);
+                setTimeout(() => {
+                  setTyping(false);
+                  setMessages([{ role: "bot", parts: buildSummaryMessage(D) }]);
+                  setPhase("ready");
+                }, 1500);
+              }}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 14, border: "none",
+                background: T.brand, color: "#fff", fontSize: 16, fontWeight: 600,
+                cursor: "pointer", marginBottom: 10,
+              }}
+            >
+              好，開始分析 🚀
+            </button>
+            <button
+              onClick={() => {
+                setPhase("done");
+                setMessages([{ role: "bot", parts: [{ type: "text", content: "好的，需要的時候隨時點我！👋" }] }]);
+              }}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 14,
+                border: "1.5px solid " + T.border, background: T.bg,
+                color: T.textSubtle, fontSize: 15, fontWeight: 500, cursor: "pointer",
+              }}
+            >
+              先不用了
+            </button>
+          </div>
+        </>
+      )}
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div
         style={{
@@ -1137,6 +1192,10 @@ export default function AIChatV4({
 
       {/* ── Keyframe animation for typing dots ───────────────────────── */}
       <style>{`
+        @keyframes aichat4-slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
         @keyframes aichat4-bounce {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-6px); opacity: 1; }
