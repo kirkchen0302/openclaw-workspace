@@ -472,24 +472,38 @@ export default function AIChatV5({
       })),
     });
 
-    // Transition text
-    const tier2Total = data.tier2Total || 0;
-    parts.push({
-      type: "text",
-      content: `剩下的 $${fmt(tier2Total)} 分散在各通路：`,
-    });
+    // Store spending — by category, highlight standout repeat items
+    const storeMatrix = (data.storeCategoryMatrix || []).slice(0, 6);
+    const repeatItems = data.repeatItems || [];
 
-    // DataCard: top 5 from tier2
-    const tier2Rows = tier2.slice(0, 5).map((s) => ({
-      label: s.store,
-      value: `$${fmt(s.amount)}`,
-      sub: s.items,
-    }));
-    if (tier2Rows.length > 0) {
+    if (storeMatrix.length > 0) {
+      parts.push({
+        type: "text",
+        content: "你的錢都花在哪些通路：",
+      });
+
+      const storeRows = storeMatrix.map((s) => {
+        const catSummary = (s.topCats || []).map((c) => `${c.cat} ${c.pct}%`).join("、");
+        // Find standout repeat item for this store
+        const storeRepeats = repeatItems.filter((r) => r.shop === s.shop && r.count >= 8);
+        let highlight = "";
+        if (storeRepeats.length > 0) {
+          const best = storeRepeats.sort((a, b) => b.count - a.count)[0];
+          highlight = `\n⚡ 光「${best.name.slice(0, 12)}」就買了 ${best.count} 次（$${fmt(best.total)}）`;
+        }
+        // Shorten store name
+        const shortName = s.shop.replace(/股份有限公司/g, "").replace(/有限公司/g, "").slice(0, 12);
+        return {
+          label: shortName,
+          value: `$${fmt(s.total)}`,
+          sub: catSummary + highlight,
+        };
+      });
+
       parts.push({
         type: "datacard",
-        title: "零散消費",
-        rows: tier2Rows,
+        title: "🏪 通路消費分布",
+        rows: storeRows,
       });
     }
 
