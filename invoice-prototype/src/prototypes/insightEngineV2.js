@@ -834,6 +834,75 @@ function detectLateNight(invoices) {
 }
 
 /**
+ * Time-based spending analysis: peak hour, day-of-week, peak month.
+ */
+function detectTimePatterns(invoices) {
+  const hourMap = {};
+  const wkNames = ["週日","週一","週二","週三","週四","週五","週六"];
+  const wkMap = {};
+  const monthMap = {};
+
+  for (const inv of invoices) {
+    if (!inv.issued_at) continue;
+    const dt = new Date(inv.issued_at);
+    if (isNaN(dt)) continue;
+    const amt = inv.amount || 0;
+
+    // Hour
+    const h = dt.getHours();
+    hourMap[h] = (hourMap[h] || 0) + amt;
+
+    // Day of week
+    const wk = wkNames[dt.getDay()];
+    if (!wkMap[wk]) wkMap[wk] = { total: 0, count: 0, days: new Set() };
+    wkMap[wk].total += amt;
+    wkMap[wk].count++;
+    wkMap[wk].days.add(inv.issued_at.slice(0, 10));
+
+    // Month
+    const ym = inv.yearMonth || inv.issued_at.slice(0, 7);
+    if (!monthMap[ym]) monthMap[ym] = 0;
+    monthMap[ym] += amt;
+  }
+
+  // Peak hour
+  const peakHour = Object.entries(hourMap).sort((a, b) => b[1] - a[1])[0];
+
+  // Day of week with daily averages
+  const wkAvgs = ["週一","週二","週三","週四","週五","週六","週日"].map((wk) => {
+    const s = wkMap[wk];
+    return s && s.days.size > 0 ? { wk, avg: Math.round(s.total / s.days.size), total: Math.round(s.total) } : { wk, avg: 0, total: 0 };
+  }).filter((w) => w.avg > 0);
+  const maxWk = wkAvgs.length > 0 ? wkAvgs.reduce((a, b) => a.avg > b.avg ? a : b) : null;
+  const minWk = wkAvgs.length > 0 ? wkAvgs.reduce((a, b) => a.avg < b.avg ? a : b) : null;
+
+  // Peak month
+  const peakMonth = Object.entries(monthMap).sort((a, b) => b[1] - a[1])[0];
+
+  // Hour buckets for display
+  const buckets = { "早上(6-11)": 0, "中午(12-14)": 0, "下午(15-17)": 0, "晚上(18-21)": 0, "深夜(22-5)": 0 };
+  for (const [h, amt] of Object.entries(hourMap)) {
+    const hr = parseInt(h);
+    if (hr >= 6 && hr < 12) buckets["早上(6-11)"] += amt;
+    else if (hr >= 12 && hr < 15) buckets["中午(12-14)"] += amt;
+    else if (hr >= 15 && hr < 18) buckets["下午(15-17)"] += amt;
+    else if (hr >= 18 && hr < 22) buckets["晚上(18-21)"] += amt;
+    else buckets["深夜(22-5)"] += amt;
+  }
+  const sortedBuckets = Object.entries(buckets).sort((a, b) => b[1] - a[1]).map(([name, amt]) => ({ name, amount: Math.round(amt) }));
+
+  return {
+    peakHour: peakHour ? { hour: parseInt(peakHour[0]), amount: Math.round(peakHour[1]) } : null,
+    peakMonth: peakMonth ? { month: peakMonth[0], amount: Math.round(peakMonth[1]) } : null,
+    dayOfWeek: wkAvgs,
+    maxDay: maxWk,
+    minDay: minWk,
+    dayRatio: maxWk && minWk && minWk.avg > 0 ? Math.round(maxWk.avg / minWk.avg * 10) / 10 : 0,
+    timeBuckets: sortedBuckets,
+  };
+}
+
+/**
  * Detect weekend premium: weekday vs weekend per-invoice average spend.
  * Returns { pct, weekdayAvg, weekendAvg }.
  */
@@ -1062,6 +1131,7 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
   const lateNight = detectLateNight(invoices);
   const weekendPremium = detectWeekendPremium(invoices);
   const frequencySurges = detectFrequencySurges(invoices);
+  const timePatterns = detectTimePatterns(invoices);
 
   // ── Repeat items (with per-visit logic) ──────────────────────────────
 
@@ -1271,5 +1341,6 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
     storeCategoryMatrix,
     categoryStoreMatrix,
     hiddenThieves,
+    timePatterns,
   };
 }
