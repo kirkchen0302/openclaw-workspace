@@ -487,6 +487,69 @@ export default function AIChatV4({
       });
     }
 
+    // ── 重複購買行為 ──────────────────────────────────────────────────
+    const repeatItems = (data.repeatItems || []).slice(0, 6);
+    if (repeatItems.length > 0) {
+      const spanMonths = Math.max(data.total / (data.monthly || 1), 1);
+      const repeatTotal = repeatItems.reduce((s, it) => s + (it.total || 0), 0);
+      const annualRepeat = Math.round((repeatTotal / spanMonths) * 12);
+
+      parts.push({
+        type: "text",
+        content: `另外，你有 ${repeatItems.length} 個品項一直在重複購買：`,
+      });
+      parts.push({
+        type: "datacard",
+        title: "🔄 重複購買行為",
+        rows: repeatItems.map((item) => {
+          const displayName = item.name.length > 15 ? item.name.slice(0, 15) + "…" : item.name;
+          const monthly = Math.round(item.total / Math.max(spanMonths, 1));
+          return {
+            label: displayName,
+            value: `${item.count} 次`,
+            sub: `共 $${fmt(item.total)}，月均 $${fmt(monthly)}（${item.shop}）`,
+          };
+        }),
+      });
+      parts.push({
+        type: "text",
+        content: `重複消費合計：$${fmt(annualRepeat)}/年`,
+      });
+
+      // Per-item savings tips
+      const tipLines = [];
+      for (const item of repeatItems) {
+        const cat = item.cat || "";
+        const monthly = Math.round(item.total / Math.max(spanMonths, 1));
+        const yearly = monthly * 12;
+        if (cat === "咖啡" && yearly > 1000) {
+          tipLines.push("☕ " + item.name.slice(0, 12) + "：自備杯折 $3-5 + 考慮平價品牌");
+        } else if (["零食/餅乾", "瓶裝飲料"].includes(cat) && yearly > 800) {
+          tipLines.push("🏪 " + item.name.slice(0, 12) + "：超商同款在超市省 20-30%");
+        } else if (["乳製品"].includes(cat) && yearly > 1000) {
+          tipLines.push("🥛 " + item.name.slice(0, 12) + "：固定在超市採購，比超商便宜 15-25%");
+        } else if (cat === "餐飲" && item.count >= 8) {
+          tipLines.push("🍔 " + item.name.slice(0, 12) + "：善用 App 優惠券和集點");
+        }
+      }
+      if (data.smartBuy && data.smartBuy.length > 0 && data.smartBuy[0].currentPrice > 0 && data.smartBuy[0].betterPrice > 0) {
+        const sb = data.smartBuy[0];
+        tipLines.push("📦 " + (sb.item.length > 12 ? sb.item.slice(0, 12) + "…" : sb.item) + "：改買大包裝 $" + fmt(sb.currentPrice) + " → $" + fmt(sb.betterPrice));
+      }
+      if (tipLines.length > 0) {
+        parts.push({ type: "text", content: tipLines.join("\n") });
+      }
+
+      // Side-by-side CTAs
+      parts.push({
+        type: "cta-row",
+        buttons: [
+          { label: "📋 建立購買清單", primary: true, todoText: "建立購買清單：" + repeatItems.slice(0, 5).map((it) => it.name.slice(0, 10)).join("、") + "（設定購買週期提醒）" },
+          { label: "🔔 有便宜通知我", primary: false, todoText: "開啟比價通知：當重複購買品項有更便宜的選擇時推播提醒" },
+        ],
+      });
+    }
+
     return parts;
   }
 
@@ -512,6 +575,12 @@ export default function AIChatV4({
           })),
           { label: "年度合計", value: `$${fmt(annualSub)}/年`, valueColor: T.danger },
         ],
+      });
+      subBubble.push({
+        type: "cta",
+        label: "📋 歸戶更多訂閱發票",
+        primary: false,
+        todoText: "到 App 載具歸戶頁面，確認所有訂閱服務都已歸戶（Netflix / Spotify / iCloud 等）",
       });
     } else {
       subBubble.push({
@@ -554,10 +623,11 @@ export default function AIChatV4({
         });
       }
       utilBubble.push({
-        type: "cta",
-        label: "🔔 設定繳費提醒",
-        primary: false,
-        todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）",
+        type: "cta-row",
+        buttons: [
+          { label: "📋 歸戶更多公共事業發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
+          { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
+        ],
       });
     } else {
       utilBubble.push({
@@ -565,16 +635,11 @@ export default function AIChatV4({
         content: "🏠 你的發票中沒有出現電費、水費、瓦斯費。這些帳單可能還沒歸戶到載具。",
       });
       utilBubble.push({
-        type: "cta",
-        label: "📋 歸戶更多公共事業發票",
-        primary: true,
-        todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具",
-      });
-      utilBubble.push({
-        type: "cta",
-        label: "🔔 設定繳費提醒",
-        primary: false,
-        todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）",
+        type: "cta-row",
+        buttons: [
+          { label: "📋 歸戶更多公共事業發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" },
+          { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
+        ],
       });
     }
     bubbles.push(utilBubble);
