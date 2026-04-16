@@ -1,0 +1,6274 @@
+[
+  {
+    "shop": "7-11",
+    "brand": "7-ELEVEN",
+    "category_lv1": "超商",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "105438",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "509086",
+    "brand": "Prozac Balcony",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "4274804",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "10359060",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "10385996",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "24476883",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "24756934",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "24935022",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "27256291",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "28216396",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "28418999",
+    "brand": "肯德基",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "28994845",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "38497304",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "42487406",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "51183903",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "51446429",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "51608606",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "53007657",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "53028885",
+    "brand": "麥當勞 McDonald's",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "53080376",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "53356839",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "54370346",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "54911841",
+    "brand": "遠東百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "60428741",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "60501377",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "60745367",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "70770620",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "75586840",
+    "brand": "能量先生",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "77909254",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "83538421",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "88117928",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "88392001",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "90628186",
+    "brand": "QBurger",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "90880370",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "93557707",
+    "brand": "統一時代百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "95450595",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "96844083",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "85度C",
+    "brand": "85度C",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "一之軒食品士林分店",
+    "brand": "一之軒",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "一之軒食品永和頂溪…",
+    "brand": "一之軒",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "一之軒食品南京分店",
+    "brand": "一之軒",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "一直喝",
+    "brand": "一直喝",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "一階堂拉麵餐飲潤泰…",
+    "brand": "一階堂拉麵",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "九五二七商行",
+    "brand": "九五二七商行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "九易宇軒",
+    "brand": "九易宇軒",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "九乘九文具板橋中山…",
+    "brand": "九乘九",
+    "category_lv1": "文具",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "了了生活",
+    "brand": "了了生活",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "八方雲集餐飲御廚士…",
+    "brand": "八方雲集",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "八北重曜",
+    "brand": "八北重曜",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "力大開發羅東營業所",
+    "brand": "力大開發羅東",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "力揚停車場設備林口廣停二",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "力揚停車場設備林口廣停六",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "十分甜品冰品店",
+    "brand": "十分甜品冰品店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "十平方文具",
+    "brand": "十平方文具",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商家購土城中正分…",
+    "brand": "美廉社",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商家購土城福祥分…",
+    "brand": "美廉社",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商家購士林社子分…",
+    "brand": "美廉社",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商家購永和國光分…",
+    "brand": "美廉社",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商家購信義莊敬分…",
+    "brand": "美廉社",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商餐飲士林二分公司",
+    "brand": "三商餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商餐飲世貿門市部",
+    "brand": "三商餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商餐飲和平門市部",
+    "brand": "三商餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三商餐飲新店二門市部",
+    "brand": "三商餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三條龍小吃店",
+    "brand": "三條龍小吃店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三創數位",
+    "brand": "三創生活",
+    "category_lv1": "家電",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三森有幸餐飲顧問",
+    "brand": "三森有幸餐飲顧問",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三新二奧特萊斯",
+    "brand": "三井outlet",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "三新奧特萊斯",
+    "brand": "三井outlet",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "上豐商行",
+    "brand": "上豐商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "上騰醫研",
+    "brand": "上騰醫研",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "士東寶商行",
+    "brand": "士東寶商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "士林綠茶店",
+    "brand": "綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大日開發福和營業所",
+    "brand": "大日開發福和",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大台北區瓦斯",
+    "brand": "大台北區瓦斯",
+    "category_lv1": "瓦斯費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大南春天生活藥局",
+    "brand": "大南春天生活藥局",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大帝興業潮州驛站處",
+    "brand": "大帝興業潮州驛站處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大苑子",
+    "brand": "大苑子",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大島茶業",
+    "brand": "大島茶業",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大圈韓食",
+    "brand": "大圈韓食",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大溪育樂",
+    "brand": "大溪育樂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大碗公當歸羊肉",
+    "brand": "大碗公當歸羊肉",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大葉高島屋百貨",
+    "brand": "大葉高島屋",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大聚休閒管理顧問鸚鵡螺廣",
+    "brand": "大聚休閒管理顧問鸚鵡螺廣",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大學光學科技新南門市",
+    "brand": "大學光學科技新南",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大樹文山藥局",
+    "brand": "大樹文山藥局",
+    "category_lv1": "藥局",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "大樹家古亭分公司",
+    "brand": "大樹家",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "小南門餐飲東門營業所",
+    "brand": "小南門",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "小島海人企業",
+    "brand": "小島海人企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "小豪海鮮",
+    "brand": "小豪海鮮",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "不在辦公室",
+    "brand": "不在辦公室",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "不然信義餐飲天母店",
+    "brand": "不然信義餐飲天母店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中央藥局",
+    "brand": "中央藥局",
+    "category_lv1": "藥局",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中華電信個人家庭分…",
+    "brand": "中華電信",
+    "category_lv1": "電信費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中華電信新北營運處",
+    "brand": "中華電信",
+    "category_lv1": "電信費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中華電信臺南營運處",
+    "brand": "中華電信",
+    "category_lv1": "電信費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中嘉寬頻",
+    "brand": "中嘉寬頻",
+    "category_lv1": "網路",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中興電工機械嘟嘟房…",
+    "brand": "中興電工機械嘟嘟房",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "中興電工機械嘟嘟房世貿一",
+    "brand": "中興電工機械嘟嘟房世貿一",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "丹丹企業社",
+    "brand": "丹丹企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "互馨育樂",
+    "brand": "互馨育樂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "五大國際唱片",
+    "brand": "五大國際唱片",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "五花馬國際行銷台北…",
+    "brand": "五花馬國際行銷台北",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "允暘美食",
+    "brand": "允暘美食",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "元第小吃店",
+    "brand": "元第小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "元晴茶行",
+    "brand": "元晴茶行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "六角國際事業台北市…",
+    "brand": "六角國際事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "六堆伙房",
+    "brand": "六堆伙房",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "化石先生動物園店",
+    "brand": "化石先生動物園店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "双花鍋物",
+    "brand": "双花鍋物",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "天上人間飲茶舖",
+    "brand": "天上人間飲茶舖",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "天仁茶業士林分公司",
+    "brand": "天仁茗茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "天仁茶業板橋分公司",
+    "brand": "天仁茗茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "天仁茶業陽明分公司",
+    "brand": "天仁茗茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "太平洋崇光百貨",
+    "brand": "太平洋百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "太平洋崇光百貨天母…",
+    "brand": "太平洋百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "太魯閣國際永康二店",
+    "brand": "太魯閣",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "心茶",
+    "brand": "心茶",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "文慶小吃店",
+    "brand": "文慶小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "文鑫茶坊",
+    "brand": "文鑫茶坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日勻吉拾商行",
+    "brand": "日勻吉拾商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日月亭三軍總醫院汀…",
+    "brand": "日月亭停車",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日月亭內湖捷運營業所",
+    "brand": "日月亭停車",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日月亭桃園展演中心…",
+    "brand": "日月亭停車",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日月亭景新立體營業所",
+    "brand": "日月亭停車",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日月亭臺北體育館營…",
+    "brand": "日月亭停車",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日亨通企業社",
+    "brand": "日亨通企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日相",
+    "brand": "日相",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "日裏文創事業",
+    "brand": "日裏文創事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "月半婦嬰生活用品社",
+    "brand": "月半婦嬰生活用品社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "月吾",
+    "brand": "月吾",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "水果行",
+    "brand": "水果行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王十字咖啡工坊",
+    "brand": "王十字咖啡工坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲王品台北南…",
+    "brand": "王品牛排 Wang Steak",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲肉次方板橋…",
+    "brand": "王品餐飲肉次方板橋",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲西堤台北羅…",
+    "brand": "西堤 TASTy",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲和牛涮台北…",
+    "brand": "王品餐飲和牛涮台北",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲青",
+    "brand": "王品餐飲青",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "王品餐飲青花",
+    "brand": "王品餐飲青花",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "世大小吃店",
+    "brand": "世大小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "主頂",
+    "brand": "主頂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "主富服裝松江二店分…",
+    "brand": "主富服裝松江二店分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "加分小吃店",
+    "brand": "加分小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "加油站",
+    "brand": "加油站",
+    "category_lv1": "加油",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "北",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "北濱育樂事業八里國際高爾",
+    "brand": "高爾夫",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台北101",
+    "brand": "台北101",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台北金融大樓",
+    "brand": "台北金融大樓",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台和捷麗古亭店",
+    "brand": "台和捷麗店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台茂購物中心",
+    "brand": "台茂購物中心",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣大哥大",
+    "brand": "台灣大哥大",
+    "category_lv1": "電信費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣大��大",
+    "brand": "大��大",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣文創發展",
+    "brand": "文創發展",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣卡多摩嬰童館台…",
+    "brand": "卡多摩",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣吉野家景美分公司",
+    "brand": "吉野家景美",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣好行客運",
+    "brand": "好行客運",
+    "category_lv1": "交通",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣自來水第十二區…",
+    "brand": "自來水",
+    "category_lv1": "水費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣松屋餐飲士林中…",
+    "brand": "松屋 Matsuya",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣泛亞零售管理顧…",
+    "brand": "泛亞零售管理顧",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣威富品牌新店門…",
+    "brand": "威富品牌新店門",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣迪卡儂內湖營業所",
+    "brand": "迪卡儂 Decathlon",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣高速鐵路台南站",
+    "brand": "高速鐵路台南站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商土城中央門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商士林門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商大安門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商永和頂溪門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商忠孝復興門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商芝山門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商信義安和門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣善商南京復興門市",
+    "brand": "Sukiya",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣無印良品Ｌａ",
+    "brand": "無印良品Ｌａ",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣華特迪士尼",
+    "brand": "華特迪士尼",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣楓康超市東山分…",
+    "brand": "楓康",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣電力台北北區營…",
+    "brand": "台灣電力",
+    "category_lv1": "電費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣電力台北市區營…",
+    "brand": "台灣電力",
+    "category_lv1": "電費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣電力台北南區營…",
+    "brand": "台灣電力",
+    "category_lv1": "電費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣壽司郎台北公館店",
+    "brand": "壽司郎台北公館店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣優衣庫",
+    "brand": "Uniqlo",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣優衣庫土城金城…",
+    "brand": "Uniqlo",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣優衣庫台南文賢…",
+    "brand": "Uniqlo",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣聯通停車場開發四川路",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "台灣雞湯土城營業所",
+    "brand": "雞湯土城",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "四姊團結",
+    "brand": "四姊團結",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "尼雅那",
+    "brand": "尼雅那",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "巧燁企業",
+    "brand": "巧燁企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "布萊梅小吃店",
+    "brand": "布萊梅小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "幼幼商行",
+    "brand": "幼幼商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "弘丞",
+    "brand": "弘丞",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "必立佳大安森林公園…",
+    "brand": "必立佳大安森林公園",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "正好停艋舺公園站",
+    "brand": "正好停艋舺公園站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永吉馬蒂斯企業社",
+    "brand": "永吉馬蒂斯企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永和樓中華料理店信…",
+    "brand": "永和樓中華料理店信",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永洺茶行",
+    "brand": "永洺茶行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永新豆漿美食坊",
+    "brand": "永新豆漿美食坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永嘉小吃店",
+    "brand": "永嘉小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永豐興林口中山營業所",
+    "brand": "永豐興林口中山",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "永豐興林口南勢營業所",
+    "brand": "永豐興林口南勢",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "玉娟商行",
+    "brand": "玉娟商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瓦城泰統永和分公司",
+    "brand": "瓦城泰統永和",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瓦城泰統淡水分公司",
+    "brand": "瓦城泰統",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "田豈台北北醫分公司",
+    "brand": "田豈台北北醫",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "甲寅",
+    "brand": "甲寅",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "白水永康商行永康店",
+    "brand": "白水豆花 / 白水",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "目民",
+    "brand": "目民",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "禾之豐食品",
+    "brand": "禾之豐食品",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "禾合食堂",
+    "brand": "禾合食堂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "禾典興業金豐站營業處",
+    "brand": "禾典興業金豐站營業處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "禾站營業處",
+    "brand": "禾站營業處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "立榮航空台南辦事處",
+    "brand": "立榮航空台南辦事處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "立榮航空澎湖機場辦…",
+    "brand": "立榮航空澎湖機場辦",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "伊勝實業安東營業處",
+    "brand": "伊勝實業安東營業處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "光禹文旅科技開發",
+    "brand": "光禹文旅科技開發",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "全支付電子支付",
+    "brand": "全支付電子支付",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "全家",
+    "brand": "全家 FamilyMart",
+    "category_lv1": "超商",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "全國食材廣場",
+    "brand": "全國食材廣場",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "全國電子新北市第九…",
+    "brand": "全國電子",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "全聯",
+    "brand": "全聯 PX Mart",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "共享數位服務",
+    "brand": "共享數位服務",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "共樂遊",
+    "brand": "共樂遊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "冰霖",
+    "brand": "冰霖",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "吉禾立",
+    "brand": "吉禾立",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "吉米飯",
+    "brand": "吉米飯",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "吐司利亞國際餐飲",
+    "brand": "吐司利亞國際餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好市多",
+    "brand": "好市多",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好味是",
+    "brand": "好味是",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好想吃漢堡",
+    "brand": "好想吃漢堡",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好蒔珖",
+    "brand": "好蒔珖",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好樂迪",
+    "brand": "好樂迪",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "好膳企業天母東忠誠店",
+    "brand": "好膳企業天母東忠誠店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宇勃小吃店",
+    "brand": "宇勃小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心生物科技",
+    "brand": "安心生物科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務大坪林…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務小巨蛋…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務世貿分…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務北安分…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務石牌捷…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務竹林分…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務忠孝第…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務重慶南…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務高鐵台…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務善導寺…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安心食品服務新生南…",
+    "brand": "摩斯漢堡 MOS Burger",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "安爵商行",
+    "brand": "安爵商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "年青仁眼鏡行",
+    "brand": "年青仁眼鏡行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "早點見面早餐店",
+    "brand": "早點見面早餐店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "旭電馳科研",
+    "brand": "旭電馳科研",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "旭騰餐飲",
+    "brand": "旭騰餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "有心真早餐行",
+    "brand": "有心真早餐行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "朵一朵茶行",
+    "brand": "朵一朵茶行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "江江好商行",
+    "brand": "江江好商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "百八魚場餐飲古亭分…",
+    "brand": "百八魚場餐飲分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "百泓國際事業",
+    "brand": "百泓國際事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "米格國際",
+    "brand": "米格國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "米嵐綠茶店",
+    "brand": "米嵐綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "米塔泰舍大坪林分公司",
+    "brand": "米塔泰舍大坪林",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "老天祿企業",
+    "brand": "老天祿企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "自強藥局",
+    "brand": "自強藥局",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "艾米塔幸福土城永安…",
+    "brand": "艾米塔幸福土城永安",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "行易",
+    "brand": "行易",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "衣藤富",
+    "brand": "衣藤富",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "西湖渡假村",
+    "brand": "西湖渡假村",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "佐見啦生技",
+    "brand": "佐見啦生技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "何發菊",
+    "brand": "何發菊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "克羅思",
+    "brand": "克羅思",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "君悅食品行",
+    "brand": "君悅食品行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "君格食品行",
+    "brand": "君格食品行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "吟桂公館分公司",
+    "brand": "吟桂公館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "吳達達商行",
+    "brand": "吳達達商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宏凱商行",
+    "brand": "宏凱商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宏逸企業社",
+    "brand": "宏逸企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宏匯新北",
+    "brand": "宏匯新北",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宏璟建設土城營業所",
+    "brand": "宏璟建設土城",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "希爾賽內湖營業所",
+    "brand": "希爾賽",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "杏一部",
+    "brand": "杏一部",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "杏一醫療",
+    "brand": "杏一醫療",
+    "category_lv1": "藥局",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "杏美飲料行",
+    "brand": "杏美飲料行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "沐林烘焙商行",
+    "brand": "沐林烘焙商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "沐津",
+    "brand": "沐津",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "沐橙",
+    "brand": "沐橙",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "沙漠之心咖啡天母分…",
+    "brand": "沙漠之心咖啡天母分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "沛立恩商行",
+    "brand": "沛立恩商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秀三冷飲店",
+    "brand": "清心",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秀泰全球影城樹林分…",
+    "brand": "秀泰全球影城樹林分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秀泰影城",
+    "brand": "秀泰影城",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秀喆通化門市",
+    "brand": "秀喆通化",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "良朋商號",
+    "brand": "良朋商號",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "芋金企業社",
+    "brand": "芋金企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "芋富企業社",
+    "brand": "芋富企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "貝瑞奇小餐館",
+    "brand": "貝瑞奇小餐館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "辛格獅國際江子翠營…",
+    "brand": "辛格獅國際江子翠營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "亞里士餐廳",
+    "brand": "亞里士餐廳",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "亞洲藏壽司土城金城…",
+    "brand": "亞洲藏壽司土城金城",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "享羊企業",
+    "brand": "享羊企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "享鋮",
+    "brand": "享鋮",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "京御鐵板燒",
+    "brand": "京御鐵板燒",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "京璽承旺",
+    "brand": "京璽承旺",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "京饌餐旅事業古亭營…",
+    "brand": "京饌餐旅事業營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "佳佳香鍋貼專賣店",
+    "brand": "佳佳香鍋貼專賣店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "佳瑪百貨新店分公司",
+    "brand": "佳瑪百貨新店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "佳福育樂事業連絡處",
+    "brand": "佳福育樂事業連絡處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "佳澔商行",
+    "brand": "佳澔商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "來好君悅",
+    "brand": "來好君悅",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "依鼎越式美食",
+    "brand": "依鼎越式美食",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "其他商家",
+    "brand": "其他商家",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和沅飲品店",
+    "brand": "和沅飲品店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和氣家士林創始分公司",
+    "brand": "和氣家創始",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和雲行動服務",
+    "brand": "和雲行動服務",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和雲行動服務和平東路四段",
+    "brand": "和雲行動服務和平東路四段",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和雲行動服務新北文化二路",
+    "brand": "和雲行動服務新北文化二路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和滄延飲料店",
+    "brand": "和滄延飲料店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和睦二十六旅店",
+    "brand": "和睦二十六旅店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和德昌",
+    "brand": "麥當勞 McDonald's",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "和樂家居新店分公司",
+    "brand": "和樂家居新店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "坪林手企業社",
+    "brand": "坪林手",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宜舍企業中西五妃營…",
+    "brand": "宜舍企業中西五妃營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宜家家居內湖分公司",
+    "brand": "IKEA",
+    "category_lv1": "家具",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "尚義宏臺南分公司",
+    "brand": "尚義宏臺南",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "屈臣氏",
+    "brand": "屈臣氏",
+    "category_lv1": "美妝",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "岳洋北醫附醫營業處",
+    "brand": "岳洋北醫附醫營業處",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "岳洋陽明交大醫院營…",
+    "brand": "岳洋陽明交大醫院營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "岳洋新竹台大醫院營…",
+    "brand": "岳洋新竹台大醫院營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "岳香小吃店",
+    "brand": "池上便當",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "帕米義麵",
+    "brand": "帕米義麵",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "幸兒茶行",
+    "brand": "幸兒茶行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "幸運星國際",
+    "brand": "幸運星國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "府中雞肉飯專門店",
+    "brand": "府中雞肉飯專門店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "怡客咖啡四號公園分…",
+    "brand": "怡客咖啡四號公園分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "承宇商行",
+    "brand": "承宇商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "承準",
+    "brand": "承準",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "明菓薈",
+    "brand": "明菓薈",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "明新食品企業海佃分…",
+    "brand": "明新食品企業海佃分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "明粵食堂",
+    "brand": "明粵食堂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "東朱數位行銷",
+    "brand": "東朱數位行銷",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "東森得易購Ｋ區東森…",
+    "brand": "東森得易購Ｋ區東森",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "松下苑",
+    "brand": "松下苑",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "松深食品",
+    "brand": "松深食品",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "松贊餐飲美食坊",
+    "brand": "松贊餐飲美食坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "林口育樂事業",
+    "brand": "林口育樂事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "林果良品東門分公司",
+    "brand": "林果良品東門",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "果汁媽粉條爸飲料店",
+    "brand": "果汁媽粉條爸飲料店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "果多夥房",
+    "brand": "果多夥房",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "欣芯茶行",
+    "brand": "欣芯茶行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "欣泰石油氣",
+    "brand": "欣泰石油氣",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "波利馬資訊科技",
+    "brand": "波利馬資訊科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "爭鮮",
+    "brand": "爭鮮 Sushi Express",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "知和商行",
+    "brand": "知和商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "知芯商行",
+    "brand": "知芯商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "社子藥局",
+    "brand": "社子藥局",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "空野隘門分公司",
+    "brand": "空野隘門",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "芝生新生",
+    "brand": "芝生新生",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "芝生鼓亭",
+    "brand": "芝生鼓亭",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "芯動力國際",
+    "brand": "芯動力國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "邵立澎湖分公司",
+    "brand": "邵立澎湖",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金山地區農會生鮮超…",
+    "brand": "金山地區農會生鮮超",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金旺牛",
+    "brand": "金旺牛",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金皇食品１０１門市部",
+    "brand": "金皇食品１０１",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金富佳",
+    "brand": "金富佳",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金興發永和分公司",
+    "brand": "金興發永和",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "金點實業",
+    "brand": "金點實業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "長昇商行",
+    "brand": "長昇商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "阿仁衝衝衝新竹高鐵店",
+    "brand": "阿仁衝衝衝新竹高鐵店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "阿發布雷克士林分公司",
+    "brand": "ABV Bar & Kitchen / 阿發布雷克",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "阿發布雷克吳興分公司",
+    "brand": "ABV Bar & Kitchen / 阿發布雷克",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "阿發布雷克復北分公司",
+    "brand": "ABV Bar & Kitchen / 阿發布雷克",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "阿義師素食館",
+    "brand": "阿義師素食館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "青山本部",
+    "brand": "青山本部",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "青年人眼鏡行",
+    "brand": "青年人眼鏡行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "信怡綠茶店",
+    "brand": "50嵐",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "俥亭停車事業台北企業總部",
+    "brand": "俥亭停車事業台北企業總部",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "冠捷生活館",
+    "brand": "冠捷生活館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "冠誠生活",
+    "brand": "冠誠生活",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "冠樺",
+    "brand": "冠樺",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "勇樂小吃店",
+    "brand": "勇樂小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "南仁湖育樂中壢營業所",
+    "brand": "南仁湖育樂中壢",
+    "category_lv1": "休息站",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "南仁湖育樂湖口營業所",
+    "brand": "南仁湖育樂湖口",
+    "category_lv1": "休息站",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "南紡流通事業",
+    "brand": "南紡流通事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "品頡商行",
+    "brand": "品頡商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "哈肯舖劍潭營業處",
+    "brand": "哈肯舖劍潭營業處",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "哈贊生炒羊肉士林店",
+    "brand": "哈贊生炒羊肉店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "垚居串食食堂",
+    "brand": "垚居串食食堂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "奕思商行",
+    "brand": "奕思商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "奕氣呵茶",
+    "brand": "奕氣呵茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "威秀影城信義分公司",
+    "brand": "威秀影城",
+    "category_lv1": "電影娛樂",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "威秀影城新店分公司",
+    "brand": "威秀影城",
+    "category_lv1": "電影娛樂",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "威思創意",
+    "brand": "威思創意",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "威瀧實業景勤二號公園地下",
+    "brand": "威瀧實業景勤二號公園地下",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "宥恩概念屋",
+    "brand": "早安美芝城",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "屋伴餐旅",
+    "brand": "屋伴餐旅",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "帝果水果行",
+    "brand": "帝果水果行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "帢禾商行",
+    "brand": "帢禾商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "建宏商行",
+    "brand": "建宏商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "建楓小吃店",
+    "brand": "建楓小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "很秋",
+    "brand": "很秋",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "思哈",
+    "brand": "思哈",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "拾伍階工作室",
+    "brand": "拾伍階工作室",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "故宮晶華",
+    "brand": "故宮晶華",
+    "category_lv1": "展覽",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "星巴克",
+    "brand": "星巴克",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "星鮮点商行",
+    "brand": "星鮮点商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "春上竹北營業所",
+    "brand": "春上竹北",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "春水堂實業大直營業所",
+    "brand": "春水堂",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "春禾小吃店",
+    "brand": "春禾小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "春秋山林企業社",
+    "brand": "春秋山林企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柏元飲品",
+    "brand": "柏元飲品",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柏文健康事業中和分…",
+    "brand": "健身工廠",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柏文健康事業永和分…",
+    "brand": "健身工廠",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柏悅",
+    "brand": "柏悅",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柏瑞小吃店",
+    "brand": "能量先生",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "柒魚台南虱目魚小吃店",
+    "brand": "柒魚台南虱目魚小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "泉湧企業社",
+    "brand": "泉湧企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "津利德小吃店",
+    "brand": "津利德小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "洲豐開發建設洲豐停車場",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "珍美好小吃店",
+    "brand": "珍美好小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "珍參柒美食坊",
+    "brand": "珍參柒美食坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "竑達商行",
+    "brand": "竑達商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "竑穗興業竹北停十三…",
+    "brand": "竑穗興業竹北停十三",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "約束",
+    "brand": "約束",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "約翰紅茶信義營業所",
+    "brand": "約翰紅茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "約翰紅茶南港營業所",
+    "brand": "約翰紅茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美三企業社",
+    "brand": "美三企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美好的工作室",
+    "brand": "美好的工作室",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美而快生活美學光復店",
+    "brand": "UR Living",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美味達人板橋江翠分…",
+    "brand": "烘焙坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美味達人板橋重慶分…",
+    "brand": "烘焙坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美味達人景美分公司",
+    "brand": "烘焙坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美味達人樹林中山分…",
+    "brand": "烘焙坊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美科實業",
+    "brand": "美科實業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "美麗華城市發展",
+    "brand": "美麗華城市發展",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "英屬開曼群島商睿能…",
+    "brand": "英屬開曼群島商睿能",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "茂吉奇積",
+    "brand": "茂吉奇積",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "衫豪服飾開發",
+    "brand": "衫豪服飾開發",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "飛豪餐飲烏龍麵所板…",
+    "brand": "飛豪餐飲烏龍麵所板",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "香",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "香吉石牌門市",
+    "brand": "麻古茶坊 MACU",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "香港商果翼科技台灣…",
+    "brand": "香港商果翼科技",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "香港商雅虎資訊台灣…",
+    "brand": "香港商雅虎資訊",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "香港榮華便當店",
+    "brand": "香港榮華便當店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凌華商行",
+    "brand": "凌華商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "家美盈",
+    "brand": "家美盈",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "家樂五金",
+    "brand": "家樂五金",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "家樂福",
+    "brand": "家樂福 Carrefour",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "峨眉冷飲站",
+    "brand": "峨眉冷飲站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "庫網金融科技",
+    "brand": "庫網金融科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "朗露企業",
+    "brand": "朗露企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "栗島商行",
+    "brand": "栗島商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "桃園大竹藥局",
+    "brand": "桃園大竹藥局",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "桓宇館",
+    "brand": "桓宇館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "殊境商行",
+    "brand": "殊境商行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "浦町食品企業社",
+    "brand": "浦町食品企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "浩勝",
+    "brand": "浩勝",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "浩豐聖",
+    "brand": "浩豐聖",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "特",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "特力屋士林分公司",
+    "brand": "特力屋",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "特力屋新店分公司",
+    "brand": "特力屋",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "特好喝台北一號店",
+    "brand": "特好喝台北一號店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "珝珝如生餐飲店",
+    "brand": "珝珝如生餐飲店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "益新企業",
+    "brand": "益新企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秘方雪人兄弟永康小…",
+    "brand": "秘方雪人兄弟永康小",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "秝農",
+    "brand": "秝農",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "笑笑笑國際台北永和…",
+    "brand": "笑笑笑國際台北永和",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "能量城市餐飲府中門市",
+    "brand": "能量城市餐飲府中",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "茶未商行",
+    "brand": "茶未商行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "茶森苑企業",
+    "brand": "茶森苑企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "茹日中天商行",
+    "brand": "茹日中天商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "財團法人工業技術研…",
+    "brand": "財團法人工業技術研",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "財團法人中華民國唐氏症基",
+    "brand": "財團法人中華民國唐氏症基",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "財團法人台北市文化基金會",
+    "brand": "財團法人文化基金會",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "財團法人台灣設計研究院",
+    "brand": "財團法人設計研究院",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "財團法人陽光社會福…",
+    "brand": "財團法人陽光社會福",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "迴響創意",
+    "brand": "迴響創意",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "郡帆企業社",
+    "brand": "郡帆企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "酒食屋",
+    "brand": "酒食屋",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "酒條通中和景安",
+    "brand": "酒條通中和景安",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "馬可先生食品企業莊…",
+    "brand": "馬可先生",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "馬可先生第八大直門…",
+    "brand": "馬可先生",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "高雙管四神湯小吃店",
+    "brand": "高雙管四神湯小吃店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "停車場",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "兜樂教育附設臺北市…",
+    "brand": "兜樂教育附設市",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "唯達餐飲",
+    "brand": "唯達餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "啦啦寶都",
+    "brand": "啦啦寶都",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "國盛育樂第一高爾夫球場營",
+    "brand": "高爾夫",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "國雲公寓大廈管理維…",
+    "brand": "國雲公寓大廈管理維",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "國營臺灣鐵路附業營…",
+    "brand": "國營臺灣鐵路附業營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "康是美巨富藥局",
+    "brand": "康是美",
+    "category_lv1": "美妝",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "康是美城美藥局",
+    "brand": "康是美",
+    "category_lv1": "美妝",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "強運商行",
+    "brand": "強運商行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "彩蝶宴",
+    "brand": "彩蝶宴",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "得利仕興業北",
+    "brand": "得利仕興業北",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "御園茶館",
+    "brand": "御園茶館",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業台北市…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業台北縣…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業台南市…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業南山門…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業時代寓…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業高雄市…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠旅生活事業新北市…",
+    "brand": "星巴克 Starbucks",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠勢科技",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠勢科技長春龍江營…",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "悠勢科技悠電能源營…",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "捷安商實業麻膳堂桂…",
+    "brand": "捷安商實業麻膳堂桂",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "啟信車業樂華分公司",
+    "brand": "啟信車業樂華",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "梁鑫雞肉飯專門店",
+    "brand": "梁鑫雞肉飯專門店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "涵澈鈷茶屋",
+    "brand": "涵澈鈷茶屋",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "淑淑的賣商行",
+    "brand": "淑淑的賣商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "深嵐綠茶店",
+    "brand": "深嵐綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "清泉小吃店襄陽店",
+    "brand": "清泉小吃店襄陽店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "現代財富科技",
+    "brand": "MaiCoin",
+    "category_lv1": "投資",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "甜樹商行",
+    "brand": "甜樹商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "祥慶鳳舞綠茶店",
+    "brand": "祥慶鳳舞綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "這宅咖啡館",
+    "brand": "這宅咖啡館",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "通庵",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "連展電能科技",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "部",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "都城實業南港中信商…",
+    "brand": "都城實業南港中信商",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "雪坊志業天玉門市",
+    "brand": "雪坊優格",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "魚青食堂",
+    "brand": "魚青食堂",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鳥貴成慶城門市部",
+    "brand": "鳥貴成慶城",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麥格西點麵包店",
+    "brand": "麥格西點麵包店",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麥造烘焙坊",
+    "brand": "麥造烘焙坊",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麥當勞",
+    "brand": "麥當勞 McDonald's",
+    "category_lv1": "速食",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麻吉行得通",
+    "brand": "麻吉行得通",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "傑斯企業社",
+    "brand": "迷客夏",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱文貝克手烘咖啡店",
+    "brand": "凱文貝克手烘咖啡店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱仲實業",
+    "brand": "凱仲實業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱帝食品",
+    "brand": "凱帝食品",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱悅國際貿易通化分…",
+    "brand": "凱悅國際貿易通化分",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱旋門",
+    "brand": "凱旋門",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "凱督國際桃園專門店",
+    "brand": "凱督國際桃園專門店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "博客來數位科技",
+    "brand": "博客來數位科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "啾咕企業社",
+    "brand": "啾咕企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "喝茶囉人文飲食實業社",
+    "brand": "喝茶囉人文飲食實業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "喬沛",
+    "brand": "烏弄",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "喬寓咖啡",
+    "brand": "喬寓咖啡",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "富山事業林口區中山路營業",
+    "brand": "富山事業林口區中山路營業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "富晟國際開發桃知道…",
+    "brand": "富晟國際開發桃知道",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "富海美饌",
+    "brand": "富海美饌",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "富錦樹文創科技",
+    "brand": "富錦樹文創科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寒舍餐旅管理顧問信…",
+    "brand": "寒舍餐旅管理顧問信",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "尊品國際貿易中山捷…",
+    "brand": "尊品國際貿易中山捷",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "復空食品",
+    "brand": "復空食品",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "揚秦國際企業信義基…",
+    "brand": "麥味登",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "斯寶恩實業社",
+    "brand": "斯寶恩實業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "普林斯戶外",
+    "brand": "普林斯戶外",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "景丞企業社新生營業所",
+    "brand": "景丞企業社新生",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "智生活",
+    "brand": "智生活",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "智見科技",
+    "brand": "智見科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "智慧時尚",
+    "brand": "智慧時尚",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "森騰私房小館",
+    "brand": "森騰私房小館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "湘鼎安和店",
+    "brand": "湘鼎安和店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "無為教育科技",
+    "brand": "無為教育科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "琥虎",
+    "brand": "得正",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "琺鈉生活",
+    "brand": "琺鈉生活",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "皓皓便當店",
+    "brand": "皓皓便當店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "粟家牛肉麵店",
+    "brand": "粟家牛肉麵店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "紫莉",
+    "brand": "紫莉",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "絕色影城",
+    "brand": "絕色影城",
+    "category_lv1": "電影",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統",
+    "brand": "未知通路",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一",
+    "brand": "統一",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一生活",
+    "brand": "7-ELEVEN",
+    "category_lv1": "超商",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一百華台北分公司",
+    "brand": "統一時代百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一百華夢廣場分公司",
+    "brand": "統一時代百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一速達板橋一營業所",
+    "brand": "統一速達板橋一",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一速邁自販台北營…",
+    "brand": "統一速邁自販台北營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一聖娜多堡新大坪…",
+    "brand": "統一聖娜多堡新大坪",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統一數網",
+    "brand": "統一數網",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統康生活事業永和竹…",
+    "brand": "Mia C'bon",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統康生活事業後港分…",
+    "brand": "Mia C'bon",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "統康生活事業美麗華…",
+    "brand": "Mia C'bon",
+    "category_lv1": "超市",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "華城電能科技",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "菲思和",
+    "brand": "菲思和",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "萊爾富",
+    "brand": "萊爾富 Hi-Life",
+    "category_lv1": "超商",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "萊樂茶行",
+    "brand": "萊樂茶行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "街口電子支付",
+    "brand": "街口電子支付",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "詠裕服裝新店門市",
+    "brand": "詠裕服裝新店",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "貳樓餐飲",
+    "brand": "貳樓餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "賀臨",
+    "brand": "賀臨",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "進化研究",
+    "brand": "進化研究",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "陽明山瓦斯",
+    "brand": "陽明山瓦斯",
+    "category_lv1": "瓦斯",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "陽明冷飲店",
+    "brand": "陽明冷飲店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "雅凱藝術事業",
+    "brand": "雅凱藝術事業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "雲鼎阿二麻辣",
+    "brand": "雲鼎阿二麻辣",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "黃大隆企業社",
+    "brand": "黃大隆企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "黑橋牌企業士林門市部",
+    "brand": "黑橋牌企業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "傲德國際",
+    "brand": "傲德國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "傳忠頭城停一",
+    "brand": "傳忠頭城停一",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "圓心圓國際事業礁溪…",
+    "brand": "圓心圓國際事業礁溪",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "圓左企業社",
+    "brand": "圓左企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "圓荷",
+    "brand": "圓荷",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "塞特知識",
+    "brand": "知識衛星",
+    "category_lv1": "學習平台",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "微風場站開發",
+    "brand": "微風 Breeze",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "微風置地信義分公司",
+    "brand": "微風 Breeze",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "微風廣場實業",
+    "brand": "微風 Breeze",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "微程式資訊嘉義安樂場",
+    "brand": "微程式資訊嘉義安樂場",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "想酌",
+    "brand": "想酌",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "愷妃商行",
+    "brand": "愷妃商行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "愷眞冷飲站",
+    "brand": "愷眞冷飲站",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新北市板橋區農會",
+    "brand": "板橋區農會",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新禾園美食坊",
+    "brand": "新禾園美食坊",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新光三越",
+    "brand": "新光三越",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新光三越百貨台北天…",
+    "brand": "新光三越",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新光三越百貨台北信…",
+    "brand": "新光三越",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新光三越百貨台北南…",
+    "brand": "新光三越",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新東陽國道西螺門市部",
+    "brand": "新東陽國道",
+    "category_lv1": "食品",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新東陽國道關西門市部",
+    "brand": "新東陽國道",
+    "category_lv1": "食品",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新板綠茶店",
+    "brand": "新板綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新空間國際",
+    "brand": "新空間國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新長越企業林口忠孝路停車",
+    "brand": "新長越企業林口路停車",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新新生工作室",
+    "brand": "新新生工作室",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "新儀科技",
+    "brand": "新儀科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "極月國際餐飲",
+    "brand": "極月國際餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "溪和食品",
+    "brand": "溪和食品",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "滄美",
+    "brand": "滄美",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瑞芳綠茶店",
+    "brand": "瑞芳綠茶店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瑞哥小吃店",
+    "brand": "瑞哥小吃店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瑞記海南雞飯大直營…",
+    "brand": "瑞記海南雞飯大直營",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瑞奧",
+    "brand": "瑞奧",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "萬友企業昌吉分公司",
+    "brand": "萬友企業昌吉",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "萬宜豐",
+    "brand": "萬宜豐",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "萬達寵物事業通化分…",
+    "brand": "萬達寵物事業通化分",
+    "category_lv1": "寵物",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "義美",
+    "brand": "義美",
+    "category_lv1": "食品",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "義寶餐飲",
+    "brand": "義寶餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聖格",
+    "brand": "聖格",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "葉葉樹食店",
+    "brand": "葉葉樹食店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "葳耀茶坊",
+    "brand": "葳耀茶坊",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "誠品",
+    "brand": "誠品",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "誠盟桃園分公司",
+    "brand": "誠盟桃園",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "誠興小吃店",
+    "brand": "誠興小吃店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "誠鮮餐飲事業臨沂分…",
+    "brand": "誠鮮餐飲事業臨沂分",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "路易莎",
+    "brand": "路易莎 Louisa",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "路遙圓創",
+    "brand": "路遙圓創",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "零七小吃店",
+    "brand": "禪吃茶",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鼎虹涮涮鍋店",
+    "brand": "鼎虹涮涮鍋店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鼎泰豐小吃店新生分…",
+    "brand": "鼎泰豐",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "對稱資訊",
+    "brand": "對稱資訊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "幣託科技",
+    "brand": "幣託科技",
+    "category_lv1": "投資",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "慵懶市府餐飲",
+    "brand": "慵懶市府餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "慵懶福和餐飲",
+    "brand": "慵懶福和餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "榮",
+    "brand": "榮",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "漁韻飯館",
+    "brand": "漁韻飯館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "漢威餐飲",
+    "brand": "漢威餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "漢唐信義莊敬店",
+    "brand": "漢唐信義莊敬店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "漾沛商行",
+    "brand": "漾沛商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "瑪沙餐飲",
+    "brand": "瑪沙餐飲",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "甄晶采實業",
+    "brand": "甄晶采實業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "睿太數位",
+    "brand": "睿太數位",
+    "category_lv1": "咖啡",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "睿宣咖啡",
+    "brand": "睿宣咖啡",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "睿能數位服務",
+    "brand": "睿能數位服務",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "睿鼎數位",
+    "brand": "睿鼎數位",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "福港餐飲",
+    "brand": "福港餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "福華冷飲站",
+    "brand": "福華冷飲站",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "福圓號食品大坪林門市",
+    "brand": "福圓號食品大坪林",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "福滿無限餐飲",
+    "brand": "福滿無限餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "精誠資訊",
+    "brand": "精誠資訊",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "綠島豆丁冷飲店",
+    "brand": "綠島豆丁冷飲店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "綠薄荷麵食坊",
+    "brand": "綠薄荷麵食坊",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "網路家庭國際資訊",
+    "brand": "PChome",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "網際智慧",
+    "brand": "網際智慧",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聚寶易",
+    "brand": "聚寶易",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聚鑫超有肉涮涮屋",
+    "brand": "聚鑫超有肉涮涮屋",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "臺北市士林運動中心",
+    "brand": "士林運動中心",
+    "category_lv1": "運動",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "臺北自來水事業處",
+    "brand": "臺北自來水事業處",
+    "category_lv1": "水費",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "臺隆工業南港營業所",
+    "brand": "臺隆工業南港",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "舞動陽光師大附中營…",
+    "brand": "舞動陽光師大附中營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "豪宬企業仁愛門市店",
+    "brand": "豪宬企業仁愛店",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "輕鬆美膚",
+    "brand": "輕鬆美膚",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠百企業板橋南雅分…",
+    "brand": "遠東百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠東百貨竹北分公司",
+    "brand": "遠東百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠東百貨板橋新站分…",
+    "brand": "遠東百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠東百貨信義分公司",
+    "brand": "遠東百貨",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠悦餐飲",
+    "brand": "遠悦餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠時數位科技",
+    "brand": "遠時數位科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "遠創智慧",
+    "brand": "遠創智慧",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "酷澎",
+    "brand": "Coupang 酷澎",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "銘元",
+    "brand": "銘元",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "齊臨",
+    "brand": "齊臨",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "億品商行",
+    "brand": "億品商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "億迪發",
+    "brand": "億迪發",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "億群發",
+    "brand": "億群發",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "億達發企業社",
+    "brand": "億達發企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "德翊志行號",
+    "brand": "德翊志行號",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "德富利飲料店",
+    "brand": "德富利飲料店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "德榮軒小吃店",
+    "brand": "德榮軒小吃店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "德誼數位科技台大營…",
+    "brand": "德誼數位科技台大營",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "摩立斯",
+    "brand": "摩立斯",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "樂子國際瑞安分公司",
+    "brand": "樂子國際瑞安",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "樂芳源通化分公司",
+    "brand": "樂芳源通化",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "樂排",
+    "brand": "樂排",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "樂眾科技",
+    "brand": "樂眾科技",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "歐立食品新埔分公司",
+    "brand": "歐立食品新埔",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "歐特儀行政段２２６地號平",
+    "brand": "歐特儀行政段２２６地號平",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "歐莉飲料店",
+    "brand": "歐莉飲料店",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "潤揚興業社",
+    "brand": "潤揚興業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "澄薏餐飲元氣眷村重…",
+    "brand": "澄薏餐飲元氣眷村重",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "澎坊三號港分公司",
+    "brand": "澎坊三號港",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "穀醍英式茶行",
+    "brand": "穀醍英式茶行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蔥達人",
+    "brand": "蔥達人",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蔦燒國際餐飲石牌店",
+    "brand": "蔦燒國際餐飲店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蝦皮",
+    "brand": "蝦皮 Shopee",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蝦皮購物",
+    "brand": "蝦皮 Shopee",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "賜久五金百貨商行",
+    "brand": "賜久五金百貨商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "質飲商號",
+    "brand": "質飲商號",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "震澔商行",
+    "brand": "得正",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "墨凡東站營業所",
+    "brand": "墨凡東站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "學府路雞肉飯",
+    "brand": "學府路雞肉飯",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "橘熊科技",
+    "brand": "橘熊科技",
+    "category_lv1": "服飾",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "熹穎",
+    "brand": "熹穎",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "築間餐飲事業新北永…",
+    "brand": "築間",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "貓空休閒咖啡館",
+    "brand": "貓空休閒咖啡館",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "錢京視聽",
+    "brand": "錢京視聽",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "餐廳",
+    "brand": "餐廳",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "默默企業社",
+    "brand": "默默企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "龍巖",
+    "brand": "龍巖",
+    "category_lv1": "殯葬",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "龍鱗餐飲",
+    "brand": "龍鱗餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "優迪國際",
+    "brand": "優迪國際",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "優食好物台灣",
+    "brand": "Uber Eats",
+    "category_lv1": "外送",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "應安北平東停車場",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "應安僑信停車場",
+    "brand": "停車場 / Parking",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "礁溪鄉農會湯戀物產館",
+    "brand": "礁溪鄉農會湯戀物產館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聯永物業台北十八站",
+    "brand": "聯永物業 / 停車",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聯發國際餐飲事業",
+    "brand": "聯發國際餐飲事業",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聯發國際餐飲事業南…",
+    "brand": "聯發國際餐飲事業南",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "聯發國際餐飲事業樂…",
+    "brand": "聯發國際餐飲事業樂",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蕾莉珍娜國際企業士…",
+    "brand": "蕾莉珍娜",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蕾莉珍娜國���企業士…",
+    "brand": "蕾莉珍娜",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "薏羅食品新店門市",
+    "brand": "薏羅食品新店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鮪肚國際大坪林分公司",
+    "brand": "鮪肚國際大坪林",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鮮冠小吃店",
+    "brand": "鮮冠小吃店",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鴻緯智慧科技",
+    "brand": "電動車充電 / 停車能源",
+    "category_lv1": "停車",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "曜成茗茶行",
+    "brand": "曜成茗茶行",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "薩摩亞商客來喜餐飲…",
+    "brand": "薩摩亞商客來喜餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "薰衣草森林新社營業所",
+    "brand": "薰衣草森林新社",
+    "category_lv1": "旅遊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "豐其生活館",
+    "brand": "豐其生活館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "豐東興業",
+    "brand": "豐東興業",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "豐奕生活館",
+    "brand": "豐奕生活館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "豐郁生活館",
+    "brand": "豐郁生活館",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鎷鏮茶飲",
+    "brand": "鎷鏮茶飲",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "雙月好湯",
+    "brand": "雙月好湯",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鵝城餐飲",
+    "brand": "鵝城餐飲",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張台北分公司",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張台北北醫分公司",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張台北民權分公司",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張台北通化分公司",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張板橋江子翠分…",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鬍鬚張芝山分公司",
+    "brand": "鬍鬚張",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麗鑫綜合百貨",
+    "brand": "麗鑫綜合百貨",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶禾電子商務",
+    "brand": "寶禾電子商務",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶島光學科技寶島眼…",
+    "brand": "寶島光學科技寶島眼",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶盛國際嘟嘟房中崙…",
+    "brand": "寶盛國際嘟嘟房中崙",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶盛國際嘟嘟房捷運淡水站",
+    "brand": "寶盛國際嘟嘟房捷運站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶盛莊敬站",
+    "brand": "寶盛莊敬站",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "寶雅",
+    "brand": "寶雅",
+    "category_lv1": "美妝",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "耀森商行",
+    "brand": "耀森商行",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "麵包空間手感烘焙坊",
+    "brand": "麵包空間手感烘焙坊",
+    "category_lv1": "烘焙坊",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "囍金咖啡館",
+    "brand": "囍金咖啡館",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "蘭田國際企業社",
+    "brand": "蘭田國際企業社",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "饗樂餐飲實業土城中…",
+    "brand": "QBurger",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "饗樂餐飲實業板橋華…",
+    "brand": "QBurger",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "饗樂餐飲實業信義信…",
+    "brand": "QBurger",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "饗樂餐飲實業新北市…",
+    "brand": "QBurger",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鑫光威登士林分公司",
+    "brand": "鑫光威登",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鑫光威登社子分公司",
+    "brand": "鑫光威登社子",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鑫光威登景平分公司",
+    "brand": "鑫光威登景平",
+    "category_lv1": "餐飲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鑫莎企業",
+    "brand": "鑫莎企業",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "鑫鑽咖啡館",
+    "brand": "鑫鑽咖啡館",
+    "category_lv1": "飲料",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Ａｇｏｄａ　　Ｃｏ…",
+    "brand": "Ａｇｏｄａ　　Ｃｏ",
+    "category_lv1": "旅遊住宿",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Apple",
+    "brand": "Apple",
+    "category_lv1": "3C",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Costco",
+    "brand": "Costco",
+    "category_lv1": "量販",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "foodpanda",
+    "brand": "foodpanda",
+    "category_lv1": "外送",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Google",
+    "brand": "Google",
+    "category_lv1": "訂閱",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Ｇｏｏｇｌｅ　　Ａｓｉａ",
+    "brand": "Ｇｏｏｇｌｅ　　Ａｓｉａ",
+    "category_lv1": "訂閱",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "ＨＥＰＴＡ　ＰＬＡ…",
+    "brand": "ＨＥＰＴＡ　ＰＬＡ",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "ＬａＬａ",
+    "brand": "ＬａＬａ",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "momo購物",
+    "brand": "momo購物",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Ｎｅｔｆｌｉｘ　Ｐ…",
+    "brand": "Ｎｅｔｆｌｉｘ",
+    "category_lv1": "串流平台",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Nintendo",
+    "brand": "Nintendo",
+    "category_lv1": "遊戲",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "ＯｐｅｎＡＩ　ＬＬＣ",
+    "brand": "OpenAI",
+    "category_lv1": "訂閱",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "ＯｐｅｎＡＩ　Ｏｐ…",
+    "brand": "OpenAI",
+    "category_lv1": "訂閱",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Ｐａｄｄｌｅ．ｃｏｍＭａ",
+    "brand": "Ｐａｄｄｌｅ．ｃｏｍＭａ",
+    "category_lv1": "其他",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Ｒａｋｕｔｅｎ　Ｋ…",
+    "brand": "Ｒａｋｕｔｅｎ　Ｋ",
+    "category_lv1": "網購",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "SOGO",
+    "brand": "SOGO",
+    "category_lv1": "百貨",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "Uber Eats",
+    "brand": "Uber Eats",
+    "category_lv1": "外送",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  },
+  {
+    "shop": "UberEats",
+    "brand": "Uber Eats",
+    "category_lv1": "外送",
+    "category_lv2": "",
+    "insight_tag": "",
+    "note": ""
+  }
+]
