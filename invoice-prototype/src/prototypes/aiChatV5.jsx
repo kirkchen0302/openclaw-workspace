@@ -588,20 +588,34 @@ export default function AIChatV5({
         ],
       });
       if (utils.penalties && utils.penalties.length > 0) {
+        const penaltyAmt = utils.penalties.reduce((s, p) => s + p.amount, 0);
         utilBubble.push({
           type: "alert",
           icon: "⚠️",
-          title: `發現 $${fmt(utils.penalties.reduce((s, p) => s + p.amount, 0))} 滯納金`,
-          body: "逾期繳費被收了違約金。建議開啟繳費到期推播提醒，或設定自動扣繳。",
+          title: `你過去一年有 $${fmt(penaltyAmt)} 滯納金`,
+          body: "因為逾期繳費而被收取違約金。這筆錢完全可以避免——只要開啟繳費提醒，就不會再忘記繳費了。",
+        });
+        utilBubble.push({
+          type: "cta",
+          label: "🔔 立即設定繳費提醒，不再被罰",
+          primary: true,
+          todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前 3 天通知，避免滯納金）",
+        });
+        utilBubble.push({
+          type: "cta",
+          label: "📋 歸戶更多繳費發票",
+          primary: false,
+          todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶",
+        });
+      } else {
+        utilBubble.push({
+          type: "cta-row",
+          buttons: [
+            { label: "📋 歸戶更多繳費發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
+            { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
+          ],
         });
       }
-      utilBubble.push({
-        type: "cta-row",
-        buttons: [
-          { label: "📋 歸戶更多繳費發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
-          { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
-        ],
-      });
     } else {
       utilBubble.push({
         type: "text",
