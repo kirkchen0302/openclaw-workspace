@@ -154,8 +154,7 @@ function CtaButton({ primary, label, done, onClick, flex }) {
           cursor: "default",
           marginTop: flex ? 0 : 6,
           display: flex ? undefined : "block",
-          marginLeft: flex ? undefined : "auto",
-          marginRight: flex ? undefined : "auto",
+          width: flex ? undefined : "100%",
         }}
       >
         {label}
@@ -177,8 +176,7 @@ function CtaButton({ primary, label, done, onClick, flex }) {
         cursor: "pointer",
         marginTop: flex ? 0 : 6,
         display: flex ? undefined : "block",
-        marginLeft: flex ? undefined : "auto",
-        marginRight: flex ? undefined : "auto",
+        width: flex ? undefined : "100%",
       }}
     >
       {label}
@@ -270,7 +268,8 @@ export default function AIChatV6({
   const [input, setInput] = useState("");
   const [answeredKeys, setAnsweredKeys] = useState([]);
   const [todos, setTodos] = useState([]);
-  const [phase, setPhase] = useState("auth"); // "auth" | "ready" | "done"
+  const [phase, setPhase] = useState("auth");
+  const [expandedBills, setExpandedBills] = useState({}); // "auth" | "ready" | "done"
   const scrollRef = useRef(null);
   const typingTimerRef = useRef(null);
 
@@ -583,16 +582,10 @@ export default function AIChatV6({
     if (bills.length > 0) {
       const annualUtil = bills.reduce((s, b) => s + (b.annual || 0), 0);
       utilBubble.push({
-        type: "datacard",
+        type: "utility-card",
         title: "🏠 公共事業費",
-        rows: [
-          ...bills.map((b) => ({
-            label: b.name,
-            value: `每期 $${fmt(b.perPeriod)}`,
-            sub: `共 ${b.count} 期，年度 $${fmt(b.annual)}`,
-          })),
-          { label: "年度合計", value: `$${fmt(annualUtil)}/年` },
-        ],
+        bills,
+        annualUtil,
       });
       if (utils.penalties && utils.penalties.length > 0) {
         const penaltyAmt = utils.penalties.reduce((s, p) => s + p.amount, 0);
@@ -994,6 +987,54 @@ export default function AIChatV6({
               if (!isDone) addTodo(part.todoText);
             }}
           />
+        );
+      }
+      case "utility-card": {
+        const { title: ucTitle, bills: ucBills, annualUtil: ucAnnual } = part;
+        return (
+          <div key={idx} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px 16px", marginTop: 10, marginBottom: 6 }}>
+            {ucTitle && <div style={{ fontSize: 13, fontWeight: 700, color: T.textBold, marginBottom: 10 }}>{ucTitle}</div>}
+            {(ucBills || []).map((bill, bi) => {
+              const isExpanded = expandedBills[bill.name];
+              const periods = (bill.periods || []).slice(-6);
+              const maxAmt = periods.length > 0 ? Math.max(...periods.map((p) => p.amount)) : 1;
+              return (
+                <div key={bi} style={{ marginBottom: 8 }}>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: periods.length > 0 ? "pointer" : "default" }}
+                    onClick={() => { if (periods.length > 0) setExpandedBills((prev) => ({ ...prev, [bill.name]: !prev[bill.name] })); }}
+                  >
+                    <span style={{ fontSize: 13, color: T.textDefault }}>{bill.name}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: T.textBold }}>每期 ${fmt(bill.perPeriod)}</span>
+                      {periods.length > 0 && <span style={{ fontSize: 11, color: T.textSubtle, transition: "transform 0.2s", transform: isExpanded ? "rotate(180deg)" : "rotate(0)" }}>▼</span>}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: T.textSubtle, marginTop: 2 }}>共 {bill.count} 期，年度 ${fmt(bill.annual)}</div>
+                  {isExpanded && periods.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 60, marginTop: 8, paddingBottom: 2 }}>
+                      {periods.map((p, pi) => {
+                        const barH = Math.max((p.amount / maxAmt) * 44, 4);
+                        return (
+                          <div key={pi} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                            <div style={{ fontSize: 9, color: T.textSubtle, fontWeight: 500 }}>${fmt(p.amount)}</div>
+                            <div style={{ width: "100%", height: barH, borderRadius: "3px 3px 0 0", background: T.brand }} />
+                            <div style={{ fontSize: 9, color: T.textSubtle }}>{(p.date || "").slice(5) || "?"}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 6, marginTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.textBold }}>年度合計</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.textBold }}>${fmt(ucAnnual)}/年</span>
+              </div>
+            </div>
+          </div>
         );
       }
       case "start-cta":

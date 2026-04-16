@@ -175,6 +175,7 @@ function detectFixed(invoices, span) {
   for (const rule of FIXED_RULES) {
     let sum = 0;
     let count = 0;
+    const matchedInvs = [];
 
     for (const inv of invoices) {
       const shopLower = (inv.shop || "").toLowerCase();
@@ -195,6 +196,7 @@ function detectFixed(invoices, span) {
       if (invMatch) {
         sum += inv.amount || 0;
         count++;
+        matchedInvs.push({ date: inv.yearMonth || (inv.issued_at || "").slice(0, 7), amount: inv.amount || 0 });
       }
     }
 
@@ -207,6 +209,7 @@ function detectFixed(invoices, span) {
         period: `每期 $${fmt(perPeriod)}`,
         perPeriod,
         count,
+        periods: matchedInvs.sort((a, b) => (a.date || "").localeCompare(b.date || "")).slice(-6).map((m) => ({ date: m.date, amount: m.amount })),
       });
     }
   }
@@ -1153,6 +1156,7 @@ export function computeInsightData(invoices, invoiceCount, totalAmount) {
     perPeriod: f.perPeriod || 0,   // average per bill
     annual: f.amount,               // annualized total
     count: f.count || 0,            // number of bills seen
+    periods: f.periods || [],       // [{date, amount}] last 6 periods for bar chart
   }));
   const utilPenalties = penaltiesRaw > 0
     ? [{ name: "滯納金/違約金", amount: penaltiesRaw }]
