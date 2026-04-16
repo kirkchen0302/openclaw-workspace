@@ -584,8 +584,8 @@ export default function AIChatV4({
     const tipLines = [];
     let totalSaveable = 0;
 
-    // Smart buy DataCard if currentPrice > 0
-    if (data.smartBuy && data.smartBuy.length > 0 && data.smartBuy[0].currentPrice > 0) {
+    // Smart buy DataCard
+    if (data.smartBuy && data.smartBuy.length > 0 && data.smartBuy[0].currentPrice > 0 && data.smartBuy[0].betterPrice > 0) {
       saveBubble.push({
         type: "datacard",
         title: "💡 買更省的方式",
@@ -642,7 +642,10 @@ export default function AIChatV4({
       }
     }
 
-    if (saveBubble.length > 0) bubbles.push(saveBubble);
+    if (saveBubble.length === 0) {
+      saveBubble.push({ type: "text", content: "💡 你的消費整體看起來還算合理。持續留意重複性支出，有意識地消費就是最好的省錢方式。" });
+    }
+    bubbles.push(saveBubble);
 
     return bubbles;
   }
@@ -653,38 +656,60 @@ export default function AIChatV4({
   function buildTimeResponse(data) {
     const bubbles = [];
     const tp = data.timePatterns || {};
-
-    // ── Bubble 1: 時段分析 ─────────────────────────────────────────────
-    const timeBubble = [];
+    const lateNight = data.lateNight || {};
+    const weekendPremium = data.weekendPremium || {};
     const peakHour = tp.peakHour;
+    const peakMonth = tp.peakMonth;
     const timeBuckets = tp.timeBuckets || [];
-    const totalBucketAmount = timeBuckets.reduce((s, b) => s + b.amount, 0);
+    const totalBucketAmt = timeBuckets.reduce((s, b) => s + b.amount, 0);
 
+    // ── Bubble 1: 破題 — 用最驚訝的數字開場 ──────────────────────────
+    // 優先級：深夜佔比 ≥10% → 週末溢價 ≥20% → 月份版
+    const leadBubble = [];
+    if (lateNight.pct >= 10 && peakHour && peakHour.hour >= 22) {
+      leadBubble.push({
+        type: "text",
+        content: `你過去一年有 $${fmt(lateNight.total)} 是在深夜花掉的，佔了你總消費的 ${lateNight.pct}%。\n\n深夜的消費決策力比白天低很多，這些錢很多是「滑手機滑出來的」。`,
+      });
+    } else if (weekendPremium.pct >= 20) {
+      leadBubble.push({
+        type: "text",
+        content: `你週末每筆消費比平日貴 ${weekendPremium.pct}%——平日均 $${fmt(weekendPremium.weekdayAvg)}，但到了週末變成 $${fmt(weekendPremium.weekendAvg)}。\n\n週末容易「犒賞自己」，不知不覺花更多。`,
+      });
+    } else if (peakMonth) {
+      leadBubble.push({
+        type: "text",
+        content: `你 ${peakMonth.month} 花了全年最多的 $${fmt(peakMonth.amount)}。\n\n可能有大筆消費或季節性支出，值得回頭看看那個月發生了什麼。`,
+      });
+    } else if (peakHour) {
+      leadBubble.push({
+        type: "text",
+        content: `你的消費高峰在 ${peakHour.hour} 點，光這個時段就花了 $${fmt(peakHour.amount)}。`,
+      });
+    }
+    if (leadBubble.length > 0) bubbles.push(leadBubble);
+
+    // ── Bubble 2: 時段分析 ─────────────────────────────────────────────
+    const timeBubble = [];
     if (peakHour) {
       timeBubble.push({
         type: "text",
-        content: `你的消費高峰在 ${peakHour.hour} 點，這個時段花了 $${fmt(peakHour.amount)}`,
+        content: `你花最多錢的時段是 ${peakHour.hour} 點（$${fmt(peakHour.amount)}）。看看你的錢在一天中怎麼分布的：`,
       });
     }
-
     if (timeBuckets.length > 0) {
       timeBubble.push({
         type: "datacard",
-        title: "消費時段分布",
+        title: "⏰ 消費時段分布",
         rows: timeBuckets.slice(0, 5).map((b) => {
-          const pct = totalBucketAmount > 0 ? Math.round((b.amount / totalBucketAmount) * 100) : 0;
-          return {
-            label: b.name,
-            value: `$${fmt(b.amount)}`,
-            bar: pct,
-          };
+          const pct = totalBucketAmt > 0 ? Math.round((b.amount / totalBucketAmt) * 100) : 0;
+          return { label: b.name, value: `$${fmt(b.amount)}（${pct}%）`, bar: pct };
         }),
       });
     }
-
     if (timeBubble.length > 0) bubbles.push(timeBubble);
 
-    // ── Bubble 2: 星期分析 ─────────────────────────────────────────────
+    // ── Bubble 3: 星期分析 ─────────────────────────────────────────────
     const dayBubble = [];
     const dayOfWeek = tp.dayOfWeek || [];
     const maxDay = tp.maxDay;
@@ -692,17 +717,16 @@ export default function AIChatV4({
     const dayRatio = tp.dayRatio || 0;
     const maxDayAvg = dayOfWeek.length > 0 ? Math.max(...dayOfWeek.map((d) => d.avg)) : 1;
 
-    if (maxDay && minDay) {
+    if (maxDay && minDay && dayRatio >= 1.5) {
       dayBubble.push({
         type: "text",
-        content: `${maxDay.wk} 花最多（日均 $${fmt(maxDay.avg)}），是 ${minDay.wk} 的 ${dayRatio} 倍`,
+        content: `${maxDay.wk}是你的「破財日」——日均消費 $${fmt(maxDay.avg)}，是${minDay.wk}（$${fmt(minDay.avg)}）的 ${dayRatio} 倍。\n\n${maxDay.wk === "週六" || maxDay.wk === "週日" ? "週末通常是採購日和外出日，花費自然偏高。但知道差距有多大，就能有意識地控制。" : "這天可能是你固定的採購或外食日，注意一下是否有衝動消費。"}`,
       });
     }
-
     if (dayOfWeek.length > 0) {
       dayBubble.push({
         type: "datacard",
-        title: "星期消費分布",
+        title: "📅 星期消費分布",
         rows: dayOfWeek.map((d) => ({
           label: d.wk,
           value: `日均 $${fmt(d.avg)}`,
@@ -710,47 +734,39 @@ export default function AIChatV4({
         })),
       });
     }
-
     if (dayBubble.length > 0) bubbles.push(dayBubble);
 
-    // ── Bubble 3: 深夜 + 週末 + 月份高峰 + Tips ──────────────────────
-    const extraBubble = [];
-    const lateNight = data.lateNight || {};
-    const weekendPremium = data.weekendPremium || {};
-    const peakMonth = tp.peakMonth;
-
+    // ── Bubble 4: 深夜消費 + 週末溢價 + 建議 ──────────────────────────
+    const insightBubble = [];
     if (lateNight.pct >= 10) {
-      extraBubble.push({
+      insightBubble.push({
         type: "alert",
         icon: "🌙",
-        title: `${lateNight.pct}% 消費在深夜（22:00-06:00）`,
-        body: `共 $${fmt(lateNight.total)}，減少 30% 可年省 $${fmt(lateNight.saveable)}`,
+        title: `深夜消費佔 ${lateNight.pct}%（$${fmt(lateNight.total)}）`,
+        body: `深夜（22:00-06:00）的消費通常衝動性更高。減少 30% 就能年省 $${fmt(lateNight.saveable)}。`,
       });
     }
-
     if (weekendPremium.pct >= 20) {
-      extraBubble.push({
+      insightBubble.push({
         type: "text",
-        content: `📆 週末每筆消費比平日貴 ${weekendPremium.pct}%（平日均 $${fmt(weekendPremium.weekdayAvg)} vs 週末 $${fmt(weekendPremium.weekendAvg)}）`,
+        content: `📆 你週末每筆消費比平日貴 ${weekendPremium.pct}%\n平日均 $${fmt(weekendPremium.weekdayAvg)} → 週末 $${fmt(weekendPremium.weekendAvg)}`,
       });
     }
-
     if (peakMonth) {
-      extraBubble.push({
+      insightBubble.push({
         type: "text",
-        content: `你的 ${peakMonth.month} 花了最多的 $${fmt(peakMonth.amount)}`,
+        content: `📊 消費最高的月份：${peakMonth.month}（$${fmt(peakMonth.amount)}）`,
       });
     }
-
-    // Tips
+    // Actionable tips
     const tips = [];
-    if (lateNight.pct >= 10) {
-      tips.push("🌙 深夜冷靜期建議：超過 $200 的消費，先放購物車等隔天再決定");
-    }
-    tips.push("📝 出門前列清單，避免衝動消費");
-    extraBubble.push({ type: "text", content: tips.join("\n") });
+    if (lateNight.pct >= 10) tips.push("🌙 設定「深夜冷靜期」——22 點後超過 $200 的消費，先加購物車明天再決定");
+    if (weekendPremium.pct >= 20) tips.push("📝 週末出門前列好清單和預算，減少衝動消費");
+    if (peakMonth) tips.push("📆 留意消費高峰月份，提前規劃大筆支出");
+    if (tips.length === 0) tips.push("📝 出門前列清單，避免衝動消費");
+    insightBubble.push({ type: "text", content: tips.join("\n") });
 
-    if (extraBubble.length > 0) bubbles.push(extraBubble);
+    if (insightBubble.length > 0) bubbles.push(insightBubble);
 
     return bubbles;
   }
