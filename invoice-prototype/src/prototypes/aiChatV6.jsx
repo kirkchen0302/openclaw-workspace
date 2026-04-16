@@ -144,7 +144,7 @@ function CtaButton({ primary, label, done, onClick, flex }) {
         disabled
         style={{
           flex: flex ? 1 : undefined,
-          padding: "10px 14px",
+          padding: flex ? "8px 10px" : "10px 14px",
           borderRadius: 20,
           border: `1px solid ${T.border}`,
           background: T.bgSunken,
@@ -153,6 +153,9 @@ function CtaButton({ primary, label, done, onClick, flex }) {
           fontWeight: 600,
           cursor: "default",
           marginTop: flex ? 0 : 6,
+          display: flex ? undefined : "block",
+          marginLeft: flex ? undefined : "auto",
+          marginRight: flex ? undefined : "auto",
         }}
       >
         {label}
@@ -164,7 +167,7 @@ function CtaButton({ primary, label, done, onClick, flex }) {
       onClick={onClick}
       style={{
         flex: flex ? 1 : undefined,
-        padding: "10px 14px",
+        padding: flex ? "8px 10px" : "10px 14px",
         borderRadius: 20,
         border: primary ? "none" : `1.5px solid ${T.brand}`,
         background: primary ? T.brand : T.bg,
@@ -173,6 +176,9 @@ function CtaButton({ primary, label, done, onClick, flex }) {
         fontWeight: 600,
         cursor: "pointer",
         marginTop: flex ? 0 : 6,
+        display: flex ? undefined : "block",
+        marginLeft: flex ? undefined : "auto",
+        marginRight: flex ? undefined : "auto",
       }}
     >
       {label}
@@ -536,7 +542,7 @@ export default function AIChatV6({
       });
       subBubble.push({
         type: "cta",
-        label: "📋 歸戶更多訂閱發票",
+        label: "📋 歸戶訂閱發票",
         primary: false,
         todoText: "到 App 載具歸戶頁面，確認所有訂閱服務都已歸戶（Netflix / Spotify / iCloud 等）",
       });
@@ -563,7 +569,7 @@ export default function AIChatV6({
       });
       subBubble.push({
         type: "cta",
-        label: "📋 歸戶更多訂閱發票",
+        label: "📋 歸戶訂閱發票",
         primary: true,
         todoText: "到 App 載具歸戶頁面，把 Netflix / Spotify / iCloud 等訂閱服務歸戶",
       });
@@ -604,7 +610,7 @@ export default function AIChatV6({
         });
         utilBubble.push({
           type: "cta",
-          label: "📋 歸戶更多繳費發票",
+          label: "📋 歸戶繳費發票",
           primary: false,
           todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶",
         });
@@ -612,7 +618,7 @@ export default function AIChatV6({
         utilBubble.push({
           type: "cta-row",
           buttons: [
-            { label: "📋 歸戶更多繳費發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
+            { label: "📋 歸戶繳費發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
             { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
           ],
         });
@@ -625,7 +631,7 @@ export default function AIChatV6({
       utilBubble.push({
         type: "cta-row",
         buttons: [
-          { label: "📋 歸戶更多繳費發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" },
+          { label: "📋 歸戶繳費發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" },
           { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
         ],
       });
