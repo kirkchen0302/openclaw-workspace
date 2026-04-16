@@ -598,7 +598,7 @@ export default function AIChatV5({
       utilBubble.push({
         type: "cta-row",
         buttons: [
-          { label: "📋 歸戶更多公共事業發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
+          { label: "📋 歸戶更多繳費發票", primary: false, todoText: "到 App 載具歸戶頁面，確認台電、自來水、瓦斯公司都已歸戶" },
           { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
         ],
       });
@@ -610,7 +610,7 @@ export default function AIChatV5({
       utilBubble.push({
         type: "cta-row",
         buttons: [
-          { label: "📋 歸戶更多公共事業發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" },
+          { label: "📋 歸戶更多繳費發票", primary: true, todoText: "到 App 載具歸戶頁面，把台電、自來水、瓦斯公司歸到載具" },
           { label: "🔔 設定繳費提醒", primary: false, todoText: "設定公共事業費繳費提醒（電費、水費、瓦斯費到期前通知）" },
         ],
       });
