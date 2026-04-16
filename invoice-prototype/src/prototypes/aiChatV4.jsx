@@ -442,28 +442,32 @@ export default function AIChatV4({
     }
 
     const top = tier1[0];
-    const avg = Math.round(top.amount / top.count);
 
-    // Lead text
+    // Subtitle
     parts.push({
       type: "text",
-      content: `你花最多的是「${top.name}」，一年 $${fmt(top.amount)}（${top.count} 次，每次平均 $${fmt(avg)}）`,
+      content: `你花最多錢的是「${top.name}」，一年累積 $${fmt(top.amount)}`,
     });
 
-    // DataCard: top 5 from tier1
-    const tier1Rows = tier1.slice(0, 5).map((item) => {
-      const itemAvg = Math.round(item.amount / item.count);
-      return {
-        label: item.name,
-        value: `$${fmt(item.amount)}（${item.pct}%）`,
-        sub: `${item.count} 次，每次 $${fmt(itemAvg)}`,
-        bar: item.pct,
-      };
+    // Hero card — big number for #1 item
+    parts.push({
+      type: "hero",
+      label: "你花最多錢買的東西",
+      name: top.name.length > 20 ? top.name.slice(0, 20) + "…" : top.name,
+      amount: top.amount,
+      sub: `${top.count} 次，佔總支出 ${top.pct}%`,
     });
+
+    // Ranking DataCard — all top items with progress bars
     parts.push({
       type: "datacard",
-      title: "前 5 大花費項目",
-      rows: tier1Rows,
+      rows: tier1.slice(0, 6).map((item) => ({
+        label: item.name.length > 18 ? item.name.slice(0, 18) + "…" : item.name,
+        value: `$${fmt(item.amount)}`,
+        sub: `${item.count}次，佔${item.pct}%`,
+        bar: item.pct,
+        barColor: T.brand,
+      })),
     });
 
     // Transition text
@@ -956,6 +960,15 @@ export default function AIChatV4({
   // ── Render a single message part ──────────────────────────────────────
   function renderPart(part, idx) {
     switch (part.type) {
+      case "hero":
+        return (
+          <div key={idx} style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: T.textSubtle, marginBottom: 4 }}>{part.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.textBold, marginBottom: 4 }}>{part.name}</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: T.brand, lineHeight: 1.2, marginBottom: 4 }}>${fmt(part.amount)}</div>
+            <div style={{ fontSize: 13, color: T.textSubtle }}>{part.sub}</div>
+          </div>
+        );
       case "text":
         return (
           <div
